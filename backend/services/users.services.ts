@@ -9,6 +9,7 @@ import { ObjectId } from 'mongodb'
 import { config } from 'dotenv'
 import { userMessages } from '~/constants/messages'
 import databaseService from './database.services'
+import { sendVerifyEmail, sendForgotPasswordEmail } from '~/utils/email'
 config()
 //payload giong 1 object trong do cac thuoc tinh vay a
 class UsersService {
@@ -57,9 +58,9 @@ class UsersService {
         user_id,
         token_type: TokenType.ForgotPasswordToken
       },
-      privateKey: process.env.JWT_SECRET_RESET_PASSWORD_TOKEN as string,
+      privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string,
       options: {
-        expiresIn: process.env.RESET_PASSWORD_TOKEN_EXPIRES_IN as any
+        expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN as any
       }
     })
   }
@@ -83,7 +84,8 @@ class UsersService {
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
     )
-    console.log('email_verify_token', email_verify_token)
+    // Gửi email xác thực
+    await sendVerifyEmail(payload.email, payload.name, email_verify_token)
     return {
       access_token,
       refresh_token
@@ -128,16 +130,22 @@ class UsersService {
 
   async resendEmailVerify(user_id: string) {
     const email_verify_token = await this.signEmailVerifyToken(user_id)
+    const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
     await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       { $set: { email_verify_token, updated_at: new Date() } }
     )
+    // Gửi lại email xác thực
+    if (user) {
+      await sendVerifyEmail(user.email, user.name, email_verify_token)
+    }
     return {
       message: userMessages.RESEND_EMAIL_VERIFY_SUCCESS
     }
   }
   async forgotPassword(user_id: string) {
     const forgot_password_token = await this.signForgotPasswordToken(user_id)
+    const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
     await databaseService.users.updateOne(
       {
         _id: new ObjectId(user_id)
@@ -149,7 +157,10 @@ class UsersService {
         }
       }
     )
-    console.log('forgot_password_token: ', forgot_password_token)
+    // Gửi email đặt lại mật khẩu
+    if (user) {
+      await sendForgotPasswordEmail(user.email, user.name, forgot_password_token)
+    }
     return {
       message: userMessages.CREATE_FORGOT_PASSWORD_TOKEN_SUCCESS
     }
@@ -159,6 +170,17 @@ class UsersService {
       { _id: new ObjectId(user_id) },
       { $set: { password: hashPassword(password), forgot_password_token: '', updated_at: new Date() } }
     )
+  }
+
+  async loginWithGoogle(user_id: string) {
+    const [access_token, refresh_token] = await this.signAccessTokenandRefreshToken(user_id)
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    )
+    return {
+      access_token,
+      refresh_token
+    }
   }
 }
 

@@ -1,0 +1,6 @@
+{
+  "watch": [".", ".env"],
+  "ext": ".ts,.js",
+  "ignore": ["build", "node_modules"],
+  "exec": "npx tsx ./index.ts"
+}

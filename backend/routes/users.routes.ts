@@ -19,7 +19,9 @@ import {
   resetPasswordController,
   verifyForgotPasswordTokenController
 } from '../controllers/users.controllers'
+import { googleCallbackController } from '../controllers/google.controllers'
 import { wrapRequestHandler } from '~/utils/handlers'
+import passport from '~/middlewares/passport.middleware'
 
 const usersRouter = Router()
 
@@ -44,4 +46,10 @@ usersRouter.post(
 )
 // reset password k cần biết mk cũ
 usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+
+// Google OAuth
+usersRouter.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+usersRouter.get('/google/callback', passport.authenticate('google', { session: false }), googleCallbackController)
+
 export default usersRouter
+

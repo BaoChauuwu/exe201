@@ -1,0 +1,189 @@
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Mail, Lock, Eye, EyeOff, User, Plane, Calendar, AlertCircle, CheckCircle } from 'lucide-react'
+import { authApi } from '../api/auth.api'
+import { useAuthStore } from '../store/authStore'
+import GoogleButton from '../components/ui/GoogleButton'
+
+const registerSchema = z.object({
+  name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
+  email: z.string().email('Email không hợp lệ'),
+  date_of_birth: z.string().min(1, 'Vui lòng chọn ngày sinh'),
+  password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự')
+    .regex(/[A-Z]/, 'Cần ít nhất 1 chữ hoa')
+    .regex(/[0-9]/, 'Cần ít nhất 1 chữ số'),
+  confirm_password: z.string()
+}).refine((d) => d.password === d.confirm_password, {
+  message: 'Mật khẩu xác nhận không khớp',
+  path: ['confirm_password']
+})
+
+type RegisterForm = z.infer<typeof registerSchema>
+
+export default function RegisterPage() {
+  const [showPass, setShowPass] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [apiError, setApiError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const { setTokens } = useAuthStore()
+  const navigate = useNavigate()
+
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema)
+  })
+
+  const onSubmit = async (data: RegisterForm) => {
+    try {
+      setApiError('')
+      const res = await authApi.register(data)
+      setTokens(res.data.result.access_token, res.data.result.refresh_token)
+      setSuccess(true)
+      setTimeout(() => navigate('/dashboard'), 1500)
+    } catch (err: any) {
+      setApiError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+    }
+  }
+
+  return (
+    <div className='auth-page'>
+      <div className='auth-bg-orb auth-bg-orb-1' />
+      <div className='auth-bg-orb auth-bg-orb-2' />
+
+      <div className='auth-container animate-fade-in-up' style={{ maxWidth: 500 }}>
+        <div className='auth-logo'>
+          <Link to='/'>
+            <div className='auth-logo-icon'>
+              <Plane size={28} color='#fff' />
+            </div>
+          </Link>
+          <h1 className='auth-title'>Tạo tài khoản mới</h1>
+          <p className='auth-subtitle'>Tham gia cộng đồng UniTravel ngay hôm nay</p>
+        </div>
+
+        <div className='card card-glow'>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <GoogleButton onClick={() => authApi.loginWithGoogle()} label='Đăng ký với Google' />
+          </div>
+
+          <div className='auth-divider'>hoặc đăng ký bằng email</div>
+
+          {apiError && (
+            <div className='alert alert-error' style={{ marginTop: '1rem' }}>
+              <AlertCircle size={16} />{apiError}
+            </div>
+          )}
+          {success && (
+            <div className='alert alert-success' style={{ marginTop: '1rem' }}>
+              <CheckCircle size={16} />Đăng ký thành công! Đang chuyển hướng...
+            </div>
+          )}
+
+          <form className='auth-form' onSubmit={handleSubmit(onSubmit)} style={{ marginTop: '1.5rem' }}>
+            {/* Name */}
+            <div className='input-group'>
+              <label className='input-label' htmlFor='reg-name'>Họ và tên</label>
+              <div className='input-wrapper'>
+                <User size={16} className='input-icon' />
+                <input
+                  id='reg-name'
+                  type='text'
+                  placeholder='Nguyễn Văn A'
+                  className={`input-field with-icon ${errors.name ? 'error' : ''}`}
+                  {...register('name')}
+                />
+              </div>
+              {errors.name && <span className='input-error'><AlertCircle size={12} />{errors.name.message}</span>}
+            </div>
+
+            {/* Email */}
+            <div className='input-group'>
+              <label className='input-label' htmlFor='reg-email'>Email</label>
+              <div className='input-wrapper'>
+                <Mail size={16} className='input-icon' />
+                <input
+                  id='reg-email'
+                  type='email'
+                  placeholder='your@email.com'
+                  className={`input-field with-icon ${errors.email ? 'error' : ''}`}
+                  {...register('email')}
+                />
+              </div>
+              {errors.email && <span className='input-error'><AlertCircle size={12} />{errors.email.message}</span>}
+            </div>
+
+            {/* Date of Birth */}
+            <div className='input-group'>
+              <label className='input-label' htmlFor='reg-dob'>Ngày sinh</label>
+              <div className='input-wrapper'>
+                <Calendar size={16} className='input-icon' />
+                <input
+                  id='reg-dob'
+                  type='date'
+                  className={`input-field with-icon ${errors.date_of_birth ? 'error' : ''}`}
+                  style={{ colorScheme: 'dark' }}
+                  {...register('date_of_birth')}
+                />
+              </div>
+              {errors.date_of_birth && <span className='input-error'><AlertCircle size={12} />{errors.date_of_birth.message}</span>}
+            </div>
+
+            {/* Password */}
+            <div className='input-group'>
+              <label className='input-label' htmlFor='reg-password'>Mật khẩu</label>
+              <div className='input-wrapper'>
+                <Lock size={16} className='input-icon' />
+                <input
+                  id='reg-password'
+                  type={showPass ? 'text' : 'password'}
+                  placeholder='Tối thiểu 8 ký tự'
+                  className={`input-field with-icon with-toggle ${errors.password ? 'error' : ''}`}
+                  {...register('password')}
+                />
+                <button type='button' className='input-toggle' onClick={() => setShowPass(!showPass)}>
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.password && <span className='input-error'><AlertCircle size={12} />{errors.password.message}</span>}
+            </div>
+
+            {/* Confirm Password */}
+            <div className='input-group'>
+              <label className='input-label' htmlFor='reg-confirm'>Xác nhận mật khẩu</label>
+              <div className='input-wrapper'>
+                <Lock size={16} className='input-icon' />
+                <input
+                  id='reg-confirm'
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder='Nhập lại mật khẩu'
+                  className={`input-field with-icon with-toggle ${errors.confirm_password ? 'error' : ''}`}
+                  {...register('confirm_password')}
+                />
+                <button type='button' className='input-toggle' onClick={() => setShowConfirm(!showConfirm)}>
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.confirm_password && <span className='input-error'><AlertCircle size={12} />{errors.confirm_password.message}</span>}
+            </div>
+
+            <button
+              id='btn-register-submit'
+              type='submit'
+              className='btn btn-primary btn-full btn-lg'
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <span className='loading-spinner' /> : null}
+              {isSubmitting ? 'Đang đăng ký...' : 'Tạo tài khoản'}
+            </button>
+          </form>
+
+          <div className='auth-footer' style={{ marginTop: '1.5rem' }}>
+            Đã có tài khoản? <Link to='/login'>Đăng nhập</Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

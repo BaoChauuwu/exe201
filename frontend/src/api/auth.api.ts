@@ -1,0 +1,39 @@
+import axiosInstance from './axios'
+import type {
+  LoginBody,
+  RegisterBody,
+  ForgotPasswordBody,
+  ResetPasswordBody,
+  AuthResponse
+} from '../types/auth.types'
+
+export const authApi = {
+  login: (body: LoginBody) =>
+    axiosInstance.post<AuthResponse>('/users/login', body),
+
+  register: (body: RegisterBody) =>
+    axiosInstance.post<AuthResponse>('/users/register', body),
+
+  logout: (refresh_token: string) =>
+    axiosInstance.post('/users/logout', { refresh_token }),
+
+  verifyEmail: (email_verify_token: string) =>
+    axiosInstance.post('/users/verify-email', { email_verify_token }),
+
+  resendEmailVerify: () =>
+    axiosInstance.post('/users/resend-email-verify'),
+
+  forgotPassword: (body: ForgotPasswordBody) =>
+    axiosInstance.post('/users/forgot-password', body),
+
+  verifyForgotPasswordToken: (forgot_password_token: string) =>
+    axiosInstance.post('/users/verify-forgot-password-token', { forgot_password_token }),
+
+  resetPassword: (body: ResetPasswordBody) =>
+    axiosInstance.post('/users/reset-password', body),
+
+  // Google OAuth — redirect trực tiếp tới backend
+  loginWithGoogle: () => {
+    window.location.href = '/api/users/google'
+  }
+}
