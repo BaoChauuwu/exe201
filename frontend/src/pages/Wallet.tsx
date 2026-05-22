@@ -53,7 +53,7 @@ export const Wallet = () => {
                 setWalletBalance(prev => prev - withdrawAmount);
                 setAmount('');
             })
-            .catch(err => {
+            .catch(() => {
                 setStatus('error');
                 setStatusMsg('Giao dịch thất bại. MongoDB Transaction đã rollback.');
             });

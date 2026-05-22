@@ -1,11 +1,13 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, Star, Shield,
-  Compass, ArrowRight, Zap, Heart
+  Compass, ArrowRight, Zap, Heart, MapPin, Clock
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
+import { experienceApi, type IExperience } from '../api/experience.api'
 
 const features = [
   {
@@ -48,6 +50,31 @@ const features = [
 
 export default function HomePage() {
   const { isAuthenticated } = useAuthStore()
+  const [experiences, setExperiences] = useState<IExperience[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    experienceApi.getAllPublic()
+      .then(res => {
+        setExperiences(res.data.result || [])
+      })
+      .catch(err => {
+        console.error('Lỗi khi tải danh sách tour:', err)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [])
+
+  const getCategoryLabel = (cat: string) => {
+    switch (cat) {
+      case 'food': return '🍴 Ẩm thực'
+      case 'adventure': return '🧗 Phiêu lưu'
+      case 'culture': return '🏛️ Văn hóa'
+      case 'nightlife': return '💃 Giải trí đêm'
+      default: return '🗺️ Khác'
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -194,6 +221,116 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ====== FEATURED EXPERIENCES ====== */}
+      <section className='section' id='experiences' style={{ background: 'var(--color-bg)', padding: '5rem 0' }}>
+        <div className='container'>
+          <div className='section-header' style={{ marginBottom: '3.5rem' }}>
+            <div className='section-badge'>Trải nghiệm độc đáo</div>
+            <h2 className='section-title'>
+              Trải nghiệm bản địa nổi bật<br />
+              <span className='gradient-text'>Được dẫn dắt bởi Local Buddy</span>
+            </h2>
+            <p className='section-subtitle'>
+              Khám phá các tour ẩm thực, văn hóa và phiêu lưu được thiết kế và hướng dẫn trực tiếp bởi những người bạn bản địa năng động.
+            </p>
+          </div>
+
+          {isLoading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ background: '#ffffff', border: '1px solid rgba(14, 165, 233, 0.12)', borderRadius: '24px', height: '360px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(14, 165, 233, 0.02)', maxWidth: '360px', width: '100%', margin: '0 auto' }}>
+                  <div style={{ height: '180px', background: '#f1f5f9' }} />
+                  <div style={{ padding: '1.5rem' }}>
+                    <div style={{ width: '30%', height: '12px', background: '#e2e8f0', borderRadius: '4px', marginBottom: '1rem' }} />
+                    <div style={{ width: '80%', height: '20px', background: '#e2e8f0', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                    <div style={{ width: '50%', height: '12px', background: '#e2e8f0', borderRadius: '4px', marginBottom: '1.5rem' }} />
+                    <div style={{ width: '100%', height: '38px', background: '#f1f5f9', borderRadius: '10px' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : experiences.length === 0 ? (
+            <div style={{ background: '#ffffff', border: '1px dashed rgba(14, 165, 233, 0.3)', borderRadius: '24px', padding: '4rem 2rem', textAlign: 'center', color: 'var(--color-text-muted)', maxWidth: '500px', margin: '0 auto' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
+              <p>Hiện tại chưa có tour trải nghiệm nào được duyệt. Quay lại sau nhé!</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
+              {experiences.slice(0, 6).map(exp => (
+                <div
+                  key={exp._id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid rgba(14, 165, 233, 0.12)',
+                    borderRadius: '24px',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 10px 30px rgba(14, 165, 233, 0.04)',
+                    maxWidth: '360px',
+                    width: '100%',
+                    margin: '0 auto',
+                  }}
+                  onMouseEnter={e => {
+                    const card = e.currentTarget as HTMLElement
+                    card.style.transform = 'translateY(-6px)'
+                    card.style.borderColor = 'rgba(14, 165, 233, 0.35)'
+                    card.style.boxShadow = '0 15px 35px rgba(14, 165, 233, 0.08)'
+                  }}
+                  onMouseLeave={e => {
+                    const card = e.currentTarget as HTMLElement
+                    card.style.transform = 'translateY(0)'
+                    card.style.borderColor = 'rgba(14, 165, 233, 0.12)'
+                    card.style.boxShadow = '0 10px 30px rgba(14, 165, 233, 0.04)'
+                  }}
+                >
+                  <div style={{ height: '180px', width: '100%', position: 'relative', overflow: 'hidden', background: '#f1f5f9' }}>
+                    {exp.images && exp.images.length > 0 ? (
+                      <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)' }}>🗺️ Chưa có ảnh</div>
+                    )}
+                    <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: 'rgba(15, 12, 41, 0.75)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
+                      {getCategoryLabel(exp.category)}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                      <MapPin size={12} style={{ color: 'var(--color-primary)' }} />
+                      <span>{exp.city || 'Đà Nẵng'}</span>
+                      <span style={{ margin: '0 4px', color: 'var(--color-text-faint)' }}>•</span>
+                      <Clock size={12} style={{ color: 'var(--color-primary)' }} />
+                      <span>{exp.minHours}h tối thiểu</span>
+                    </div>
+
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem', lineHeight: 1.4, color: 'var(--color-text)' }}>{exp.title}</h3>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0 0 1.25rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                      <div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chi phí</div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>{exp.price?.toLocaleString()}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{exp.currency || 'VND'}/h</span>
+                        </div>
+                      </div>
+
+                      <Link to={isAuthenticated ? `/buddies/${exp.buddyId}` : '/register'} style={{ textDecoration: 'none' }}>
+                        <button style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
+                          Khám phá Buddy <ArrowRight size={12} />
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

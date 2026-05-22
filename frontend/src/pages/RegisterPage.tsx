@@ -57,7 +57,7 @@ export default function RegisterPage() {
       setSuccess(true)
       setTimeout(() => navigate('/dashboard'), 1500)
     } catch (err: any) {
-      setApiError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+      setApiError(err.response?.data?.message || 'Đã có lỗi xảy ra')
     }
   }
 

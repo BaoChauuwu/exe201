@@ -21,6 +21,9 @@ import { ConversationsPage } from './pages/ConversationsPage'
 import { Wallet } from './pages/Wallet'
 import { FindBuddyPage } from './pages/FindBuddyPage'
 import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
+import { CreateExperiencePage } from './pages/CreateExperiencePage'
+import { EditExperiencePage } from './pages/EditExperiencePage'
+import { MyExperiencesPage } from './pages/MyExperiencesPage'
 
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
@@ -76,6 +79,9 @@ function App() {
           <Route path='/conversations' element={<ConversationsPage />} />
           <Route path='/chat/:receiverId' element={<Chat />} />
           <Route path='/wallet' element={<Wallet />} />
+          <Route path='/experiences/my' element={<MyExperiencesPage />} />
+          <Route path='/experiences/create' element={<CreateExperiencePage />} />
+          <Route path='/experiences/:id/edit' element={<EditExperiencePage />} />
         </Route>
 
         {/* 404 */}

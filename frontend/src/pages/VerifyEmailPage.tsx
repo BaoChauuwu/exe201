@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { CheckCircle, XCircle, Mail, Loader } from 'lucide-react'
+import { Mail, Loader } from 'lucide-react'
 import { authApi } from '../api/auth.api'
 import { useAuthStore } from '../store/authStore'
 
