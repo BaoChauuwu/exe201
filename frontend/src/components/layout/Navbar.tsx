@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Plane, User, LogOut } from 'lucide-react'
+import { Plane, User, LogOut, Menu, X } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth.api'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const { isAuthenticated, logout, refreshToken } = useAuthStore()
   const navigate = useNavigate()
 
@@ -24,48 +25,214 @@ export default function Navbar() {
     }
   }
 
+  const navStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 0, left: 0, right: 0,
+    zIndex: 200,
+    padding: '0.875rem 0',
+    transition: 'all 0.3s ease',
+    background: scrolled
+      ? 'rgba(15, 12, 41, 0.92)'
+      : 'rgba(15, 12, 41, 0.7)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+    boxShadow: scrolled ? '0 4px 24px rgba(0,0,0,0.4)' : 'none',
+  }
+
+  const containerStyle: React.CSSProperties = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '0 2rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  }
+
+  const logoStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.625rem',
+    textDecoration: 'none',
+  }
+
+  const logoIconStyle: React.CSSProperties = {
+    width: '36px', height: '36px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 4px 12px rgba(139,92,246,0.4)',
+    flexShrink: 0,
+  }
+
+  const logoTextStyle: React.CSSProperties = {
+    fontSize: '1.2rem',
+    fontWeight: 800,
+    background: 'linear-gradient(135deg, #c4b5fd, #a5b4fc)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    fontFamily: "'Inter', sans-serif",
+  }
+
+  const linksStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '2rem',
+    listStyle: 'none',
+  }
+
+  const linkStyle: React.CSSProperties = {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    textDecoration: 'none',
+    transition: 'color 0.2s',
+    fontFamily: "'Inter', sans-serif",
+  }
+
+  const actionsStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.625rem',
+  }
+
+  const btnSecondaryStyle: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+    padding: '0.5rem 1rem',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: '10px',
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: '0.8rem', fontWeight: 600,
+    cursor: 'pointer', textDecoration: 'none',
+    transition: 'all 0.2s',
+    fontFamily: "'Inter', sans-serif",
+  }
+
+  const btnPrimaryStyle: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+    padding: '0.5rem 1rem',
+    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+    border: 'none',
+    borderRadius: '10px',
+    color: 'white',
+    fontSize: '0.8rem', fontWeight: 700,
+    cursor: 'pointer', textDecoration: 'none',
+    boxShadow: '0 4px 12px rgba(139,92,246,0.35)',
+    transition: 'all 0.2s',
+    fontFamily: "'Inter', sans-serif",
+  }
+
+  const btnLogoutStyle: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+    padding: '0.5rem 1rem',
+    background: 'transparent',
+    border: '1px solid rgba(239,68,68,0.3)',
+    borderRadius: '10px',
+    color: 'rgba(252,165,165,0.8)',
+    fontSize: '0.8rem', fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontFamily: "'Inter', sans-serif",
+  }
+
   return (
-    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-      <div className='container'>
-        <div className='navbar-inner'>
-          <Link to='/' className='navbar-logo'>
-            <div className='navbar-logo-icon'>
+    <>
+      <nav style={navStyle}>
+        <div style={containerStyle}>
+          {/* Logo */}
+          <Link to='/' style={logoStyle}>
+            <div style={logoIconStyle}>
               <Plane size={18} color='#fff' />
             </div>
-            <span className='gradient-text'>UniTravel</span>
+            <span style={logoTextStyle}>UniTravel</span>
           </Link>
 
-          <ul className='navbar-links'>
-            <li><Link to='/'>Trang chủ</Link></li>
-            <li><a href='#features'>Tính năng</a></li>
-            {isAuthenticated && <li><Link to='/dashboard'>Dashboard</Link></li>}
+          {/* Center links */}
+          <ul style={linksStyle}>
+            <li>
+              <Link to='/' style={linkStyle}
+                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                Trang chủ
+              </Link>
+            </li>
+            <li>
+              <a href='#features' style={linkStyle}
+                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                Tính năng
+              </a>
+            </li>
+            <li>
+              <Link to='/buddies' style={linkStyle}
+                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                Tìm Buddy
+              </Link>
+            </li>
+            {isAuthenticated && (
+              <>
+                <li>
+                  <Link to='/dashboard' style={linkStyle}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/conversations' style={linkStyle}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                    Tin nhắn
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
 
-          <div className='navbar-actions'>
+          {/* Actions */}
+          <div style={actionsStyle}>
             {isAuthenticated ? (
               <>
-                <Link to='/profile'>
-                  <button className='btn btn-secondary btn-sm' style={{ gap: '6px' }}>
-                    <User size={16} /> Hồ sơ
-                  </button>
+                <Link to='/profile' style={{ textDecoration: 'none' }}>
+                  <div style={btnSecondaryStyle}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)' }}>
+                    <User size={15} /> Hồ sơ
+                  </div>
                 </Link>
-                <button className='btn btn-ghost btn-sm' onClick={handleLogout} style={{ gap: '6px' }}>
-                  <LogOut size={16} /> Đăng xuất
+                <button style={btnLogoutStyle} onClick={handleLogout}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.5)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.3)' }}>
+                  <LogOut size={15} /> Đăng xuất
                 </button>
               </>
             ) : (
               <>
-                <Link to='/login'>
-                  <button className='btn btn-secondary btn-sm'>Đăng nhập</button>
+                <Link to='/login' style={{ textDecoration: 'none' }}>
+                  <div style={btnSecondaryStyle}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)' }}>
+                    Đăng nhập
+                  </div>
                 </Link>
-                <Link to='/register'>
-                  <button className='btn btn-primary btn-sm'>Đăng ký</button>
+                <Link to='/register' style={{ textDecoration: 'none' }}>
+                  <div style={btnPrimaryStyle}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
+                    Đăng ký
+                  </div>
                 </Link>
               </>
             )}
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Navbar spacer — push content below fixed nav */}
+      <div style={{ height: '64px' }} />
+    </>
   )
 }

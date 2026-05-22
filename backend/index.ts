@@ -1,6 +1,14 @@
 import express from 'express'
 import cors from 'cors'
+import { createServer } from 'http'
+import { initSocket } from './socket'
 import usersRouter from './routes/users.routes'
+import messagesRouter from './routes/messages.routes'
+import safetyRouter from './routes/safety.routes'
+import payoutsRouter from './routes/payouts.routes'
+import ekycRouter from './routes/ekyc.routes'
+import buddyProfilesRouter from './routes/buddyProfiles.routes'
+import adminRouter from './routes/admin.routes'
 import databaseService from './services/database.services'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
 import './middlewares/passport.middleware'
@@ -20,14 +28,24 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
 }))
-app.use(express.json())
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use(passport.initialize())
 
 // Routes
 app.use('/users', usersRouter)
+app.use('/messages', messagesRouter)
+app.use('/safety', safetyRouter)
+app.use('/payouts', payoutsRouter)
+app.use('/ekyc', ekycRouter)
+app.use('/buddy-profile', buddyProfilesRouter)
+app.use('/admin', adminRouter)
 
 app.use(defaultErrorHandler)
-app.listen(port, () => {
+
+const httpServer = createServer(app)
+initSocket(httpServer)
+
+httpServer.listen(port, () => {
   console.log(`Server is running on port ${port}`)
 })
-

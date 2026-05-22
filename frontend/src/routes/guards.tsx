@@ -7,6 +7,7 @@ export const ProtectedRoute = () => {
 }
 
 export const GuestRoute = () => {
-  const { isAuthenticated } = useAuthStore()
-  return !isAuthenticated ? <Outlet /> : <Navigate to='/dashboard' replace />
+  const { isAuthenticated, user } = useAuthStore()
+  if (!isAuthenticated) return <Outlet />
+  return <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />
 }

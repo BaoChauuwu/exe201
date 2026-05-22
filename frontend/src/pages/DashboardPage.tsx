@@ -1,230 +1,208 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import {
   Plane, Map, Users, TrendingUp, Star, Compass,
-  ArrowRight, Heart, Bell, Calendar, Award
+  ArrowRight, Heart, Bell, Calendar, Award, Wallet
 } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
+
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />
+  }
 
   const displayName = user?.name || user?.username || 'Traveler'
   const isBuddy = user?.role === 'buddy'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
 
-  // Dynamic content based on user role
   const stats = isBuddy
     ? [
-        { icon: <Map size={20} />, iconClass: 'feature-icon-blue', value: '0', label: 'Chuyến đã dẫn', id: 'stat-trips' },
-        { icon: <Star size={20} />, iconClass: 'feature-icon-amber', value: '5.0', label: 'Đánh giá', id: 'stat-rating' },
-        { icon: <TrendingUp size={20} />, iconClass: 'feature-icon-green', value: '0 đ', label: 'Doanh thu', id: 'stat-revenue' },
-        { icon: <Bell size={20} />, iconClass: 'feature-icon-purple', value: '0', label: 'Yêu cầu mới', id: 'stat-requests' }
+        { icon: <Map size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.15)', value: '0', label: 'Chuyến đã dẫn', id: 'stat-trips' },
+        { icon: <Star size={22} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', value: '5.0', label: 'Đánh giá', id: 'stat-rating' },
+        { icon: <TrendingUp size={22} />, color: '#10b981', bg: 'rgba(16,185,129,0.15)', value: '0 ₫', label: 'Doanh thu', id: 'stat-revenue' },
+        { icon: <Bell size={22} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', value: '0', label: 'Yêu cầu mới', id: 'stat-requests' }
       ]
     : [
-        { icon: <Map size={20} />, iconClass: 'feature-icon-blue', value: '0', label: 'Chuyến đi của tôi', id: 'stat-trips' },
-        { icon: <Users size={20} />, iconClass: 'feature-icon-purple', value: '0', label: 'Buddy đã thuê', id: 'stat-buddies' },
-        { icon: <Heart size={20} />, iconClass: 'feature-icon-pink', value: '0', label: 'Buddy yêu thích', id: 'stat-saved' },
-        { icon: <Star size={20} />, iconClass: 'feature-icon-amber', value: '0', label: 'Đánh giá đã viết', id: 'stat-reviews' }
+        { icon: <Map size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.15)', value: '0', label: 'Chuyến đi', id: 'stat-trips' },
+        { icon: <Users size={22} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', value: '0', label: 'Buddy đã thuê', id: 'stat-buddies' },
+        { icon: <Heart size={22} />, color: '#ec4899', bg: 'rgba(236,72,153,0.15)', value: '0', label: 'Yêu thích', id: 'stat-saved' },
+        { icon: <Star size={22} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', value: '0', label: 'Đánh giá', id: 'stat-reviews' }
       ]
 
   const quickActions = isBuddy
     ? [
-        { icon: <Calendar size={24} />, label: 'Quản lý lịch rảnh', desc: 'Thiết lập thời gian có thể dẫn tour', color: 'var(--color-primary)', actionId: 'action-schedule' },
-        { icon: <Bell size={24} />, label: 'Đơn đặt lịch', desc: 'Xem & xác nhận yêu cầu thuê từ khách', color: '#818cf8', actionId: 'action-bookings' },
-        { icon: <TrendingUp size={24} />, label: 'Thống kê thu nhập', desc: 'Theo dõi doanh thu & rút tiền', color: '#10b981', actionId: 'action-wallet' },
-        { icon: <Users size={24} />, label: 'Hồ sơ Buddy', desc: 'Cập nhật giới thiệu, ngôn ngữ, chuyên môn', color: '#f59e0b', actionId: 'action-profile' }
+        { icon: <Calendar size={22} />, label: 'Quản lý lịch rảnh', desc: 'Thiết lập thời gian dẫn tour', color: '#6366f1', to: '/buddy-profile', actionId: 'action-schedule' },
+        { icon: <Bell size={22} />, label: 'Đơn đặt lịch', desc: 'Xem & xác nhận yêu cầu thuê', color: '#8b5cf6', to: '/dashboard', actionId: 'action-bookings' },
+        { icon: <Wallet size={22} />, label: 'Ví & Rút tiền', desc: 'Theo dõi doanh thu & rút tiền', color: '#10b981', to: '/wallet', actionId: 'action-wallet' },
+        { icon: <Users size={22} />, label: 'Hồ sơ Buddy', desc: 'Cập nhật giới thiệu, ngôn ngữ', color: '#f59e0b', to: '/buddy-profile', actionId: 'action-profile' }
       ]
     : [
-        { icon: <Compass size={24} />, label: 'Tìm Local Buddy', desc: 'Tìm kiếm hướng dẫn viên bản địa phù hợp', color: 'var(--color-primary)', actionId: 'action-find-buddy' },
-        { icon: <Map size={24} />, label: 'Lịch trình của tôi', desc: 'Quản lý và theo dõi các chuyến đi sắp tới', color: '#818cf8', actionId: 'action-my-trips' },
-        { icon: <Users size={24} />, label: 'Cộng đồng du lịch', desc: 'Kết nối với du khách & Local Buddy khác', color: '#f59e0b', actionId: 'action-community' },
-        { icon: <Star size={24} />, label: 'Đánh giá Local Buddy', desc: 'Chia sẻ nhận xét sau mỗi chuyến đi', color: '#10b981', actionId: 'action-review' }
+        { icon: <Compass size={22} />, label: 'Tìm Local Buddy', desc: 'Tìm hướng dẫn viên bản địa', color: '#6366f1', to: '/dashboard', actionId: 'action-find-buddy' },
+        { icon: <Map size={22} />, label: 'Lịch trình của tôi', desc: 'Quản lý các chuyến đi sắp tới', color: '#8b5cf6', to: '/dashboard', actionId: 'action-my-trips' },
+        { icon: <Users size={22} />, label: 'Cộng đồng du lịch', desc: 'Kết nối với du khách khác', color: '#f59e0b', to: '/chat', actionId: 'action-community' },
+        { icon: <Star size={22} />, label: 'Đánh giá Buddy', desc: 'Chia sẻ nhận xét sau chuyến đi', color: '#10b981', to: '/dashboard', actionId: 'action-review' }
       ]
 
   return (
-    <div className='dashboard-page'>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f0c29 0%, #1a1040 60%, #0d1117 100%)', fontFamily: "'Inter', -apple-system, sans-serif" }}>
       <Navbar />
 
-      <div className='container'>
-        {/* Header */}
-        <div className='dashboard-header animate-fade-in-up'>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                {greeting} 👋 Bạn tham gia với vai trò <strong style={{ color: isBuddy ? '#8b5cf6' : 'var(--color-primary)' }}>{isBuddy ? 'Local Buddy' : 'Khách du lịch'}</strong>
-              </p>
-              <h1 className='dashboard-greeting'>
-                {greeting}, <span className='gradient-text'>{displayName}!</span>
-              </h1>
-              <p className='dashboard-subtitle'>
-                {isBuddy ? 'Hôm nay bạn sẵn sàng đón khách chứ?' : 'Bạn muốn cùng Local Buddy khám phá thành phố nào hôm nay?'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button className='btn btn-secondary btn-sm'>
-                <Bell size={16} /> Thông báo
+      {/* Hero welcome banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.1) 100%)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        padding: '3rem 2rem'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ background: isBuddy ? 'rgba(139,92,246,0.2)' : 'rgba(99,102,241,0.2)', color: isBuddy ? '#c4b5fd' : '#a5b4fc', padding: '2px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, border: `1px solid ${isBuddy ? 'rgba(139,92,246,0.4)' : 'rgba(99,102,241,0.4)'}` }}>
+                {isBuddy ? '🌟 Local Buddy' : '✈️ Khách du lịch'}
+              </span>
+            </p>
+            <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'white', margin: 0, letterSpacing: '-0.025em' }}>
+              {greeting}, <span style={{ background: 'linear-gradient(90deg, #a78bfa, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{displayName}!</span> 👋
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.45)', marginTop: '0.5rem', fontSize: '1rem' }}>
+              {isBuddy ? 'Hôm nay bạn sẵn sàng đón khách chứ?' : 'Bạn muốn khám phá thành phố nào hôm nay?'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.6rem 1.2rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem' }}>
+              <Bell size={16} /> Thông báo
+            </button>
+            <Link to='/profile'>
+              <button style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', border: 'none', borderRadius: '10px', padding: '0.6rem 1.2rem', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                Hồ sơ của tôi
               </button>
-              <Link to='/profile'>
-                <button className='btn btn-primary btn-sm'>
-                  Hồ sơ của tôi
-                </button>
-              </Link>
-            </div>
+            </Link>
           </div>
         </div>
+      </div>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2.5rem 2rem' }}>
 
         {/* Stats */}
-        <div className='stats-grid animate-fade-in-up animate-delay-1'>
-          {stats.map((s, i) => (
-            <div key={i} className='stat-card' id={s.id}>
-              <div className={`stat-icon ${s.iconClass}`}>{s.icon}</div>
-              <div className='stat-value'>{s.value}</div>
-              <div className='stat-label'>{s.label}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+          {stats.map((s) => (
+            <div key={s.id} id={s.id} style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '20px', padding: '1.75rem 1.5rem',
+              display: 'flex', alignItems: 'center', gap: '1.25rem',
+              backdropFilter: 'blur(10px)', transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 12px 30px ${s.color}20` }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+            >
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, flexShrink: 0 }}>
+                {s.icon}
+              </div>
+              <div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>{s.value}</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginTop: '0.3rem' }}>{s.label}</div>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Quick Actions */}
-        <div style={{ marginBottom: '2rem' }} className='animate-fade-in-up animate-delay-2'>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Hành động nhanh</h2>
-          </div>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hành động nhanh</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            {quickActions.map((a, i) => (
-              <button
-                key={i}
-                id={a.actionId}
-                style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '1rem',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.25s ease',
-                  color: 'var(--color-text)',
-                  fontFamily: 'var(--font-family)'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = a.color
-                  e.currentTarget.style.transform = 'translateY(-3px)'
-                  e.currentTarget.style.boxShadow = `0 8px 30px ${a.color}20`
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                <div style={{
-                  width: 44, height: 44, borderRadius: '0.75rem', marginBottom: '1rem',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: `${a.color}18`, color: a.color
-                }}>
-                  {a.icon}
+            {quickActions.map((a) => (
+              <Link to={a.to} key={a.actionId} style={{ textDecoration: 'none' }}>
+                <div
+                  id={a.actionId}
+                  style={{
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: '20px', padding: '1.5rem', cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.25s', height: '100%', boxSizing: 'border-box'
+                  }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${a.color}60`; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = `0 12px 30px ${a.color}20`; el.style.background = `${a.color}0a` }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.07)'; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; el.style.background = 'rgba(255,255,255,0.04)' }}
+                >
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: `${a.color}18`, color: a.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                    {a.icon}
+                  </div>
+                  <div style={{ fontWeight: 700, color: 'white', marginBottom: '0.35rem', fontSize: '0.95rem' }}>{a.label}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)' }}>{a.desc}</div>
                 </div>
-                <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{a.label}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{a.desc}</div>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
 
-        {/* Dynamic banner */}
-        <div className='animate-fade-in-up animate-delay-3' style={{
-          background: 'var(--gradient-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '1.5rem',
-          padding: '2rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-          marginBottom: '2rem',
-          position: 'relative',
-          overflow: 'hidden'
+        {/* Banner */}
+        <div style={{
+          background: isBuddy
+            ? 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(99,102,241,0.15) 100%)'
+            : 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(59,130,246,0.1) 100%)',
+          border: `1px solid ${isBuddy ? 'rgba(139,92,246,0.3)' : 'rgba(99,102,241,0.3)'}`,
+          borderRadius: '24px', padding: '2rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: '1.5rem', marginBottom: '2rem',
+          backdropFilter: 'blur(10px)'
         }}>
-          <div style={{
-            position: 'absolute', right: -40, top: -40,
-            width: 200, height: 200,
-            background: 'radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 70%)',
-            pointerEvents: 'none'
-          }} />
           {isBuddy ? (
             <>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                  <Award size={18} style={{ color: '#8b5cf6' }} />
-                  <span style={{ color: '#8b5cf6', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Chương trình eKYC & Xác thực
-                  </span>
+                  <Award size={16} style={{ color: '#c4b5fd' }} />
+                  <span style={{ color: '#c4b5fd', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chương trình eKYC</span>
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-                  🔒 Xác thực danh tính Local Buddy ngay!
-                </h3>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-                  Tải lên CCCD & ảnh chân dung để được duyệt hồ sơ, tăng độ tin cậy và nhận nhiều đơn đặt lịch hơn.
-                </p>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', marginBottom: '0.4rem' }}>🔒 Xác thực danh tính Buddy ngay!</h3>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>Tải lên CCCD & ảnh chân dung để tăng độ tin cậy và nhận nhiều đơn hơn.</p>
               </div>
-              <button className='btn btn-primary' style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', border: 'none' }} id='dashboard-ekyc-btn'>
-                Bắt đầu eKYC <ArrowRight size={16} />
-              </button>
+              <Link to='/ekyc'>
+                <button id='dashboard-ekyc-btn' style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', border: 'none', borderRadius: '12px', padding: '0.875rem 1.5rem', color: 'white', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 8px 20px rgba(139,92,246,0.35)', whiteSpace: 'nowrap' }}>
+                  Bắt đầu eKYC <ArrowRight size={16} />
+                </button>
+              </Link>
             </>
           ) : (
             <>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                  <TrendingUp size={18} style={{ color: 'var(--color-primary)' }} />
-                  <span style={{ color: 'var(--color-primary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Gợi ý Local Buddy hôm nay
-                  </span>
+                  <TrendingUp size={16} style={{ color: '#a5b4fc' }} />
+                  <span style={{ color: '#a5b4fc', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gợi ý Buddy hôm nay</span>
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-                  ✈️ Lan Anh – Local Buddy chuyên tour ẩm thực Hà Nội
-                </h3>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-                  Khám phá các ngóc ngách phố cổ và ẩm thực đường phố độc đáo chỉ từ 250K/giờ.
-                </p>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', marginBottom: '0.4rem' }}>✈️ Lan Anh – Tour ẩm thực Hà Nội</h3>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>Khám phá phố cổ và ẩm thực đường phố độc đáo chỉ từ 250K/giờ.</p>
               </div>
-              <button className='btn btn-primary' id='dashboard-explore-btn'>
+              <button id='dashboard-explore-btn' style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none', borderRadius: '12px', padding: '0.875rem 1.5rem', color: 'white', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 8px 20px rgba(99,102,241,0.35)', whiteSpace: 'nowrap' }}>
                 Tìm hiểu thêm <ArrowRight size={16} />
               </button>
             </>
           )}
         </div>
 
-        {/* Dynamic upcoming trips/schedules */}
-        <div className='animate-fade-in-up animate-delay-4' style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+        {/* Upcoming trips/schedule - empty state */}
+        <div>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {isBuddy ? 'Lịch trình dẫn khách sắp tới' : 'Chuyến đi sắp tới'}
           </h2>
           <div style={{
-            background: 'var(--color-surface)',
-            border: '1px dashed var(--color-border)',
-            borderRadius: '1.5rem',
-            padding: '3rem',
-            textAlign: 'center'
+            background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)',
+            borderRadius: '24px', padding: '4rem 2rem', textAlign: 'center'
           }}>
             {isBuddy ? (
               <>
-                <Calendar size={40} style={{ color: 'var(--color-text-faint)', marginBottom: '1rem' }} />
-                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                  Bạn chưa nhận lịch dẫn đường nào sắp tới
-                </p>
-                <button className='btn btn-primary btn-sm' style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', border: 'none' }} id='dashboard-buddy-schedule'>
-                  <Calendar size={16} /> Mở lịch rảnh ngay
-                </button>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
+                <p style={{ color: 'rgba(255,255,255,0.35)', marginBottom: '1.25rem', fontSize: '0.9rem' }}>Bạn chưa nhận lịch dẫn đường nào sắp tới</p>
+                <Link to='/buddy-profile'>
+                  <button id='dashboard-buddy-schedule' style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)', borderRadius: '12px', padding: '0.75rem 1.5rem', color: '#c4b5fd', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                    <Calendar size={16} /> Mở lịch rảnh ngay
+                  </button>
+                </Link>
               </>
             ) : (
               <>
-                <Plane size={40} style={{ color: 'var(--color-text-faint)', marginBottom: '1rem' }} />
-                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                  Bạn chưa có chuyến đi nào được lên lịch với Local Buddy
-                </p>
-                <button className='btn btn-primary btn-sm' id='dashboard-plan-trip'>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✈️</div>
+                <p style={{ color: 'rgba(255,255,255,0.35)', marginBottom: '1.25rem', fontSize: '0.9rem' }}>Bạn chưa có chuyến đi nào được lên lịch</p>
+                <button id='dashboard-plan-trip' style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', padding: '0.75rem 1.5rem', color: '#a5b4fc', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                   <Compass size={16} /> Thuê Local Buddy ngay
                 </button>
               </>
