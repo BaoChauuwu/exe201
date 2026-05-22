@@ -9,6 +9,7 @@ export interface RegisterRequestBody {
   password: string
   date_of_birth: string
   confirm_password: string
+  role?: string
 }
 
 export interface LogoutRequestBody {

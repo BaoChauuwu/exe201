@@ -253,6 +253,15 @@ export const registerValidator = validate(
           },
           errorMessage: userMessages.DATE_OF_BIRTH_MUST_BE_A_DATE
         }
+      },
+      role: {
+        optional: true,
+        isString: true,
+        trim: true,
+        isIn: {
+          options: [['tourist', 'buddy']],
+          errorMessage: userMessages.ROLE_MUST_BE_TOURIST_OR_BUDDY
+        }
       }
     },
     ['body']
