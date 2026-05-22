@@ -9,7 +9,7 @@ async function run() {
   try {
     const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@twitter.dbbh1tu.mongodb.net/`
     await mongoose.connect(uri, { dbName: process.env.DB_NAME })
-    
+
     // Kiểm tra xem đã có admin2 chưa
     const existingAdmin = await User.findOne({ email: 'admin2@unitravel.com' })
     if (existingAdmin) {
@@ -25,7 +25,7 @@ async function run() {
       isVerified: true,
       verify: UserVerifyStatus.Verified
     }).save()
-    
+
     console.log('--------------------------------')
     console.log('Tạo tài khoản Admin thành công!')
     console.log('Email: admin2@unitravel.com')
