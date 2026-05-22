@@ -1,18 +1,17 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
-import { User, Mail, MapPin, Globe, FileText, AtSign, AlertCircle, CheckCircle, Camera } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { User, Mail, MapPin, Globe, FileText, AlertCircle, CheckCircle, Camera } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
-import { Link } from 'react-router-dom'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
   bio: z.string().max(200, 'Bio tối đa 200 ký tự').optional(),
   location: z.string().optional(),
   website: z.string().url('URL không hợp lệ').or(z.literal('')).optional(),
-  username: z.string().min(3, 'Username tối thiểu 3 ký tự').optional()
+  username: z.string().min(3, 'Username tối thiểu 3 ký tự').or(z.literal('')).optional()
 })
 
 type ProfileForm = z.infer<typeof profileSchema>
@@ -30,6 +29,62 @@ export default function ProfilePage() {
   const { user, updateProfile } = useAuthStore()
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError('Kích thước ảnh không được vượt quá 5MB')
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      setSaveError('')
+
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+
+      if (!cloudName || !uploadPreset) {
+        throw new Error('Chưa cấu hình Cloudinary credentials trong file .env')
+      }
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', uploadPreset)
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Không thể tải ảnh lên Cloudinary')
+      }
+
+      const result = await response.json()
+      const secureUrl = result.secure_url
+
+      await updateProfile({ avatar: secureUrl })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err: any) {
+      setSaveError(err.message || 'Tải ảnh thất bại.')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
 
   const displayName = user?.name || 'Traveler'
   const initials = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
@@ -80,17 +135,47 @@ export default function ProfilePage() {
                   fontSize: '1.75rem', fontWeight: 700, color: 'white',
                   border: '3px solid rgba(255,255,255,0.1)',
                   boxShadow: '0 8px 32px rgba(139,92,246,0.4)',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  position: 'relative'
                 }}>
                   {user?.avatar ? <img src={user.avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+                  {isUploading && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(0,0,0,0.6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <div style={{
+                        width: '24px', height: '24px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTopColor: 'white',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite'
+                      }} />
+                    </div>
+                  )}
                 </div>
-                <button style={{
-                  position: 'absolute', bottom: 0, right: 0,
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                  border: '2px solid rgba(255,255,255,0.2)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
+                <input
+                  type='file'
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept='image/*'
+                  onChange={handleFileChange}
+                />
+                <button
+                  type='button'
+                  onClick={handleAvatarClick}
+                  disabled={isUploading}
+                  style={{
+                    position: 'absolute', bottom: 0, right: 0,
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                    border: '2px solid rgba(255,255,255,0.2)',
+                    cursor: isUploading ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: isUploading ? 0.7 : 1
+                  }}
+                >
                   <Camera size={12} color='#fff' />
                 </button>
               </div>
