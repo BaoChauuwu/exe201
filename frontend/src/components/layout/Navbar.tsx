@@ -1,12 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Plane, User, LogOut, Menu, X } from 'lucide-react'
+import { Plane, User, LogOut } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth.api'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
   const { isAuthenticated, logout, refreshToken } = useAuthStore()
   const navigate = useNavigate()
 

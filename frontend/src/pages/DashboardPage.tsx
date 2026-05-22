@@ -2,7 +2,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import {
-  Plane, Map, Users, TrendingUp, Star, Compass,
+  Map, Users, TrendingUp, Star, Compass,
   ArrowRight, Heart, Bell, Calendar, Award, Wallet
 } from 'lucide-react'
 

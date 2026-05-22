@@ -21,6 +21,7 @@ import { ConversationsPage } from './pages/ConversationsPage'
 import { Wallet } from './pages/Wallet'
 import { FindBuddyPage } from './pages/FindBuddyPage'
 import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
+import UnauthorizedPage from './pages/UnauthorizedPage'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -73,6 +74,7 @@ function App() {
         <Route path='/oauth-success' element={<OAuthSuccessPage />} />
         <Route path='/buddies' element={<FindBuddyPage />} />
         <Route path='/buddies/:id' element={<BuddyPublicProfilePage />} />
+        <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
         {/* Guest only (redirect to /dashboard if logged in) */}
         <Route element={<GuestRoute />}>
@@ -86,12 +88,20 @@ function App() {
           <Route path='/dashboard' element={<DashboardPage />} />
           <Route path='/profile' element={<ProfilePage />} />
           <Route path='/ekyc' element={<EkycPage />} />
-          <Route path='/buddy-profile' element={<BuddyProfilePage />} />
-          <Route path='/admin' element={<AdminDashboard />} />
           <Route path='/live-tracking/:bookingId' element={<LiveTracking />} />
           <Route path='/conversations' element={<ConversationsPage />} />
           <Route path='/chat/:receiverId' element={<Chat />} />
+        </Route>
+
+        {/* Buddy specific routes */}
+        <Route element={<ProtectedRoute allowedRoles={['buddy']} />}>
+          <Route path='/buddy-profile' element={<BuddyProfilePage />} />
           <Route path='/wallet' element={<Wallet />} />
+        </Route>
+
+        {/* Admin specific routes */}
+        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          <Route path='/admin' element={<AdminDashboard />} />
         </Route>
 
         {/* 404 */}

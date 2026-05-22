@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { Navigation, MapPin, Activity, ShieldAlert } from 'lucide-react';
