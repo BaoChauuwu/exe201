@@ -1,13 +1,11 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { identityVerificationSchema, IIdentityVerification } from '../models/schemas/IdentityVerification.schema'
-import { payoutRequestSchema, IPayoutRequest } from '../models/schemas/PayoutRequest.schema'
 import databaseService from '../services/database.services'
 import { ObjectId } from 'mongodb'
 import httpStatus from '../constants/httpStatus'
-
-const IdentityVerification = mongoose.models.IdentityVerifications || mongoose.model<IIdentityVerification>('IdentityVerifications', identityVerificationSchema)
-const PayoutRequest = mongoose.models.PayoutRequests || mongoose.model<IPayoutRequest>('PayoutRequests', payoutRequestSchema)
+import IdentityVerification from '../models/IdentityVerification.model'
+import PayoutRequest from '../models/PayoutRequest.model'
+import BuddyProfile from '../models/BuddyProfile.model'
 
 // eKYC Management
 export const getPendingEkyc = async (req: Request, res: Response) => {
@@ -75,7 +73,6 @@ export const approvePayout = async (req: Request, res: Response) => {
 
         if (status === 'rejected') {
             // Refund the buddy's wallet
-            const BuddyProfile = mongoose.models.BuddyProfiles
             const profile = await BuddyProfile.findOne({ userId: payout.buddyId }).session(session)
             if (profile) {
                 profile.walletBalance += payout.amount

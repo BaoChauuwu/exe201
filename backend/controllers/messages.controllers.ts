@@ -1,13 +1,8 @@
 import { Request, Response } from 'express'
-import mongoose from 'mongoose'
-import { messageSchema, IMessage } from '../models/schemas/Message.schema'
-import { conversationSchema, IConversation } from '../models/schemas/Conversation.schema'
 import { ObjectId } from 'mongodb'
 import { TokenPayload } from '../models/requests/User.requests'
-
-// Check if models exist, otherwise compile them
-const Message = mongoose.models.Messages || mongoose.model<IMessage>('Messages', messageSchema)
-const Conversation = mongoose.models.Conversations || mongoose.model<IConversation>('Conversations', conversationSchema)
+import Message from '../models/Message.model'
+import Conversation from '../models/Conversation.model'
 
 export const getMessagesByReceiverId = async (req: Request, res: Response) => {
     const { receiverId } = req.params
@@ -15,12 +10,12 @@ export const getMessagesByReceiverId = async (req: Request, res: Response) => {
 
     try {
         let conversation = await Conversation.findOne({
-            participants: { $all: [new ObjectId(senderId), new ObjectId(receiverId)] }
+            participants: { $all: [new ObjectId(senderId), new ObjectId(receiverId as string)] }
         })
         
         if (!conversation) {
             conversation = await Conversation.create({
-                participants: [new ObjectId(senderId), new ObjectId(receiverId)]
+                participants: [new ObjectId(senderId), new ObjectId(receiverId as string)]
             })
         }
 
@@ -42,12 +37,12 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     try {
         let conversation = await Conversation.findOne({
-            participants: { $all: [new ObjectId(senderId), new ObjectId(receiverId)] }
+            participants: { $all: [new ObjectId(senderId), new ObjectId(receiverId as string)] }
         })
         
         if (!conversation) {
             conversation = await Conversation.create({
-                participants: [new ObjectId(senderId), new ObjectId(receiverId)]
+                participants: [new ObjectId(senderId), new ObjectId(receiverId as string)]
             })
         }
 

@@ -142,17 +142,7 @@ export const loginValidator = validate(
             max: 50
           }
         },
-        isString: true,
-        isStrongPassword: {
-          options: {
-            minLength: 6,
-            minLowercase: 1,
-            minUppercase: 1,
-            minNumbers: 1,
-            minSymbols: 1
-          },
-          errorMessage: userMessages.PASSWORD_MUST_BE_STRONG
-        }
+        isString: true
       }
     },
     ['body']
