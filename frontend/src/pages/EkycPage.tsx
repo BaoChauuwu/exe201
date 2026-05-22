@@ -1,8 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { CreditCard, Camera, UploadCloud, CheckCircle, Shield, X, AlertCircle } from 'lucide-react';
+import { CreditCard, Camera, UploadCloud, CheckCircle, Shield, X } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 // Convert File → base64 string
 const toBase64 = (file: File): Promise<string> =>
@@ -128,7 +129,6 @@ export const EkycPage = () => {
   const [selfiePreview, setSelfiePreview] = useState('');
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
 
   const allUploaded = frontPreview && backPreview && selfiePreview;
 
@@ -136,17 +136,16 @@ export const EkycPage = () => {
     e.preventDefault();
     if (!accessToken) {
       setStatus('error');
-      setErrorMsg('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
+      toast.error('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
       return;
     }
     if (!allUploaded) {
       setStatus('error');
-      setErrorMsg('Vui lòng tải lên đủ 3 ảnh: Mặt trước CCCD, mặt sau CCCD và Selfie.');
+      toast.error('Vui lòng tải lên đủ 3 ảnh: Mặt trước CCCD, mặt sau CCCD và Selfie.');
       return;
     }
 
     setStatus('loading');
-    setErrorMsg('');
 
     try {
       // Convert files to base64
@@ -165,7 +164,7 @@ export const EkycPage = () => {
       setStatus('success');
     } catch (err: any) {
       setStatus('error');
-      setErrorMsg(err.response?.data?.message || err.message || 'Gửi eKYC thất bại. Vui lòng thử lại.');
+      toast.error(err.response?.data?.message || err.message || 'Gửi eKYC thất bại. Vui lòng thử lại.');
     }
   };
 
@@ -288,12 +287,7 @@ export const EkycPage = () => {
                 </ul>
               </div>
 
-              {/* Error */}
-              {status === 'error' && (
-                <div style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-                  <AlertCircle size={16} style={{ flexShrink: 0 }} /> {errorMsg}
-                </div>
-              )}
+
 
               {/* Progress indicator */}
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>

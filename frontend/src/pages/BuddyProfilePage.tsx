@@ -3,6 +3,7 @@ import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { Clock, Globe2, Building2, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export const BuddyProfilePage = () => {
     const [availability, setAvailability] = useState('');
@@ -11,7 +12,6 @@ export const BuddyProfilePage = () => {
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
-    const [statusMsg, setStatusMsg] = useState('');
 
     const { accessToken } = useAuthStore();
 
@@ -38,12 +38,13 @@ export const BuddyProfilePage = () => {
                 bankCode, accountNumber, accountName
             }, { headers: { Authorization: `Bearer ${accessToken}` } });
             setStatus('success');
-            setStatusMsg('Profile updated successfully!');
+            toast.success('Cập nhật thành công!');
         } catch (err: any) {
             setStatus('error');
-            setStatusMsg(err.response?.data?.message || err.message);
+            toast.error(err.response?.data?.message || err.message || 'Cập nhật thất bại.');
+        } finally {
+            setStatus('idle');
         }
-        setTimeout(() => setStatus('idle'), 3000);
     };
 
     const inputStyle: React.CSSProperties = {
@@ -156,13 +157,7 @@ export const BuddyProfilePage = () => {
                         </div>
                     </div>
 
-                    {/* Status messages */}
-                    {status === 'success' && (
-                        <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', color: '#6ee7b7', fontSize: '0.875rem', marginBottom: '1rem' }}>✅ {statusMsg}</div>
-                    )}
-                    {status === 'error' && (
-                        <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1rem' }}>❌ {statusMsg}</div>
-                    )}
+
 
                     {/* Submit button */}
                     <button type='submit' disabled={status === 'loading'}

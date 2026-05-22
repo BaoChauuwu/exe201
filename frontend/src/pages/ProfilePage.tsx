@@ -5,6 +5,7 @@ import { useState, useRef } from 'react'
 import { User, Mail, MapPin, Globe, FileText, AlertCircle, CheckCircle, Camera } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
+import toast from 'react-hot-toast'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
@@ -27,8 +28,6 @@ const fieldStyle = (hasError: boolean): React.CSSProperties => ({
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuthStore()
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  const [saveError, setSaveError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -41,13 +40,12 @@ export default function ProfilePage() {
     if (!file) return
 
     if (file.size > 5 * 1024 * 1024) {
-      setSaveError('Kích thước ảnh không được vượt quá 5MB')
+      toast.error('Kích thước ảnh không được vượt quá 5MB')
       return
     }
 
     try {
       setIsUploading(true)
-      setSaveError('')
 
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
       const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
@@ -74,10 +72,9 @@ export default function ProfilePage() {
       const secureUrl = result.secure_url
 
       await updateProfile({ avatar: secureUrl })
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
+      toast.success('Cập nhật ảnh đại diện thành công!')
     } catch (err: any) {
-      setSaveError(err.message || 'Tải ảnh thất bại.')
+      toast.error(err.message || 'Tải ảnh thất bại.')
     } finally {
       setIsUploading(false)
       if (fileInputRef.current) {
@@ -102,12 +99,10 @@ export default function ProfilePage() {
 
   const onSubmit = async (data: ProfileForm) => {
     try {
-      setSaveError('')
       await updateProfile(data)
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
+      toast.success('Cập nhật hồ sơ thành công!')
     } catch (err: any) {
-      setSaveError(err.response?.data?.message || 'Cập nhật thất bại.')
+      toast.error(err.response?.data?.message || 'Cập nhật thất bại.')
     }
   }
 
@@ -213,16 +208,7 @@ export default function ProfilePage() {
         <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '24px', padding: '2rem', marginTop: '1.5rem' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chỉnh sửa hồ sơ</h2>
 
-          {saveSuccess && (
-            <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6ee7b7', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              <CheckCircle size={16} />Cập nhật hồ sơ thành công!
-            </div>
-          )}
-          {saveError && (
-            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              <AlertCircle size={16} />{saveError}
-            </div>
-          )}
+
 
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
@@ -250,6 +236,7 @@ export default function ProfilePage() {
                   style={{ ...fieldStyle(!!errors.bio), paddingTop: '0.875rem', resize: 'none' }}
                 />
               </div>
+              {errors.bio && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{errors.bio.message}</span>}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

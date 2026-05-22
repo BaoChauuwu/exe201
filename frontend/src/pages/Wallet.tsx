@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
-import { Landmark, CreditCard, ArrowRight, CheckCircle } from 'lucide-react';
+import { Landmark, CreditCard, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 export const Wallet = () => {
     const { user, accessToken } = useAuthStore();
@@ -14,7 +15,6 @@ export const Wallet = () => {
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
-    const [statusMsg, setStatusMsg] = useState('');
 
     useEffect(() => {
         if (buddyId && accessToken && user?.role === 'buddy') {
@@ -40,7 +40,7 @@ export const Wallet = () => {
         const withdrawAmount = Number(amount);
         if (withdrawAmount <= 0 || withdrawAmount > walletBalance) {
             setStatus('error');
-            setStatusMsg(withdrawAmount <= 0 ? 'Số tiền phải lớn hơn 0' : 'Số dư không đủ!');
+            toast.error(withdrawAmount <= 0 ? 'Số tiền phải lớn hơn 0' : 'Số dư không đủ!');
             return;
         }
         setStatus('loading');
@@ -49,13 +49,16 @@ export const Wallet = () => {
         })
             .then(() => {
                 setStatus('success');
-                setStatusMsg('Yêu cầu rút tiền đã được gửi thành công!');
+                toast.success('Yêu cầu rút tiền đã được gửi thành công!');
                 setWalletBalance(prev => prev - withdrawAmount);
                 setAmount('');
             })
             .catch(err => {
                 setStatus('error');
-                setStatusMsg('Giao dịch thất bại. MongoDB Transaction đã rollback.');
+                toast.error(err.response?.data?.message || err.message || 'Giao dịch thất bại. MongoDB Transaction đã rollback.');
+            })
+            .finally(() => {
+                setStatus('idle');
             });
     };
 
@@ -187,17 +190,7 @@ export const Wallet = () => {
                                 </div>
                             </div>
 
-                            {/* Status */}
-                            {status === 'success' && (
-                                <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '10px', padding: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#6ee7b7', fontSize: '0.875rem' }}>
-                                    <CheckCircle size={16} /> {statusMsg}
-                                </div>
-                            )}
-                            {status === 'error' && (
-                                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '0.875rem', color: '#fca5a5', fontSize: '0.875rem' }}>
-                                    {statusMsg}
-                                </div>
-                            )}
+
 
                             <button type='submit' disabled={status === 'loading'}
                                 style={{ width: '100%', background: 'linear-gradient(135deg, #1e1b4b, #312e81)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', fontFamily: 'inherit', opacity: status === 'loading' ? 0.7 : 1 }}>
