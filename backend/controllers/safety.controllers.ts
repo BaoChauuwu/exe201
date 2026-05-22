@@ -1,10 +1,7 @@
 import { Request, Response } from 'express'
-import mongoose from 'mongoose'
-import { liveTrackingSchema, ILiveTracking } from '../models/schemas/LiveTracking.schema'
 import { getIO } from '../socket'
 import { ObjectId } from 'mongodb'
-
-const LiveTracking = mongoose.models.LiveTrackings || mongoose.model<ILiveTracking>('LiveTrackings', liveTrackingSchema)
+import LiveTracking from '../models/LiveTracking.model'
 
 export const updateLocation = async (req: Request, res: Response) => {
     const { bookingId, buddyId, lng, lat } = req.body
