@@ -22,6 +22,8 @@ import { Wallet } from './pages/Wallet'
 import { FindBuddyPage } from './pages/FindBuddyPage'
 import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
 
+import { Toaster } from 'react-hot-toast'
+
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
   const [loading, setLoading] = useState(true)
@@ -49,6 +51,20 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster
+        position='top-right'
+        toastOptions={{
+          style: {
+            background: 'rgba(26, 22, 37, 0.95)',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            fontFamily: "'Inter', -apple-system, sans-serif",
+            fontSize: '0.9rem'
+          }
+        }}
+      />
       <Routes>
         {/* Public */}
         <Route path='/' element={<HomePage />} />
