@@ -20,7 +20,7 @@ import { IUser } from '~/models/schemas/User.schema'
 
 export const getUserByIdController = async (req: Request, res: Response) => {
   try {
-    const user = await databaseService.users.findOne({ _id: new ObjectId(req.params.id) }, { projection: { password: 0, forgot_password_token: 0, email_verify_token: 0 } })
+    const user = await databaseService.users.findOne({ _id: new ObjectId(req.params.id as string) }, { projection: { password: 0, forgot_password_token: 0, email_verify_token: 0 } })
     if (!user) {
       return res.status(httpStatus.NOT_FOUND).json({ message: 'User not found' })
     }

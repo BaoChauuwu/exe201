@@ -1,11 +1,8 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { payoutRequestSchema, IPayoutRequest } from '../models/schemas/PayoutRequest.schema'
-import { buddyProfileSchema, IBuddyProfile } from '../models/schemas/BuddyProfile.schema'
 import { ObjectId } from 'mongodb'
-
-const PayoutRequest = mongoose.models.PayoutRequests || mongoose.model<IPayoutRequest>('PayoutRequests', payoutRequestSchema)
-const BuddyProfile = mongoose.models.BuddyProfiles || mongoose.model<IBuddyProfile>('BuddyProfiles', buddyProfileSchema)
+import PayoutRequest from '../models/PayoutRequest.model'
+import BuddyProfile from '../models/BuddyProfile.model'
 
 export const requestPayout = async (req: Request, res: Response) => {
     const { buddyId, amount, bankCode, accountNumber, accountName } = req.body
