@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { UserProfile } from '../types/auth.types'
+import { authApi } from '../api/auth.api'
 
 interface AuthState {
   user: UserProfile | null
@@ -11,6 +12,8 @@ interface AuthState {
   setUser: (user: UserProfile) => void
   logout: () => void
   initFromStorage: () => void
+  fetchMe: () => Promise<void>
+  updateProfile: (fields: Partial<UserProfile>) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -41,5 +44,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       refreshToken: refresh_token,
       isAuthenticated: !!access_token
     })
+  },
+
+  fetchMe: async () => {
+    try {
+      const res = await authApi.getMe()
+      set({ user: res.data.result })
+    } catch {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
+    }
+  },
+
+  updateProfile: async (fields) => {
+    const res = await authApi.updateMe(fields)
+    set({ user: res.data.result })
   }
 }))

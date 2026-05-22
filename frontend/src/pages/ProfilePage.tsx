@@ -17,7 +17,7 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>
 
 export default function ProfilePage() {
-  const { user } = useAuthStore()
+  const { user, updateProfile } = useAuthStore()
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -35,11 +35,10 @@ export default function ProfilePage() {
     }
   })
 
-  const onSubmit = async (_data: ProfileForm) => {
+  const onSubmit = async (data: ProfileForm) => {
     try {
       setSaveError('')
-      // TODO: Khi có API update profile thì call ở đây
-      // await userApi.updateProfile(data)
+      await updateProfile(data)
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err: any) {

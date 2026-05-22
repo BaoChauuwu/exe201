@@ -18,7 +18,7 @@ type LoginForm = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [apiError, setApiError] = useState('')
-  const { setTokens } = useAuthStore()
+  const { setTokens, fetchMe } = useAuthStore()
   const navigate = useNavigate()
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
@@ -30,6 +30,7 @@ export default function LoginPage() {
       setApiError('')
       const res = await authApi.login(data)
       setTokens(res.data.result.access_token, res.data.result.refresh_token)
+      await fetchMe()
       navigate('/dashboard')
     } catch (err: any) {
       setApiError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.')

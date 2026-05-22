@@ -131,3 +131,67 @@ export const resetPasswordController = async (
     message: userMessages.RESET_PASSWORD_SUCCESS
   })
 }
+
+export const getMeController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const user = await databaseService.users.findOne(
+    { _id: new ObjectId(user_id) },
+    { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+  )
+  if (!user) {
+    return res.status(httpStatus.NOT_FOUND).json({
+      message: userMessages.USER_NOT_FOUND
+    })
+  }
+  return res.status(httpStatus.OK).json({
+    message: 'Get user profile successfully',
+    result: user
+  })
+}
+
+export const updateMeController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const body = req.body
+  const updateFields: any = {}
+  const allowedFields = ['name', 'bio', 'location', 'website', 'username', 'avatar', 'cover_photo', 'phone', 'nationality', 'role']
+  for (const key of allowedFields) {
+    if (body[key] !== undefined) {
+      updateFields[key] = body[key]
+    }
+  }
+  if (body.date_of_birth) {
+    updateFields.date_of_birth = new Date(body.date_of_birth)
+  }
+
+  await databaseService.users.updateOne(
+    { _id: new ObjectId(user_id) },
+    { $set: { ...updateFields, updated_at: new Date() } }
+  )
+
+  const user = await databaseService.users.findOne(
+    { _id: new ObjectId(user_id) },
+    { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+  )
+
+  if (!user) {
+    return res.status(httpStatus.NOT_FOUND).json({
+      message: userMessages.USER_NOT_FOUND
+    })
+  }
+
+  return res.status(httpStatus.OK).json({
+    message: 'Update profile successfully',
+    result: user
+  })
+}
+
+export const refreshTokenController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_refresh_token as TokenPayload
+  const { refresh_token } = req.body
+  const result = await usersService.refreshToken(user_id, refresh_token)
+  return res.status(httpStatus.OK).json({
+    message: 'Refresh token successfully',
+    result
+  })
+}
+

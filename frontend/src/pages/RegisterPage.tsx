@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Mail, Lock, Eye, EyeOff, User, Plane, Calendar, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Plane, Calendar, AlertCircle, CheckCircle, Users } from 'lucide-react'
 import { authApi } from '../api/auth.api'
 import { useAuthStore } from '../store/authStore'
 import GoogleButton from '../components/ui/GoogleButton'
@@ -15,7 +15,8 @@ const registerSchema = z.object({
   password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự')
     .regex(/[A-Z]/, 'Cần ít nhất 1 chữ hoa')
     .regex(/[0-9]/, 'Cần ít nhất 1 chữ số'),
-  confirm_password: z.string()
+  confirm_password: z.string(),
+  role: z.enum(['tourist', 'buddy'])
 }).refine((d) => d.password === d.confirm_password, {
   message: 'Mật khẩu xác nhận không khớp',
   path: ['confirm_password']
@@ -28,18 +29,24 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [apiError, setApiError] = useState('')
   const [success, setSuccess] = useState(false)
-  const { setTokens } = useAuthStore()
+  const { setTokens, fetchMe } = useAuthStore()
   const navigate = useNavigate()
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema)
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      role: 'tourist'
+    }
   })
+
+  const selectedRole = watch('role')
 
   const onSubmit = async (data: RegisterForm) => {
     try {
       setApiError('')
       const res = await authApi.register(data)
       setTokens(res.data.result.access_token, res.data.result.refresh_token)
+      await fetchMe() // Fetch profile right away so dashboard loads immediately
       setSuccess(true)
       setTimeout(() => navigate('/dashboard'), 1500)
     } catch (err: any) {
@@ -82,6 +89,60 @@ export default function RegisterPage() {
           )}
 
           <form className='auth-form' onSubmit={handleSubmit(onSubmit)} style={{ marginTop: '1.5rem' }}>
+            {/* Role Selector */}
+            <div className='input-group' style={{ marginBottom: '1.5rem' }}>
+              <label className='input-label'>Bạn tham gia với vai trò</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                <div
+                  id='role-tourist-btn'
+                  onClick={() => setValue('role', 'tourist')}
+                  style={{
+                    background: selectedRole === 'tourist' ? 'rgba(14, 165, 233, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                    border: selectedRole === 'tourist' ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                    borderRadius: '0.75rem',
+                    padding: '1rem 0.5rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.25s ease',
+                    boxShadow: selectedRole === 'tourist' ? '0 0 15px rgba(14, 165, 233, 0.25)' : 'none',
+                    textAlign: 'center'
+                  }}
+                >
+                  <Plane size={24} color={selectedRole === 'tourist' ? 'var(--color-primary)' : 'var(--color-text-muted)'} />
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: selectedRole === 'tourist' ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Khách du lịch</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: '1.2' }}>Tìm & thuê hướng dẫn viên bản địa</div>
+                </div>
+
+                <div
+                  id='role-buddy-btn'
+                  onClick={() => setValue('role', 'buddy')}
+                  style={{
+                    background: selectedRole === 'buddy' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                    border: selectedRole === 'buddy' ? '2px solid #8b5cf6' : '1px solid var(--color-border)',
+                    borderRadius: '0.75rem',
+                    padding: '1rem 0.5rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.25s ease',
+                    boxShadow: selectedRole === 'buddy' ? '0 0 15px rgba(139, 92, 246, 0.25)' : 'none',
+                    textAlign: 'center'
+                  }}
+                >
+                  <Users size={24} color={selectedRole === 'buddy' ? '#8b5cf6' : 'var(--color-text-muted)'} />
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: selectedRole === 'buddy' ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Local Buddy</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: '1.2' }}>Dẫn tour & chia sẻ văn hóa</div>
+                </div>
+              </div>
+            </div>
+
             {/* Name */}
             <div className='input-group'>
               <label className='input-label' htmlFor='reg-name'>Họ và tên</label>

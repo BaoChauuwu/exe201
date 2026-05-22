@@ -12,12 +12,15 @@ import {
 import {
   emailVerifyController,
   forgotPasswordController,
+  getMeController,
   loginController,
   logoutController,
   registerController,
   resendEmailVerifyController,
   resetPasswordController,
-  verifyForgotPasswordTokenController
+  updateMeController,
+  verifyForgotPasswordTokenController,
+  refreshTokenController
 } from '../controllers/users.controllers'
 import { googleCallbackController } from '../controllers/google.controllers'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -33,6 +36,8 @@ usersRouter.post('/register', registerValidator, wrapRequestHandler(registerCont
 
 usersRouter.post('/logout', accessTokenValidator, refreshTokenMiddleware, wrapRequestHandler(logoutController))
 
+usersRouter.post('/refresh-token', refreshTokenMiddleware, wrapRequestHandler(refreshTokenController))
+
 usersRouter.post('/verify-email', verifyEmailValidator, wrapRequestHandler(emailVerifyController))
 
 usersRouter.post('/resend-email-verify', accessTokenValidator, wrapRequestHandler(resendEmailVerifyController))
@@ -46,6 +51,10 @@ usersRouter.post(
 )
 // reset password k cần biết mk cũ
 usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+
+// Profile
+usersRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))
+usersRouter.patch('/me', accessTokenValidator, wrapRequestHandler(updateMeController))
 
 // Google OAuth
 usersRouter.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))

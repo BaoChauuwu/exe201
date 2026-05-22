@@ -4,7 +4,8 @@ import type {
   RegisterBody,
   ForgotPasswordBody,
   ResetPasswordBody,
-  AuthResponse
+  AuthResponse,
+  UserProfile
 } from '../types/auth.types'
 
 export const authApi = {
@@ -31,6 +32,12 @@ export const authApi = {
 
   resetPassword: (body: ResetPasswordBody) =>
     axiosInstance.post('/users/reset-password', body),
+
+  getMe: () =>
+    axiosInstance.get<{ message: string; result: UserProfile }>('/users/me'),
+
+  updateMe: (body: Partial<UserProfile>) =>
+    axiosInstance.patch<{ message: string; result: UserProfile }>('/users/me', body),
 
   // Google OAuth — redirect trực tiếp tới backend
   loginWithGoogle: () => {

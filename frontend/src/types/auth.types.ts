@@ -10,6 +10,7 @@ export interface RegisterBody {
   password: string
   confirm_password: string
   date_of_birth: string
+  role: 'tourist' | 'buddy'
 }
 
 export interface ForgotPasswordBody {
@@ -44,4 +45,5 @@ export interface UserProfile {
   avatar: string
   cover_photo: string
   verify: number
+  role: 'tourist' | 'buddy' | 'admin'
 }

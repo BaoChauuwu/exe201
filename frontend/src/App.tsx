@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ProtectedRoute, GuestRoute } from './routes/guards'
+import { useEffect, useState } from 'react'
+import { useAuthStore } from './store/authStore'
 
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -12,6 +14,30 @@ import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 
 function App() {
+  const { isAuthenticated, user, fetchMe } = useAuthStore()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const initAuth = async () => {
+      if (isAuthenticated && !user) {
+        await fetchMe()
+      }
+      setLoading(false)
+    }
+    initAuth()
+  }, [isAuthenticated, user, fetchMe])
+
+  if (loading) {
+    return (
+      <div className='loading-page'>
+        <div style={{ textAlign: 'center' }}>
+          <div className='loading-large' style={{ margin: '0 auto 1rem' }} />
+          <p style={{ color: 'var(--color-text-muted)' }}>Đang tải cấu hình...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       <Routes>
