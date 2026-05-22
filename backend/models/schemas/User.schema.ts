@@ -1,14 +1,22 @@
 import { ObjectId } from 'mongodb'
+import mongoose, { Schema } from 'mongoose'
 import { UserVerifyStatus } from '../../constants/enum'
 
-
-
-interface UserType {
+export interface IUser {
     _id?: ObjectId
-    name?: string
+    authProvider?: string // 'local', 'google', 'apple'
+    providerId?: string
+    name?: string // full name
     email: string
+    phone?: string
     date_of_birth?: Date
-    password: string
+    password?: string // hashed password
+    role?: string // 'tourist', 'buddy', 'admin'
+    nationality?: string
+    isVerified?: boolean
+    isActive?: boolean
+    deviceTokens?: string[]
+    deletedAt?: Date | null
     created_at?: Date
     updated_at?: Date
 
@@ -24,43 +32,36 @@ interface UserType {
     cover_photo?: string
 }
 
-export default class User {
-    _id?: ObjectId
-    name: string
-    email: string
-    date_of_birth: Date
-    password: string
-    created_at: Date
-    updated_at: Date
-
-    email_verify_token: string // jwt hoặc ''
-    forgot_password_token: string // jwt hoặc ''
-    verify: UserVerifyStatus
-
-    bio: string
-    location: string
-    website: string
-    username: string
-    avatar: string
-    cover_photo: string
-
-    constructor(user: UserType) {
-        const date = new Date()
-        this._id = user._id
-        this.name = user.name || ''
-        this.email = user.email
-        this.date_of_birth = user.date_of_birth || new Date()
-        this.password = user.password
-        this.created_at = user.created_at || date
-        this.updated_at = user.updated_at || date
-        this.email_verify_token = user.email_verify_token || ''
-        this.forgot_password_token = user.forgot_password_token || ''
-        this.verify = user.verify || UserVerifyStatus.Unverified
-        this.bio = user.bio || ''
-        this.location = user.location || ''
-        this.website = user.website || ''
-        this.username = user.username || ''
-        this.avatar = user.avatar || ''
-        this.cover_photo = user.cover_photo || ''
+export const userSchema = new Schema<IUser>(
+    {
+        authProvider: { type: String, default: 'local' },
+        providerId: { type: String, default: '' },
+        name: { type: String, default: '' },
+        email: { type: String, required: true, unique: true },
+        phone: { type: String, default: '' },
+        date_of_birth: { type: Date, default: Date.now },
+        password: { type: String, default: '' },
+        role: { type: String, default: 'tourist' },
+        nationality: { type: String, default: '' },
+        isVerified: { type: Boolean, default: false },
+        isActive: { type: Boolean, default: true },
+        deviceTokens: { type: [String], default: [] },
+        deletedAt: { type: Date, default: null },
+        email_verify_token: { type: String, default: '' },
+        forgot_password_token: { type: String, default: '' },
+        verify: { type: Number, enum: UserVerifyStatus, default: UserVerifyStatus.Unverified },
+        bio: { type: String, default: '' },
+        location: { type: String, default: '' },
+        website: { type: String, default: '' },
+        username: { type: String, default: '' },
+        avatar: { type: String, default: '' },
+        cover_photo: { type: String, default: '' }
+    },
+    {
+        timestamps: {
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        },
+        collection: 'users'
     }
-}
+)

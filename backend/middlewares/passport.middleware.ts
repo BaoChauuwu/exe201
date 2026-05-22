@@ -2,7 +2,7 @@ import passport from 'passport'
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20'
 import { config } from 'dotenv'
 import databaseService from '~/services/database.services'
-import User from '~/models/schemas/User.schema'
+import User from '~/models/User.model'
 import { UserVerifyStatus } from '~/constants/enum'
 import { ObjectId } from 'mongodb'
 
@@ -40,7 +40,7 @@ passport.use(
             verify: UserVerifyStatus.Verified, // auto verified vì email Google đã verified
             email_verify_token: '',
             date_of_birth: new Date()
-          })
+          }).toObject()
           await databaseService.users.insertOne(newUser)
           user = await databaseService.users.findOne({ _id: user_id })
         }

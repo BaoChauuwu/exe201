@@ -1,8 +1,8 @@
 import { UserVerifyStatus } from './../constants/enum'
-import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import RefreshToken from '~/models/RefreshToken.model'
 import { TokenType } from '../constants/enum'
 import { RegisterRequestBody } from '../models/requests/User.requests'
-import User from '../models/schemas/User.schema'
+import User from '~/models/User.model'
 import { hashPassword } from '../utils/crypto'
 import { signToken } from '../utils/jwt'
 import { ObjectId } from 'mongodb'
@@ -78,11 +78,11 @@ class UsersService {
         email_verify_token,
         date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password)
-      })
+      }).toObject()
     )
     const [access_token, refresh_token] = await this.signAccessTokenandRefreshToken(user_id.toString())
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token }).toObject()
     )
     // Gửi email xác thực
     await sendVerifyEmail(payload.email, payload.name, email_verify_token)
@@ -99,7 +99,7 @@ class UsersService {
   async login(user_id: string) {
     const [access_token, refresh_token] = await this.signAccessTokenandRefreshToken(user_id)
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token }).toObject()
     )
     return {
       access_token,
@@ -175,7 +175,7 @@ class UsersService {
   async loginWithGoogle(user_id: string) {
     const [access_token, refresh_token] = await this.signAccessTokenandRefreshToken(user_id)
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token }).toObject()
     )
     return {
       access_token,

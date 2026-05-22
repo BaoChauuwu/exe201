@@ -4,6 +4,7 @@ import tseslint from 'typescript-eslint'
 import eslintPluginPrettier from 'eslint-plugin-prettier'
 
 export default [
+  { ignores: ['**/node_modules/', '**/build/'] },
   { files: ['**/*.{js,mjs,cjs,ts}'] },
   { languageOptions: { globals: globals.node } },
   pluginJs.configs.recommended,
@@ -29,7 +30,6 @@ export default [
           jsxSingleQuote: true
         }
       ]
-    },
-    ignores: ['**/node_modules/', '**/build/']
+    }
   }
 ]

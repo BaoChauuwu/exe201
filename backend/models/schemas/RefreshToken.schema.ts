@@ -1,21 +1,23 @@
-import { ObjectId } from "mongodb"
+import { ObjectId } from 'mongodb'
+import mongoose, { Schema } from 'mongoose'
 
-interface RefreshTokenType {
-  _id?: ObjectId
-  token: string
-  created_at?: Date
-  user_id: ObjectId
+export interface IRefreshToken {
+    _id?: ObjectId
+    token: string
+    created_at?: Date
+    user_id: ObjectId
 }
 
-export default class RefreshToken {
-  _id?: ObjectId
-  token: string
-  created_at: Date
-  user_id: ObjectId
-  constructor({ _id, token, created_at, user_id }: RefreshTokenType) {
-    this._id = _id
-    this.token = token
-    this.created_at = created_at || new Date()
-    this.user_id = user_id
-  }
-}
+export const refreshTokenSchema = new Schema<IRefreshToken>(
+    {
+        token: { type: String, required: true },
+        user_id: { type: Schema.Types.ObjectId, ref: 'Users', required: true }
+    },
+    {
+        timestamps: {
+            createdAt: 'created_at',
+            updatedAt: false
+        },
+        collection: 'refresh_tokens'
+    }
+)

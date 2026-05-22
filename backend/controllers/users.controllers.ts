@@ -16,7 +16,7 @@ import databaseService from '~/services/database.services'
 import { ObjectId } from 'mongodb'
 import httpStatus from '~/constants/httpStatus'
 import { UserVerifyStatus } from '~/constants/enum'
-import User from '~/models/schemas/User.schema'
+import { IUser } from '~/models/schemas/User.schema'
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const { user } = req
@@ -102,8 +102,8 @@ export const forgotPasswordController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { _id } = req.user as User
-  const result = await usersService.forgotPassword(_id.toString())
+  const { _id } = req.user as IUser
+  const result = await usersService.forgotPassword((_id as ObjectId).toString())
   return res.status(httpStatus.OK).json({
     result
   })
