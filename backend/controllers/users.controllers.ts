@@ -18,6 +18,18 @@ import httpStatus from '~/constants/httpStatus'
 import { UserVerifyStatus } from '~/constants/enum'
 import { IUser } from '~/models/schemas/User.schema'
 
+export const getUserByIdController = async (req: Request, res: Response) => {
+  try {
+    const user = await databaseService.users.findOne({ _id: new ObjectId(req.params.id) }, { projection: { password: 0, forgot_password_token: 0, email_verify_token: 0 } })
+    if (!user) {
+      return res.status(httpStatus.NOT_FOUND).json({ message: 'User not found' })
+    }
+    return res.status(httpStatus.OK).json({ message: 'Success', result: user })
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server error', error })
+  }
+}
+
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const { user } = req
   const user_id = user._id

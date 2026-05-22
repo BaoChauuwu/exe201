@@ -21,7 +21,7 @@ export interface IBuddyProfile {
     }
     walletBalance?: number
     pendingBalance?: number
-    workingHours?: any[] // e.g., [{ dayOfWeek: 2, startTime: '08:00', endTime: '12:00' }]
+    availability?: string[]
     isAvailable?: boolean
     isApproved?: boolean
     created_at?: Date
@@ -48,7 +48,7 @@ export const buddyProfileSchema = new Schema<IBuddyProfile>(
         },
         walletBalance: { type: Number, default: 0 },
         pendingBalance: { type: Number, default: 0 },
-        workingHours: { type: [Schema.Types.Mixed], default: [] } as any,
+        availability: { type: [String], default: [] },
         isAvailable: { type: Boolean, default: false },
         isApproved: { type: Boolean, default: false }
     },

@@ -1,4 +1,5 @@
 import e, { Request, Response, NextFunction } from 'express'
+import { ObjectId } from 'mongodb'
 import { body, checkSchema, ParamSchema } from 'express-validator'
 import { validate } from '../utils/validation'
 import databaseService from '../services/database.services'
@@ -79,7 +80,7 @@ const forgot_password_tokenSchema: ParamSchema = {
         })
         const { user_id } = decoded_forgot_password_token
         const user = await databaseService.users.findOne({
-          _id: new Object(user_id)
+          _id: new ObjectId(user_id)
         })
         if (user === null) {
           throw new ErrorWithStatus({
@@ -465,3 +466,26 @@ export const resetPasswordValidator = validate(
     ['body']
   )
 )
+
+export const requireRole = (roles: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { user_id } = req.decoded_authorization as TokenPayload
+      const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+      
+      if (!user) {
+        return res.status(httpStatus.NOT_FOUND).json({ message: userMessages.USER_NOT_FOUND })
+      }
+
+      if (!roles.includes(user.role as string)) {
+        return res.status(httpStatus.FORBIDDEN).json({ 
+          message: 'Access Denied: You do not have permission to perform this action' 
+        })
+      }
+
+      next()
+    } catch (error) {
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
+    }
+  }
+}
