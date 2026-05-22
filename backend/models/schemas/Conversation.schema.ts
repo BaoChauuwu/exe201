@@ -13,7 +13,7 @@ export interface IConversation {
 
 export const conversationSchema = new Schema<IConversation>(
     {
-        bookingId: { type: Schema.Types.ObjectId, ref: 'Bookings', required: true },
+        bookingId: { type: Schema.Types.ObjectId, ref: 'Bookings', required: false },
         participants: [{ type: Schema.Types.ObjectId, ref: 'Users', required: true }],
         lastMessage: { type: String, default: '' },
         unreadCounts: { type: Map, of: Number, default: () => new Map() }

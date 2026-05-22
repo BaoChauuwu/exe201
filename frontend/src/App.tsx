@@ -12,6 +12,15 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import OAuthSuccessPage from './pages/OAuthSuccessPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
+import { EkycPage } from './pages/EkycPage'
+import { BuddyProfilePage } from './pages/BuddyProfilePage'
+import { AdminDashboard } from './pages/AdminDashboard'
+import { LiveTracking } from './pages/LiveTracking'
+import { Chat } from './pages/Chat'
+import { ConversationsPage } from './pages/ConversationsPage'
+import { Wallet } from './pages/Wallet'
+import { FindBuddyPage } from './pages/FindBuddyPage'
+import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
 
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
@@ -46,6 +55,8 @@ function App() {
         <Route path='/verify-email' element={<VerifyEmailPage />} />
         <Route path='/reset-password' element={<ResetPasswordPage />} />
         <Route path='/oauth-success' element={<OAuthSuccessPage />} />
+        <Route path='/buddies' element={<FindBuddyPage />} />
+        <Route path='/buddies/:id' element={<BuddyPublicProfilePage />} />
 
         {/* Guest only (redirect to /dashboard if logged in) */}
         <Route element={<GuestRoute />}>
@@ -58,6 +69,13 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path='/dashboard' element={<DashboardPage />} />
           <Route path='/profile' element={<ProfilePage />} />
+          <Route path='/ekyc' element={<EkycPage />} />
+          <Route path='/buddy-profile' element={<BuddyProfilePage />} />
+          <Route path='/admin' element={<AdminDashboard />} />
+          <Route path='/live-tracking/:bookingId' element={<LiveTracking />} />
+          <Route path='/conversations' element={<ConversationsPage />} />
+          <Route path='/chat/:receiverId' element={<Chat />} />
+          <Route path='/wallet' element={<Wallet />} />
         </Route>
 
         {/* 404 */}

@@ -20,7 +20,8 @@ import {
   resetPasswordController,
   updateMeController,
   verifyForgotPasswordTokenController,
-  refreshTokenController
+  refreshTokenController,
+  getUserByIdController
 } from '../controllers/users.controllers'
 import { googleCallbackController } from '../controllers/google.controllers'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -59,6 +60,8 @@ usersRouter.patch('/me', accessTokenValidator, wrapRequestHandler(updateMeContro
 // Google OAuth
 usersRouter.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
 usersRouter.get('/google/callback', passport.authenticate('google', { session: false }), googleCallbackController)
+
+usersRouter.get('/:id', wrapRequestHandler(getUserByIdController))
 
 export default usersRouter
 

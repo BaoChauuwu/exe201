@@ -3,6 +3,7 @@ import {
   Users, Star, Shield,
   Compass, ArrowRight, Zap, Heart
 } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
@@ -46,6 +47,8 @@ const features = [
 ]
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuthStore()
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
@@ -77,16 +80,33 @@ export default function HomePage() {
               </p>
 
               <div className='hero-actions animate-fade-in-up animate-delay-3'>
-                <Link to='/register'>
-                  <button className='btn btn-primary btn-lg' id='hero-cta-register'>
-                    Khám phá Buddy ngay <ArrowRight size={18} />
-                  </button>
-                </Link>
-                <Link to='/login'>
-                  <button className='btn btn-secondary btn-lg' id='hero-cta-login'>
-                    Đăng nhập
-                  </button>
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <Link to='/buddies'>
+                      <button className='btn btn-primary btn-lg' id='hero-cta-buddies'>
+                        Khám phá Buddy ngay <ArrowRight size={18} />
+                      </button>
+                    </Link>
+                    <Link to='/dashboard'>
+                      <button className='btn btn-secondary btn-lg' id='hero-cta-dashboard'>
+                        Vào Dashboard
+                      </button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to='/register'>
+                      <button className='btn btn-primary btn-lg' id='hero-cta-register'>
+                        Khám phá Buddy ngay <ArrowRight size={18} />
+                      </button>
+                    </Link>
+                    <Link to='/login'>
+                      <button className='btn btn-secondary btn-lg' id='hero-cta-login'>
+                        Đăng nhập
+                      </button>
+                    </Link>
+                  </>
+                )}
               </div>
 
               <div className='hero-stats animate-fade-in-up animate-delay-4'>
@@ -227,11 +247,19 @@ export default function HomePage() {
               Tham gia cộng đồng UniTravel ngay hôm nay để bắt đầu lên lịch trình và thuê người dẫn đường địa phương năng động nhất.
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to='/register'>
-                <button className='btn btn-primary btn-lg' id='cta-register-bottom'>
-                  Đăng ký tài khoản miễn phí <ArrowRight size={18} />
-                </button>
-              </Link>
+              {isAuthenticated ? (
+                <Link to='/buddies'>
+                  <button className='btn btn-primary btn-lg' id='cta-buddies-bottom'>
+                    Bắt đầu tìm Buddy <ArrowRight size={18} />
+                  </button>
+                </Link>
+              ) : (
+                <Link to='/register'>
+                  <button className='btn btn-primary btn-lg' id='cta-register-bottom'>
+                    Đăng ký tài khoản miễn phí <ArrowRight size={18} />
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

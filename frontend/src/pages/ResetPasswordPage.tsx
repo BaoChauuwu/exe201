@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
-import { Lock, Eye, EyeOff, Plane, AlertCircle, CheckCircle } from 'lucide-react'
+import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, KeyRound } from 'lucide-react'
 import { authApi } from '../api/auth.api'
 
 const schema = z.object({
@@ -18,6 +18,14 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+const pageStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  padding: '1.5rem', fontFamily: "'Inter', -apple-system, sans-serif",
+  position: 'relative', overflow: 'hidden'
+}
+
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
   const [showPass, setShowPass] = useState(false)
@@ -25,7 +33,6 @@ export default function ResetPasswordPage() {
   const [apiError, setApiError] = useState('')
   const [success, setSuccess] = useState(false)
   const navigate = useNavigate()
-
   const token = searchParams.get('token') || ''
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -35,11 +42,7 @@ export default function ResetPasswordPage() {
   const onSubmit = async (data: FormData) => {
     try {
       setApiError('')
-      await authApi.resetPassword({
-        forgot_password_token: token,
-        password: data.password,
-        confirm_password: data.confirm_password
-      })
+      await authApi.resetPassword({ forgot_password_token: token, password: data.password, confirm_password: data.confirm_password })
       setSuccess(true)
       setTimeout(() => navigate('/login'), 2000)
     } catch (err: any) {
@@ -48,103 +51,88 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className='auth-page'>
-      <div className='auth-bg-orb auth-bg-orb-1' />
-      <div className='auth-bg-orb auth-bg-orb-2' />
+    <div style={pageStyle}>
+      <div style={{ position: 'absolute', top: '-10rem', right: '-10rem', width: '40rem', height: '40rem', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-10rem', left: '-10rem', width: '35rem', height: '35rem', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-      <div className='auth-container animate-fade-in-up'>
-        <div className='auth-logo'>
-          <Link to='/'>
-            <div className='auth-logo-icon'>
-              <Plane size={28} color='#fff' />
+      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Link to='/' style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(139,92,246,0.4)', fontSize: '28px' }}>✈️</div>
+            <div>
+              <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'white', margin: 0 }}>Đặt lại mật khẩu</h1>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>Tạo mật khẩu mới cho tài khoản của bạn</p>
             </div>
           </Link>
-          <h1 className='auth-title'>Đặt lại mật khẩu</h1>
-          <p className='auth-subtitle'>Tạo mật khẩu mới cho tài khoản của bạn</p>
         </div>
 
-        <div className='card card-glow'>
+        <div style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', padding: '2rem', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+
           {!token && (
-            <div className='alert alert-error' style={{ marginBottom: '1.5rem' }}>
-              <AlertCircle size={16} />Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.
+            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+              <AlertCircle size={16} />Link không hợp lệ hoặc đã hết hạn.
             </div>
           )}
 
           {success ? (
-            <div style={{ textAlign: 'center' }}>
-              <div className='verify-icon verify-icon-success' style={{ margin: '0 auto 1.5rem' }}>
+            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+              <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '2px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#34d399' }}>
                 <CheckCircle size={36} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-                Đặt lại thành công!
-              </h3>
-              <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                Đang chuyển hướng về trang đăng nhập...
-              </p>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white', marginBottom: '0.75rem' }}>Đặt lại thành công! 🎉</h3>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>Đang chuyển hướng về trang đăng nhập...</p>
             </div>
           ) : (
             <>
               {apiError && (
-                <div className='alert alert-error' style={{ marginBottom: '1.5rem' }}>
+                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
                   <AlertCircle size={16} />{apiError}
                 </div>
               )}
 
-              <form className='auth-form' onSubmit={handleSubmit(onSubmit)}>
-                <div className='input-group'>
-                  <label className='input-label' htmlFor='reset-password'>Mật khẩu mới</label>
-                  <div className='input-wrapper'>
-                    <Lock size={16} className='input-icon' />
-                    <input
-                      id='reset-password'
-                      type={showPass ? 'text' : 'password'}
-                      placeholder='Tối thiểu 8 ký tự'
-                      className={`input-field with-icon with-toggle ${errors.password ? 'error' : ''}`}
-                      {...register('password')}
-                    />
-                    <button type='button' className='input-toggle' onClick={() => setShowPass(!showPass)}>
-                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+              <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {[
+                  { id: 'reset-password', label: 'Mật khẩu mới', name: 'password', show: showPass, setShow: setShowPass, error: errors.password },
+                  { id: 'reset-confirm', label: 'Xác nhận mật khẩu', name: 'confirm_password', show: showConfirm, setShow: setShowConfirm, error: errors.confirm_password }
+                ].map(field => (
+                  <div key={field.id}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{field.label}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Lock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                      <input
+                        id={field.id}
+                        type={field.show ? 'text' : 'password'}
+                        placeholder='••••••••'
+                        {...register(field.name as any)}
+                        style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: `1px solid ${field.error ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '12px', padding: '0.875rem 3rem 0.875rem 2.75rem', color: 'white', fontSize: '0.9rem', outline: 'none' }}
+                      />
+                      <button type='button' onClick={() => field.setShow(!field.show)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}>
+                        {field.show ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    {field.error && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{field.error.message}</span>}
                   </div>
-                  {errors.password && <span className='input-error'><AlertCircle size={12} />{errors.password.message}</span>}
-                </div>
-
-                <div className='input-group'>
-                  <label className='input-label' htmlFor='reset-confirm'>Xác nhận mật khẩu mới</label>
-                  <div className='input-wrapper'>
-                    <Lock size={16} className='input-icon' />
-                    <input
-                      id='reset-confirm'
-                      type={showConfirm ? 'text' : 'password'}
-                      placeholder='Nhập lại mật khẩu mới'
-                      className={`input-field with-icon with-toggle ${errors.confirm_password ? 'error' : ''}`}
-                      {...register('confirm_password')}
-                    />
-                    <button type='button' className='input-toggle' onClick={() => setShowConfirm(!showConfirm)}>
-                      {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  {errors.confirm_password && <span className='input-error'><AlertCircle size={12} />{errors.confirm_password.message}</span>}
-                </div>
+                ))}
 
                 <button
                   id='btn-reset-submit'
                   type='submit'
-                  className='btn btn-primary btn-full btn-lg'
                   disabled={isSubmitting || !token}
+                  style={{ width: '100%', background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 8px 20px rgba(139,92,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isSubmitting || !token ? 0.6 : 1 }}
                 >
-                  {isSubmitting ? <span className='loading-spinner' /> : null}
+                  <KeyRound size={18} />
                   {isSubmitting ? 'Đang cập nhật...' : 'Đặt lại mật khẩu'}
                 </button>
               </form>
             </>
           )}
 
-          <div className='auth-footer' style={{ marginTop: '1.5rem' }}>
-            <Link to='/login' style={{ color: 'var(--color-primary)' }}>Quay lại đăng nhập</Link>
-          </div>
+          <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+            <Link to='/login' style={{ color: '#a78bfa', fontSize: '0.875rem', textDecoration: 'none' }}>Quay lại đăng nhập</Link>
+          </p>
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
