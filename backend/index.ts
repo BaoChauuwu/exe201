@@ -9,6 +9,7 @@ import payoutsRouter from './routes/payouts.routes'
 import ekycRouter from './routes/ekyc.routes'
 import buddyProfilesRouter from './routes/buddyProfiles.routes'
 import adminRouter from './routes/admin.routes'
+import experiencesRouter from './routes/experiences.routes'
 import databaseService from './services/database.services'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
 import './middlewares/passport.middleware'
@@ -40,6 +41,7 @@ app.use('/payouts', payoutsRouter)
 app.use('/ekyc', ekycRouter)
 app.use('/buddy-profile', buddyProfilesRouter)
 app.use('/admin', adminRouter)
+app.use('/experiences', experiencesRouter)
 
 app.use(defaultErrorHandler)
 

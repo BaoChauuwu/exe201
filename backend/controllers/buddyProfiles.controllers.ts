@@ -1,11 +1,10 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { buddyProfileSchema, IBuddyProfile } from '../models/schemas/BuddyProfile.schema'
+import { IBuddyProfile } from '../models/schemas/BuddyProfile.schema'
 import { TokenPayload } from '../models/requests/User.requests'
 import { ObjectId } from 'mongodb'
 import httpStatus from '../constants/httpStatus'
-
-const BuddyProfile = mongoose.models.BuddyProfiles || mongoose.model<IBuddyProfile>('BuddyProfiles', buddyProfileSchema)
+import BuddyProfile from '../models/BuddyProfile.model'
 
 export const getMyBuddyProfile = async (req: Request, res: Response) => {
     const { user_id } = req.decoded_authorization as TokenPayload
@@ -67,9 +66,9 @@ export const getBuddyProfileById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         let profile = null;
-        if (ObjectId.isValid(id)) {
+        if (ObjectId.isValid(String(id))) {
             profile = await BuddyProfile.findOne({
-                $or: [{ _id: new ObjectId(id) }, { userId: new ObjectId(id) }]
+                $or: [{ _id: new ObjectId(String(id)) }, { userId: new ObjectId(String(id)) }]
             }).populate('userId', 'name avatar location username email role verify');
         }
         
