@@ -7,6 +7,7 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { authApi } from '../api/auth.api'
 import { useAuthStore } from '../store/authStore'
 import GoogleButton from '../components/ui/GoogleButton'
+import toast from 'react-hot-toast'
 
 const loginSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
@@ -17,7 +18,6 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
-  const [apiError, setApiError] = useState('')
   const { setTokens, fetchMe } = useAuthStore()
   const navigate = useNavigate()
 
@@ -27,14 +27,14 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      setApiError('')
       const res = await authApi.login(data)
       setTokens(res.data.result.access_token, res.data.result.refresh_token)
       await fetchMe()
       const userState = useAuthStore.getState().user
+      toast.success('Đăng nhập thành công!')
       navigate(userState?.role === 'admin' ? '/admin' : '/dashboard')
     } catch (err: any) {
-      setApiError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+      toast.error(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
     }
   }
 
@@ -95,17 +95,7 @@ export default function LoginPage() {
             <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
           </div>
 
-          {apiError && (
-            <div style={{
-              background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
-              borderRadius: '12px', padding: '0.875rem 1rem',
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem'
-            }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              {apiError}
-            </div>
-          )}
+
 
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Email */}

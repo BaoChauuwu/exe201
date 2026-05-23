@@ -3,15 +3,31 @@ import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { Clock, Globe2, Building2, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+const DAYS_OF_WEEK = [
+    { value: 'Monday', label: 'Thứ 2' },
+    { value: 'Tuesday', label: 'Thứ 3' },
+    { value: 'Wednesday', label: 'Thứ 4' },
+    { value: 'Thursday', label: 'Thứ 5' },
+    { value: 'Friday', label: 'Thứ 6' },
+    { value: 'Saturday', label: 'Thứ 7' },
+    { value: 'Sunday', label: 'Chủ Nhật' },
+];
+
+interface AvailabilitySlot {
+    day: string;
+    start: string;
+    end: string;
+}
 
 export const BuddyProfilePage = () => {
-    const [availability, setAvailability] = useState('');
+    const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
     const [languages, setLanguages] = useState('');
     const [bankCode, setBankCode] = useState('VCB');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
-    const [statusMsg, setStatusMsg] = useState('');
 
     const { accessToken } = useAuthStore();
 
@@ -19,7 +35,19 @@ export const BuddyProfilePage = () => {
         axios.get('http://localhost:3000/buddy-profile/me', { headers: { Authorization: `Bearer ${accessToken}` } })
             .then(res => {
                 const d = res.data.data;
-                setAvailability(d.availability?.join(', ') || '');
+                const parsedSlots: AvailabilitySlot[] = [];
+                if (d.availability && Array.isArray(d.availability)) {
+                    d.availability.forEach((slotStr: string) => {
+                        const parts = slotStr.trim().split(' ');
+                        if (parts.length >= 3) {
+                            const day = parts[0];
+                            const start = parts[1];
+                            const end = parts[3];
+                            parsedSlots.push({ day, start, end });
+                        }
+                    });
+                }
+                setSlots(parsedSlots);
                 setLanguages(d.languages?.join(', ') || '');
                 setBankCode(d.payoutMethod?.bankCode || 'VCB');
                 setAccountNumber(d.payoutMethod?.accountNumber || '');
@@ -30,20 +58,58 @@ export const BuddyProfilePage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const timeToMinutes = (timeStr: string): number => {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        for (const slot of slots) {
+            if (!slot.start || !slot.end) {
+                toast.error('Vui lòng điền đầy đủ giờ bắt đầu và kết thúc.');
+                return;
+            }
+            if (slot.start >= slot.end) {
+                toast.error('Giờ bắt đầu phải trước giờ kết thúc.');
+                return;
+            }
+            const startMins = timeToMinutes(slot.start);
+            const endMins = timeToMinutes(slot.end);
+            if (endMins - startMins < 120) {
+                toast.error('Mỗi ca làm việc phải kéo dài ít nhất 2 tiếng.');
+                return;
+            }
+        }
+
         setStatus('loading');
         try {
+            const availabilityArray = slots.map(s => `${s.day} ${s.start} - ${s.end}`);
             await axios.post('http://localhost:3000/buddy-profile/update', {
-                availability: availability.split(',').map(s => s.trim()).filter(Boolean),
+                availability: availabilityArray,
                 languages: languages.split(',').map(s => s.trim()).filter(Boolean),
                 bankCode, accountNumber, accountName
             }, { headers: { Authorization: `Bearer ${accessToken}` } });
-            setStatus('success');
-            setStatusMsg('Hồ sơ của bạn đã được cập nhật thành công!');
+            toast.success('Cập nhật thành công!');
         } catch (err: any) {
             setStatus('error');
-            setStatusMsg(err.response?.data?.message || err.message || 'Cập nhật thất bại. Vui lòng thử lại.');
+            toast.error(err.response?.data?.message || err.message || 'Cập nhật thất bại.');
+        } finally {
+            setStatus('idle');
         }
-        setTimeout(() => setStatus('idle'), 3000);
+    };
+
+    const addSlot = () => {
+        setSlots([...slots, { day: 'Monday', start: '08:00', end: '17:00' }]);
+    };
+
+    const removeSlot = (index: number) => {
+        setSlots(slots.filter((_, i) => i !== index));
+    };
+
+    const updateSlot = (index: number, key: keyof AvailabilitySlot, value: string) => {
+        const newSlots = [...slots];
+        newSlots[index] = { ...newSlots[index], [key]: value };
+        setSlots(newSlots);
     };
 
     const inputStyle: React.CSSProperties = {
@@ -99,13 +165,133 @@ export const BuddyProfilePage = () => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                             <div>
-                                <label style={labelStyle}><Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />Giờ làm việc rảnh</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Clock size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                    <input type='text' value={availability} onChange={e => setAvailability(e.target.value)}
-                                        placeholder='vd: Mon-Fri 9AM-5PM, Sat 10AM-2PM' style={inputStyle} className='buddy-input' />
-                                </div>
-                                <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.72rem' }}>Phân tách nhiều khung giờ bằng dấu phẩy</p>
+                                <label style={labelStyle}><Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />Giờ làm việc (Availability)</label>
+
+                                {slots.length === 0 ? (
+                                    <div style={{
+                                        padding: '1.25rem',
+                                        background: 'rgba(14,165,233,0.03)',
+                                        border: '1px dashed rgba(14,165,233,0.2)',
+                                        borderRadius: '12px',
+                                        textAlign: 'center',
+                                        color: '#94a3b8',
+                                        fontSize: '0.85rem',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        Chưa có lịch làm việc được thiết lập. Hãy thêm lịch bên dưới.
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+                                        {slots.map((slot, index) => (
+                                            <div key={index} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                background: '#f8fafc',
+                                                padding: '0.75rem',
+                                                borderRadius: '12px',
+                                                border: '1px solid rgba(14,165,233,0.15)'
+                                            }}>
+                                                <select
+                                                    value={slot.day}
+                                                    onChange={e => updateSlot(index, 'day', e.target.value)}
+                                                    style={{
+                                                        background: '#ffffff',
+                                                        border: '1px solid rgba(14,165,233,0.2)',
+                                                        borderRadius: '8px',
+                                                        padding: '0.5rem',
+                                                        color: '#0f172a',
+                                                        fontSize: '0.85rem',
+                                                        outline: 'none',
+                                                        cursor: 'pointer',
+                                                        flex: 1.5,
+                                                        minWidth: '95px'
+                                                    }}
+                                                >
+                                                    {DAYS_OF_WEEK.map(d => (
+                                                        <option key={d.value} value={d.value}>{d.label}</option>
+                                                    ))}
+                                                </select>
+
+                                                <input
+                                                    type="time"
+                                                    value={slot.start}
+                                                    onChange={e => updateSlot(index, 'start', e.target.value)}
+                                                    style={{
+                                                        background: '#ffffff',
+                                                        border: '1px solid rgba(14,165,233,0.2)',
+                                                        borderRadius: '8px',
+                                                        padding: '0.5rem',
+                                                        color: '#0f172a',
+                                                        fontSize: '0.85rem',
+                                                        outline: 'none',
+                                                        flex: 1,
+                                                        textAlign: 'center'
+                                                    }}
+                                                />
+
+                                                <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>đến</span>
+
+                                                <input
+                                                    type="time"
+                                                    value={slot.end}
+                                                    onChange={e => updateSlot(index, 'end', e.target.value)}
+                                                    style={{
+                                                        background: '#ffffff',
+                                                        border: '1px solid rgba(14,165,233,0.2)',
+                                                        borderRadius: '8px',
+                                                        padding: '0.5rem',
+                                                        color: '#0f172a',
+                                                        fontSize: '0.85rem',
+                                                        outline: 'none',
+                                                        flex: 1,
+                                                        textAlign: 'center'
+                                                    }}
+                                                />
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeSlot(index)}
+                                                    style={{
+                                                        background: 'rgba(239,68,68,0.08)',
+                                                        border: '1px solid rgba(239,68,68,0.2)',
+                                                        borderRadius: '8px',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: '#ef4444',
+                                                        cursor: 'pointer',
+                                                        flexShrink: 0
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={addSlot}
+                                    style={{
+                                        background: 'rgba(2,132,199,0.06)',
+                                        border: '1px dashed rgba(2,132,199,0.3)',
+                                        borderRadius: '10px',
+                                        padding: '0.6rem 1.25rem',
+                                        color: '#0284c7',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    + Thêm khung giờ
+                                </button>
                             </div>
 
                             <div>
@@ -161,13 +347,7 @@ export const BuddyProfilePage = () => {
                         </div>
                     </div>
 
-                    {/* Status messages */}
-                    {status === 'success' && (
-                        <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '12px', padding: '0.875rem 1rem', color: '#10b981', fontSize: '0.875rem', marginBottom: '1rem' }}>✅ {statusMsg}</div>
-                    )}
-                    {status === 'error' && (
-                        <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '0.875rem 1rem', color: '#ef4444', fontSize: '0.875rem', marginBottom: '1rem' }}>❌ {statusMsg}</div>
-                    )}
+
 
                     {/* Submit button */}
                     <button type='submit' disabled={status === 'loading'}

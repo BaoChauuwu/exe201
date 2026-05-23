@@ -3,10 +3,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Mail, Lock, Eye, EyeOff, User, Calendar, AlertCircle, CheckCircle, Plane, Users } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Calendar, Plane, Users } from 'lucide-react'
 import { authApi } from '../api/auth.api'
 import { useAuthStore } from '../store/authStore'
 import GoogleButton from '../components/ui/GoogleButton'
+import toast from 'react-hot-toast'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
@@ -36,8 +37,6 @@ const inputStyle = (hasError: boolean): React.CSSProperties => ({
 export default function RegisterPage() {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [apiError, setApiError] = useState('')
-  const [success, setSuccess] = useState(false)
   const { setTokens, fetchMe } = useAuthStore()
   const navigate = useNavigate()
 
@@ -50,14 +49,13 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      setApiError('')
       const res = await authApi.register(data)
       setTokens(res.data.result.access_token, res.data.result.refresh_token)
       await fetchMe()
-      setSuccess(true)
+      toast.success('Đăng ký thành công! Đang chuyển hướng...')
       setTimeout(() => navigate('/dashboard'), 1500)
     } catch (err: any) {
-      setApiError(err.response?.data?.message || 'Đã có lỗi xảy ra')
+      toast.error(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.')
     }
   }
 
@@ -96,16 +94,7 @@ export default function RegisterPage() {
             <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
           </div>
 
-          {apiError && (
-            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              <AlertCircle size={16} />{apiError}
-            </div>
-          )}
-          {success && (
-            <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6ee7b7', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              <CheckCircle size={16} />Đăng ký thành công! Đang chuyển hướng...
-            </div>
-          )}
+
 
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 

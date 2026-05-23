@@ -3,8 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { Mail, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react'
+import { Mail, CheckCircle, ArrowLeft, AlertCircle } from 'lucide-react'
 import { authApi } from '../api/auth.api'
+import toast from 'react-hot-toast'
 
 const schema = z.object({
   email: z.string().email('Email không hợp lệ')
@@ -13,7 +14,6 @@ type FormData = z.infer<typeof schema>
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false)
-  const [apiError, setApiError] = useState('')
 
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema)
@@ -21,11 +21,11 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      setApiError('')
       await authApi.forgotPassword(data)
+      toast.success('Đã gửi email đặt lại mật khẩu!')
       setSent(true)
     } catch (err: any) {
-      setApiError(err.response?.data?.message || 'Gửi email thất bại. Vui lòng thử lại.')
+      toast.error(err.response?.data?.message || 'Gửi email thất bại. Vui lòng thử lại.')
     }
   }
 
@@ -58,11 +58,6 @@ export default function ForgotPasswordPage() {
         }}>
           {!sent ? (
             <>
-              {apiError && (
-                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                  <AlertCircle size={16} />{apiError}
-                </div>
-              )}
               <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div>
                   <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Email đăng ký</label>

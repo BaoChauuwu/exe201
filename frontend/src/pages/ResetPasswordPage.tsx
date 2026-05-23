@@ -3,8 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
-import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, KeyRound } from 'lucide-react'
+import { Lock, Eye, EyeOff, AlertCircle, KeyRound } from 'lucide-react'
 import { authApi } from '../api/auth.api'
+import toast from 'react-hot-toast'
 
 const schema = z.object({
   password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự')
@@ -30,8 +31,6 @@ export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [apiError, setApiError] = useState('')
-  const [success, setSuccess] = useState(false)
   const navigate = useNavigate()
   const token = searchParams.get('token') || ''
 
@@ -41,12 +40,11 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      setApiError('')
       await authApi.resetPassword({ forgot_password_token: token, password: data.password, confirm_password: data.confirm_password })
-      setSuccess(true)
-      setTimeout(() => navigate('/login'), 2000)
+      toast.success('Đặt lại mật khẩu thành công!')
+      navigate('/login')
     } catch (err: any) {
-      setApiError(err.response?.data?.message || 'Đặt lại mật khẩu thất bại.')
+      toast.error(err.response?.data?.message || 'Đặt lại mật khẩu thất bại.')
     }
   }
 
@@ -74,22 +72,6 @@ export default function ResetPasswordPage() {
             </div>
           )}
 
-          {success ? (
-            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-              <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '2px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#34d399' }}>
-                <CheckCircle size={36} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white', marginBottom: '0.75rem' }}>Đặt lại thành công! 🎉</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>Đang chuyển hướng về trang đăng nhập...</p>
-            </div>
-          ) : (
-            <>
-              {apiError && (
-                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                  <AlertCircle size={16} />{apiError}
-                </div>
-              )}
-
               <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {[
                   { id: 'reset-password', label: 'Mật khẩu mới', name: 'password', show: showPass, setShow: setShowPass, error: errors.password },
@@ -100,7 +82,7 @@ export default function ResetPasswordPage() {
                     <div style={{ position: 'relative' }}>
                       <Lock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                       <input
-                        id={field.id}
+                         id={field.id}
                         type={field.show ? 'text' : 'password'}
                         placeholder='••••••••'
                         {...register(field.name as any)}
@@ -124,8 +106,6 @@ export default function ResetPasswordPage() {
                   {isSubmitting ? 'Đang cập nhật...' : 'Đặt lại mật khẩu'}
                 </button>
               </form>
-            </>
-          )}
 
           <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
             <Link to='/login' style={{ color: '#a78bfa', fontSize: '0.875rem', textDecoration: 'none' }}>Quay lại đăng nhập</Link>

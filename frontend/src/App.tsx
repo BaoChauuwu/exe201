@@ -24,6 +24,9 @@ import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
 import { CreateExperiencePage } from './pages/CreateExperiencePage'
 import { EditExperiencePage } from './pages/EditExperiencePage'
 import { MyExperiencesPage } from './pages/MyExperiencesPage'
+import UnauthorizedPage from './pages/UnauthorizedPage'
+
+import { Toaster } from 'react-hot-toast'
 
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
@@ -52,6 +55,20 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster
+        position='top-right'
+        toastOptions={{
+          style: {
+            background: 'rgba(26, 22, 37, 0.95)',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            fontFamily: "'Inter', -apple-system, sans-serif",
+            fontSize: '0.9rem'
+          }
+        }}
+      />
       <Routes>
         {/* Public */}
         <Route path='/' element={<HomePage />} />
@@ -60,6 +77,7 @@ function App() {
         <Route path='/oauth-success' element={<OAuthSuccessPage />} />
         <Route path='/buddies' element={<FindBuddyPage />} />
         <Route path='/buddies/:id' element={<BuddyPublicProfilePage />} />
+        <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
         {/* Guest only (redirect to /dashboard if logged in) */}
         <Route element={<GuestRoute />}>
@@ -73,15 +91,23 @@ function App() {
           <Route path='/dashboard' element={<DashboardPage />} />
           <Route path='/profile' element={<ProfilePage />} />
           <Route path='/ekyc' element={<EkycPage />} />
-          <Route path='/buddy-profile' element={<BuddyProfilePage />} />
-          <Route path='/admin' element={<AdminDashboard />} />
           <Route path='/live-tracking/:bookingId' element={<LiveTracking />} />
           <Route path='/conversations' element={<ConversationsPage />} />
           <Route path='/chat/:receiverId' element={<Chat />} />
+        </Route>
+
+        {/* Buddy specific routes */}
+        <Route element={<ProtectedRoute allowedRoles={['buddy']} />}>
+          <Route path='/buddy-profile' element={<BuddyProfilePage />} />
           <Route path='/wallet' element={<Wallet />} />
           <Route path='/experiences/my' element={<MyExperiencesPage />} />
           <Route path='/experiences/create' element={<CreateExperiencePage />} />
           <Route path='/experiences/:id/edit' element={<EditExperiencePage />} />
+        </Route>
+
+        {/* Admin specific routes */}
+        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          <Route path='/admin' element={<AdminDashboard />} />
         </Route>
 
         {/* 404 */}

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { CreditCard, Camera, UploadCloud, CheckCircle, Shield, X, AlertCircle } from 'lucide-react';
+import { CreditCard, Camera, UploadCloud, CheckCircle, Shield, X } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 // Convert File → base64 string
 const toBase64 = (file: File): Promise<string> =>
@@ -128,7 +129,6 @@ export const EkycPage = () => {
   const [selfiePreview, setSelfiePreview] = useState('');
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
 
   const allUploaded = frontPreview && backPreview && selfiePreview;
 
@@ -136,17 +136,16 @@ export const EkycPage = () => {
     e.preventDefault();
     if (!accessToken) {
       setStatus('error');
-      setErrorMsg('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
+      toast.error('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
       return;
     }
     if (!allUploaded) {
       setStatus('error');
-      setErrorMsg('Vui lòng tải lên đủ 3 ảnh: Mặt trước CCCD, mặt sau CCCD và Selfie.');
+      toast.error('Vui lòng tải lên đủ 3 ảnh: Mặt trước CCCD, mặt sau CCCD và Selfie.');
       return;
     }
 
     setStatus('loading');
-    setErrorMsg('');
 
     try {
       // Convert files to base64
@@ -165,7 +164,7 @@ export const EkycPage = () => {
       setStatus('success');
     } catch (err: any) {
       setStatus('error');
-      setErrorMsg(err.response?.data?.message || err.message || 'Gửi eKYC thất bại. Vui lòng thử lại.');
+      toast.error(err.response?.data?.message || err.message || 'Gửi eKYC thất bại. Vui lòng thử lại.');
     }
   };
 
@@ -287,6 +286,7 @@ export const EkycPage = () => {
                   <li>Ảnh selfie phải thấy rõ mặt và CCCD cùng lúc</li>
                 </ul>
               </div>
+
 
               {/* Error */}
               {status === 'error' && (
