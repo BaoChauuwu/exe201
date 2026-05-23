@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2 } from 'lucide-react';
+import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, Map } from 'lucide-react';
+import { experienceApi } from '../api/experience.api';
 
 export const AdminDashboard = () => {
     const [ekycs, setEkycs] = useState<any[]>([]);
     const [payouts, setPayouts] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'ekyc' | 'payouts' | 'users'>('ekyc');
+    const [experiences, setExperiences] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'ekyc' | 'payouts' | 'users' | 'tours'>('ekyc');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
@@ -21,6 +23,7 @@ export const AdminDashboard = () => {
         axios.get('http://localhost:3000/admin/ekyc/pending', cfg).then(r => setEkycs(r.data.data || [])).catch(console.error);
         axios.get('http://localhost:3000/admin/payouts/pending', cfg).then(r => setPayouts(r.data.data || [])).catch(console.error);
         axios.get('http://localhost:3000/admin/users', cfg).then(r => setUsers(r.data.data || [])).catch(console.error);
+        experienceApi.getPending(cfg).then(r => setExperiences(r.data.data || [])).catch(console.error);
     };
 
     useEffect(() => { fetchAll(); }, []);
@@ -37,6 +40,17 @@ export const AdminDashboard = () => {
         await axios.post('http://localhost:3000/admin/payouts/approve', { payoutId: id, status }, cfg).catch(console.error);
         showToast(`Payout ${status} thành công!`);
         fetchAll();
+    };
+
+    const approveTour = async (id: string, status: 'approved' | 'rejected') => {
+        try {
+            await experienceApi.approveExperience(id, status, cfg);
+            showToast(`Tour đã được ${status === 'approved' ? 'duyệt' : 'từ chối'} thành công!`);
+            fetchAll();
+        } catch (error) {
+            console.error(error);
+            showToast('Lỗi khi duyệt tour');
+        }
     };
 
     const deleteUser = async (id: string) => {
@@ -97,7 +111,7 @@ export const AdminDashboard = () => {
                     </div>
 
                     {/* Tabs */}
-                    <div style={{ display: 'flex', background: 'white', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '4px', gap: '4px', minWidth: '300px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ display: 'flex', background: 'white', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '4px', gap: '4px', minWidth: '400px', boxShadow: 'var(--shadow-sm)' }}>
                         <button onClick={() => setActiveTab('ekyc')} style={tabBtn(activeTab === 'ekyc', '#6366f1')}>
                             <UserCheck size={16} /> eKYC
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{ekycs.length}</span>
@@ -110,6 +124,10 @@ export const AdminDashboard = () => {
                             <Users size={16} /> Users
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{users.length}</span>
                         </button>
+                        <button onClick={() => setActiveTab('tours')} style={tabBtn(activeTab === 'tours', '#8b5cf6')}>
+                            <Map size={16} /> Tours
+                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{experiences.length}</span>
+                        </button>
                     </div>
                 </div>
 
@@ -119,7 +137,7 @@ export const AdminDashboard = () => {
                     {/* Search bar */}
                     <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                            {activeTab === 'ekyc' ? 'Pending Verifications' : activeTab === 'payouts' ? 'Pending Payouts' : 'User Management'}
+                            {activeTab === 'ekyc' ? 'Pending Verifications' : activeTab === 'payouts' ? 'Pending Payouts' : activeTab === 'tours' ? 'Pending Tours' : 'User Management'}
                         </h2>
                         
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -289,6 +307,57 @@ export const AdminDashboard = () => {
                             </div>
                         );
                     })()}
+
+                    {/* Tours tab */}
+                    {activeTab === 'tours' && (
+                        experiences.length === 0 ? (
+                            <div style={{ padding: '5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <Map size={48} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--color-primary)' }} />
+                                <p>Không có yêu cầu duyệt tour nào đang chờ xử lý</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem', padding: '1.5rem' }}>
+                                {experiences.map(exp => (
+                                    <div key={exp._id} style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: '18px', padding: '1.25rem', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column' }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)'; }}
+                                    >
+                                        <div style={{ height: '140px', width: '100%', borderRadius: '10px', overflow: 'hidden', background: '#f3f4f6', marginBottom: '1rem', position: 'relative' }}>
+                                            {exp.images && exp.images.length > 0 ? (
+                                                <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} onClick={() => setPreviewImage(exp.images[0])} />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>🗺️ Không có ảnh</div>
+                                            )}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', gap: '6px', marginBottom: '0.5rem' }}>
+                                                <span style={badgeStyle('#8b5cf6')}>{exp.category}</span>
+                                                <span style={badgeStyle('#3b82f6')}>{exp.city || 'Đà Nẵng'}</span>
+                                            </div>
+                                            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>{exp.title}</h3>
+                                            <p style={{ margin: '0 0 1rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4 }}>{exp.description}</p>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0.5rem 0', borderTop: '1px solid var(--color-border)' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Mức giá:</span>
+                                                <span style={{ fontWeight: 800, color: 'var(--color-primary-dark)', fontSize: '1rem' }}>{exp.price?.toLocaleString()} {exp.currency || 'VND'}/h</span>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                            <button onClick={() => approveTour(exp._id, 'approved')} style={{ flex: 1, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '0.6rem', color: '#059669', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.2)'; }}
+                                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.1)'; }}>
+                                                <Check size={14} /> Duyệt
+                                            </button>
+                                            <button onClick={() => approveTour(exp._id, 'rejected')} style={{ flex: 1, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)', borderRadius: '10px', padding: '0.6rem', color: '#dc2626', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.15)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.3)'; }}
+                                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.05)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.1)'; }}>
+                                                <X size={14} /> Từ chối
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
 

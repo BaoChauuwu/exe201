@@ -21,6 +21,9 @@ import { ConversationsPage } from './pages/ConversationsPage'
 import { Wallet } from './pages/Wallet'
 import { FindBuddyPage } from './pages/FindBuddyPage'
 import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
+import { CreateExperiencePage } from './pages/CreateExperiencePage'
+import { EditExperiencePage } from './pages/EditExperiencePage'
+import { MyExperiencesPage } from './pages/MyExperiencesPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 import { Toaster } from 'react-hot-toast'
@@ -97,6 +100,9 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={['buddy']} />}>
           <Route path='/buddy-profile' element={<BuddyProfilePage />} />
           <Route path='/wallet' element={<Wallet />} />
+          <Route path='/experiences/my' element={<MyExperiencesPage />} />
+          <Route path='/experiences/create' element={<CreateExperiencePage />} />
+          <Route path='/experiences/:id/edit' element={<EditExperiencePage />} />
         </Route>
 
         {/* Admin specific routes */}

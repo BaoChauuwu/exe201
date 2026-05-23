@@ -53,7 +53,7 @@ export const Wallet = () => {
                 setWalletBalance(prev => prev - withdrawAmount);
                 setAmount('');
             })
-            .catch(err => {
+            .catch(() => {
                 setStatus('error');
                 toast.error(err.response?.data?.message || err.message || 'Giao dịch thất bại. MongoDB Transaction đã rollback.');
             })

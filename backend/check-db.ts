@@ -2,9 +2,7 @@ import { config } from 'dotenv'
 config()
 import mongoose from 'mongoose'
 import { hashPassword } from './utils/crypto'
-import { userSchema, IUser } from './models/schemas/User.schema'
-
-const User = mongoose.models.Users || mongoose.model<IUser>('Users', userSchema)
+import User from './models/User.model'
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@twitter.dbbh1tu.mongodb.net/`
 
 async function run() {

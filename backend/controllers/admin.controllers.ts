@@ -6,6 +6,7 @@ import httpStatus from '../constants/httpStatus'
 import IdentityVerification from '../models/IdentityVerification.model'
 import PayoutRequest from '../models/PayoutRequest.model'
 import BuddyProfile from '../models/BuddyProfile.model'
+import ExperienceModel from '../models/Experience.model'
 
 // eKYC Management
 export const getPendingEkyc = async (req: Request, res: Response) => {
@@ -104,11 +105,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        if (!ObjectId.isValid(id)) {
+        if (!ObjectId.isValid(String(id))) {
             return res.status(httpStatus.BAD_REQUEST).json({ message: 'Invalid user ID' });
         }
         
-        const user = await databaseService.users.findOne({ _id: new ObjectId(id) });
+        const user = await databaseService.users.findOne({ _id: new ObjectId(String(id)) });
         if (!user) {
             return res.status(httpStatus.NOT_FOUND).json({ message: 'User not found' });
         }
@@ -117,9 +118,40 @@ export const deleteUser = async (req: Request, res: Response) => {
             return res.status(httpStatus.FORBIDDEN).json({ message: 'Cannot delete an admin user' });
         }
 
-        await databaseService.users.deleteOne({ _id: new ObjectId(id) });
+        await databaseService.users.deleteOne({ _id: new ObjectId(String(id)) });
         return res.status(httpStatus.OK).json({ message: 'User deleted successfully' });
     } catch (error) {
         return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error });
+    }
+}
+
+// Experience Management for Admin
+export const getPendingExperiences = async (req: Request, res: Response) => {
+    try {
+        const experiences = await ExperienceModel.find({ isApproved: false }).sort({ created_at: -1 })
+        return res.status(httpStatus.OK).json({ data: experiences })
+    } catch (error) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
+    }
+}
+
+export const approveExperience = async (req: Request, res: Response) => {
+    const { experienceId, status } = req.body // status: 'approved' | 'rejected'
+    
+    try {
+        const experience = await ExperienceModel.findById(experienceId)
+        if (!experience) return res.status(httpStatus.NOT_FOUND).json({ message: 'Tour không tồn tại' })
+
+        if (status === 'approved') {
+            experience.isApproved = true
+            await experience.save()
+            return res.status(httpStatus.OK).json({ message: 'Đã duyệt tour thành công!' })
+        } else {
+            // rejection: xóa tour khỏi DB để dọn dẹp
+            await ExperienceModel.findByIdAndDelete(experienceId)
+            return res.status(httpStatus.OK).json({ message: 'Đã từ chối và xóa tour thành công!' })
+        }
+    } catch (error) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
     }
 }

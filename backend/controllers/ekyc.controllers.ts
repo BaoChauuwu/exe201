@@ -1,11 +1,9 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { identityVerificationSchema, IIdentityVerification } from '../models/schemas/IdentityVerification.schema'
+import { IIdentityVerification } from '../models/schemas/IdentityVerification.schema'
 import { TokenPayload } from '../models/requests/User.requests'
-
 import httpStatus from '../constants/httpStatus'
-
-const IdentityVerification = mongoose.models.IdentityVerifications || mongoose.model<IIdentityVerification>('IdentityVerifications', identityVerificationSchema)
+import IdentityVerification from '../models/IdentityVerification.model'
 
 export const submitEkyc = async (req: Request, res: Response) => {
     const { user_id } = req.decoded_authorization as TokenPayload

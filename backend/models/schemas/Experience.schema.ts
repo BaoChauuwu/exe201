@@ -57,3 +57,4 @@ export const experienceSchema = new Schema<IExperience>(
     }
 )
 
+experienceSchema.index({ meetingPoint: '2dsphere' })

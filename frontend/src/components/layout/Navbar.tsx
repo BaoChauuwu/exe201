@@ -31,12 +31,12 @@ export default function Navbar() {
     padding: '0.875rem 0',
     transition: 'all 0.3s ease',
     background: scrolled
-      ? 'rgba(15, 12, 41, 0.92)'
-      : 'rgba(15, 12, 41, 0.7)',
+      ? 'rgba(255, 255, 255, 0.95)'
+      : 'rgba(255, 255, 255, 0.85)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
-    boxShadow: scrolled ? '0 4px 24px rgba(0,0,0,0.4)' : 'none',
+    borderBottom: scrolled ? '1px solid rgba(14, 165, 233, 0.15)' : '1px solid transparent',
+    boxShadow: scrolled ? '0 4px 20px rgba(14, 165, 233, 0.05)' : 'none',
   }
 
   const containerStyle: React.CSSProperties = {
@@ -58,16 +58,16 @@ export default function Navbar() {
   const logoIconStyle: React.CSSProperties = {
     width: '36px', height: '36px',
     borderRadius: '10px',
-    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+    background: 'linear-gradient(135deg, #0284c7, #0ea5e9)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(139,92,246,0.4)',
+    boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)',
     flexShrink: 0,
   }
 
   const logoTextStyle: React.CSSProperties = {
     fontSize: '1.2rem',
     fontWeight: 800,
-    background: 'linear-gradient(135deg, #c4b5fd, #a5b4fc)',
+    background: 'linear-gradient(135deg, #0369a1, #0ea5e9)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
@@ -82,7 +82,7 @@ export default function Navbar() {
   }
 
   const linkStyle: React.CSSProperties = {
-    color: 'rgba(255,255,255,0.55)',
+    color: '#475569',
     fontSize: '0.875rem',
     fontWeight: 500,
     textDecoration: 'none',
@@ -99,10 +99,10 @@ export default function Navbar() {
   const btnSecondaryStyle: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
     padding: '0.5rem 1rem',
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.12)',
+    background: '#f8fafc',
+    border: '1px solid rgba(14, 165, 233, 0.2)',
     borderRadius: '10px',
-    color: 'rgba(255,255,255,0.75)',
+    color: '#0f172a',
     fontSize: '0.8rem', fontWeight: 600,
     cursor: 'pointer', textDecoration: 'none',
     transition: 'all 0.2s',
@@ -112,13 +112,13 @@ export default function Navbar() {
   const btnPrimaryStyle: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
     padding: '0.5rem 1rem',
-    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+    background: 'linear-gradient(135deg, #0284c7, #0ea5e9)',
     border: 'none',
     borderRadius: '10px',
     color: 'white',
     fontSize: '0.8rem', fontWeight: 700,
     cursor: 'pointer', textDecoration: 'none',
-    boxShadow: '0 4px 12px rgba(139,92,246,0.35)',
+    boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)',
     transition: 'all 0.2s',
     fontFamily: "'Inter', sans-serif",
   }
@@ -127,9 +127,9 @@ export default function Navbar() {
     display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
     padding: '0.5rem 1rem',
     background: 'transparent',
-    border: '1px solid rgba(239,68,68,0.3)',
+    border: '1px solid rgba(239,68,68,0.2)',
     borderRadius: '10px',
-    color: 'rgba(252,165,165,0.8)',
+    color: 'rgba(239,68,68,0.8)',
     fontSize: '0.8rem', fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.2s',
@@ -152,22 +152,22 @@ export default function Navbar() {
           <ul style={linksStyle}>
             <li>
               <Link to='/' style={linkStyle}
-                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                 Trang chủ
               </Link>
             </li>
             <li>
               <a href='#features' style={linkStyle}
-                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                 Tính năng
               </a>
             </li>
             <li>
               <Link to='/buddies' style={linkStyle}
-                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                 Tìm Buddy
               </Link>
             </li>
@@ -175,15 +175,15 @@ export default function Navbar() {
               <>
                 <li>
                   <Link to='/dashboard' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                     Dashboard
                   </Link>
                 </li>
                 <li>
                   <Link to='/conversations' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                     Tin nhắn
                   </Link>
                 </li>
@@ -197,14 +197,26 @@ export default function Navbar() {
               <>
                 <Link to='/profile' style={{ textDecoration: 'none' }}>
                   <div style={btnSecondaryStyle}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)' }}>
+                    onMouseEnter={e => { 
+                      (e.currentTarget as HTMLElement).style.background = '#e2e8f0'; 
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14, 165, 233, 0.4)' 
+                    }}
+                    onMouseLeave={e => { 
+                      (e.currentTarget as HTMLElement).style.background = '#f8fafc'; 
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14, 165, 233, 0.2)' 
+                    }}>
                     <User size={15} /> Hồ sơ
                   </div>
                 </Link>
                 <button style={btnLogoutStyle} onClick={handleLogout}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.5)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.3)' }}>
+                  onMouseEnter={e => { 
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(239, 68, 68, 0.05)'; 
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239, 68, 68, 0.4)' 
+                  }}
+                  onMouseLeave={e => { 
+                    (e.currentTarget as HTMLElement).style.background = 'transparent'; 
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239, 68, 68, 0.2)' 
+                  }}>
                   <LogOut size={15} /> Đăng xuất
                 </button>
               </>
@@ -212,15 +224,27 @@ export default function Navbar() {
               <>
                 <Link to='/login' style={{ textDecoration: 'none' }}>
                   <div style={btnSecondaryStyle}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)' }}>
+                    onMouseEnter={e => { 
+                      (e.currentTarget as HTMLElement).style.background = '#e2e8f0';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14, 165, 233, 0.4)'
+                    }}
+                    onMouseLeave={e => { 
+                      (e.currentTarget as HTMLElement).style.background = '#f8fafc';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14, 165, 233, 0.2)'
+                    }}>
                     Đăng nhập
                   </div>
                 </Link>
                 <Link to='/register' style={{ textDecoration: 'none' }}>
                   <div style={btnPrimaryStyle}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
+                    onMouseEnter={e => { 
+                      (e.currentTarget as HTMLElement).style.opacity = '0.88'; 
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' 
+                    }}
+                    onMouseLeave={e => { 
+                      (e.currentTarget as HTMLElement).style.opacity = '1'; 
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' 
+                    }}>
                     Đăng ký
                   </div>
                 </Link>
