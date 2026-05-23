@@ -52,14 +52,19 @@ export default function HomePage() {
   const { isAuthenticated } = useAuthStore()
   const [experiences, setExperiences] = useState<IExperience[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     experienceApi.getAllPublic()
       .then(res => {
-        setExperiences(res.data.result || [])
+        console.log('[HomePage] API response:', res.data)
+        const list = res.data.result || []
+        console.log('[HomePage] Tours loaded:', list.length)
+        setExperiences(list)
       })
       .catch(err => {
-        console.error('Lỗi khi tải danh sách tour:', err)
+        console.error('[HomePage] Lỗi khi tải danh sách tour:', err)
+        setFetchError(err?.response?.data?.message || err?.message || 'Không thể tải danh sách tour')
       })
       .finally(() => {
         setIsLoading(false)
@@ -252,12 +257,19 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          ) : fetchError ? (
+            <div style={{ background: '#fff5f5', border: '1px dashed rgba(239,68,68,0.3)', borderRadius: '24px', padding: '4rem 2rem', textAlign: 'center', color: '#ef4444', maxWidth: '500px', margin: '0 auto' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+              <p style={{ fontWeight: 600 }}>Không thể tải danh sách tour</p>
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.5rem' }}>{fetchError}</p>
+            </div>
           ) : experiences.length === 0 ? (
             <div style={{ background: '#ffffff', border: '1px dashed rgba(14, 165, 233, 0.3)', borderRadius: '24px', padding: '4rem 2rem', textAlign: 'center', color: 'var(--color-text-muted)', maxWidth: '500px', margin: '0 auto' }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
               <p>Hiện tại chưa có tour trải nghiệm nào được duyệt. Quay lại sau nhé!</p>
             </div>
           ) : (
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
               {experiences.slice(0, 6).map(exp => (
                 <div
