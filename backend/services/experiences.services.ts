@@ -98,6 +98,7 @@ class ExperiencesService {
 
     // 4. Gán lại mảng ảnh cuối cùng (gồm các ảnh cũ giữ lại và ảnh mới tải lên)
     experience.images = [...keepImages, ...newImageUrls]
+    experience.markModified('images')
 
     const BuddyProfile = require('~/models/BuddyProfile.model').default
     const profile = await BuddyProfile.findOne({ userId: new ObjectId(buddyId) })
@@ -124,6 +125,7 @@ class ExperiencesService {
         : typeof includedItemsRaw === 'string'
           ? [includedItemsRaw]
           : []
+      experience.markModified('includedItems')
     }
 
     if (body.meetingPointLng !== undefined && body.meetingPointLat !== undefined) {
