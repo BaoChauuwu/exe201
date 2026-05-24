@@ -51,12 +51,25 @@ const features = [
 export default function HomePage() {
   const { isAuthenticated } = useAuthStore()
   const [experiences, setExperiences] = useState<IExperience[]>([])
+  const [categories, setCategories] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const ITEMS_PER_PAGE = 6
 
   useEffect(() => {
+    setIsLoading(true)
+    // 1. Tải danh mục động từ database
+    experienceApi.getCategories()
+      .then(res => {
+        setCategories(res.data.result || [])
+      })
+      .catch(err => {
+        console.error('[HomePage] Lỗi khi tải danh mục động:', err)
+      })
+
+    // 2. Tải danh sách tour
     experienceApi.getAllPublic()
       .then(res => {
         console.log('[HomePage] API response:', res.data)
@@ -73,14 +86,17 @@ export default function HomePage() {
       })
   }, [])
 
-  const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case 'food': return '🍴 Ẩm thực'
-      case 'adventure': return '🧗 Phiêu lưu'
-      case 'culture': return '🏛️ Văn hóa'
-      case 'nightlife': return '💃 Giải trí đêm'
-      default: return '🗺️ Khác'
+  const getCategoryBadgeDetails = (cat: string) => {
+    const found = categories.find(c => c.slug === cat)
+    if (found) {
+      return {
+        label: `${found.icon} ${found.name}`,
+        bg: found.bg,
+        border: found.border
+      }
     }
+    // Fallback mặc định
+    return { label: '✨ Khác', bg: 'linear-gradient(135deg, #64748b, #475569)', border: 'rgba(100, 116, 139, 0.2)' }
   }
 
   return (
@@ -272,181 +288,323 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* ── Tour grid ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
-                {experiences
-                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-                  .map(exp => (
-                  <Link
-                    key={exp._id}
-                    to={`/experiences/${exp._id}`}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'contents' }}
-                  >
-                  <div
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid rgba(14, 165, 233, 0.12)',
-                      borderRadius: '24px',
-                      overflow: 'hidden',
+              {/* ── Category Filters ── */}
+              {(() => {
+                const filteredExperiences = selectedCategory === 'all'
+                  ? experiences
+                  : experiences.filter(exp => exp.category === selectedCategory)
+
+                return (
+                  <>
+                    <div style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'all 0.3s ease',
-                      boxShadow: '0 10px 30px rgba(14, 165, 233, 0.04)',
-                      maxWidth: '360px',
-                      width: '100%',
-                      margin: '0 auto',
-                      cursor: 'pointer',
-                    }}
-                    onMouseEnter={e => {
-                      const card = e.currentTarget as HTMLElement
-                      card.style.transform = 'translateY(-6px)'
-                      card.style.borderColor = 'rgba(14, 165, 233, 0.35)'
-                      card.style.boxShadow = '0 15px 35px rgba(14, 165, 233, 0.08)'
-                    }}
-                    onMouseLeave={e => {
-                      const card = e.currentTarget as HTMLElement
-                      card.style.transform = 'translateY(0)'
-                      card.style.borderColor = 'rgba(14, 165, 233, 0.12)'
-                      card.style.boxShadow = '0 10px 30px rgba(14, 165, 233, 0.04)'
-                    }}
-                  >
-                    <div style={{ height: '180px', width: '100%', position: 'relative', overflow: 'hidden', background: '#f1f5f9' }}>
-                      {exp.images && exp.images.length > 0 ? (
-                        <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)' }}>🗺️ Chưa có ảnh</div>
-                      )}
-                      <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: 'rgba(15, 12, 41, 0.75)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
-                        {getCategoryLabel(exp.category)}
-                      </div>
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '2.5rem',
+                      flexWrap: 'wrap'
+                    }}>
+                      {/* Tab Tất cả mặc định */}
+                      <button
+                        onClick={() => {
+                          setSelectedCategory('all')
+                          setCurrentPage(1)
+                        }}
+                        style={{
+                          padding: '0.6rem 1.25rem',
+                          borderRadius: '999px',
+                          border: selectedCategory === 'all' ? 'none' : '1px solid rgba(14, 165, 233, 0.18)',
+                          background: selectedCategory === 'all' ? 'var(--gradient-primary)' : '#ffffff',
+                          color: selectedCategory === 'all' ? '#ffffff' : 'var(--color-text-muted)',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.25s ease',
+                          boxShadow: selectedCategory === 'all' ? '0 4px 14px rgba(2, 132, 199, 0.25)' : 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                        onMouseEnter={e => {
+                          if (selectedCategory !== 'all') {
+                            const btn = e.currentTarget as HTMLElement
+                            btn.style.borderColor = 'var(--color-primary)'
+                            btn.style.color = 'var(--color-primary)'
+                            btn.style.background = 'rgba(14, 165, 233, 0.03)'
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (selectedCategory !== 'all') {
+                            const btn = e.currentTarget as HTMLElement
+                            btn.style.borderColor = 'rgba(14, 165, 233, 0.18)'
+                            btn.style.color = 'var(--color-text-muted)'
+                            btn.style.background = '#ffffff'
+                          }
+                        }}
+                      >
+                        🗺️ Tất cả
+                      </button>
+
+                      {/* Map qua các danh mục động trong database */}
+                      {categories.map(tab => {
+                        const isActive = selectedCategory === tab.slug
+                        return (
+                          <button
+                            key={tab._id}
+                            onClick={() => {
+                              setSelectedCategory(tab.slug)
+                              setCurrentPage(1) // Reset về trang 1
+                            }}
+                            style={{
+                              padding: '0.6rem 1.25rem',
+                              borderRadius: '999px',
+                              border: isActive ? 'none' : '1px solid rgba(14, 165, 233, 0.18)',
+                              background: isActive ? 'var(--gradient-primary)' : '#ffffff',
+                              color: isActive ? '#ffffff' : 'var(--color-text-muted)',
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.25s ease',
+                              boxShadow: isActive ? '0 4px 14px rgba(2, 132, 199, 0.25)' : 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              outline: 'none',
+                              fontFamily: 'inherit'
+                            }}
+                            onMouseEnter={e => {
+                              if (!isActive) {
+                                const btn = e.currentTarget as HTMLElement
+                                btn.style.borderColor = 'var(--color-primary)'
+                                btn.style.color = 'var(--color-primary)'
+                                btn.style.background = 'rgba(14, 165, 233, 0.03)'
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!isActive) {
+                                const btn = e.currentTarget as HTMLElement
+                                btn.style.borderColor = 'rgba(14, 165, 233, 0.18)'
+                                btn.style.color = 'var(--color-text-muted)'
+                                btn.style.background = '#ffffff'
+                              }
+                            }}
+                          >
+                            {tab.icon} {tab.name}
+                          </button>
+                        )
+                      })}
                     </div>
 
-                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                        <MapPin size={12} style={{ color: 'var(--color-primary)' }} />
-                        <span>{exp.city || 'Đà Nẵng'}</span>
-                        <span style={{ margin: '0 4px', color: 'var(--color-text-faint)' }}>•</span>
-                        <Clock size={12} style={{ color: 'var(--color-primary)' }} />
-                        <span>{exp.minHours}h tối thiểu</span>
+                    {filteredExperiences.length === 0 ? (
+                      <div style={{ background: '#ffffff', border: '1px dashed rgba(14, 165, 233, 0.2)', borderRadius: '24px', padding: '5rem 2rem', textAlign: 'center', color: 'var(--color-text-muted)', maxWidth: '500px', margin: '2rem auto 0', boxShadow: '0 4px 20px rgba(14, 165, 233, 0.02)' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+                        <p style={{ fontWeight: 800, margin: 0, fontSize: '1.1rem', color: 'var(--color-text)' }}>Không tìm thấy kết quả</p>
+                        <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.5rem', lineHeight: 1.5 }}>Hiện chưa có tour nào thuộc danh mục này được duyệt.<br />Hãy thử chọn danh mục khác nhé!</p>
                       </div>
+                    ) : (
+                      <>
+                        {/* ── Tour grid ── */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
+                          {filteredExperiences
+                            .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                            .map(exp => (
+                            <Link
+                              key={exp._id}
+                              to={`/experiences/${exp._id}`}
+                              style={{ textDecoration: 'none', color: 'inherit', display: 'contents' }}
+                            >
+                            <div
+                              style={{
+                                background: '#ffffff',
+                                border: '1px solid rgba(14, 165, 233, 0.12)',
+                                borderRadius: '24px',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 10px 30px rgba(14, 165, 233, 0.04)',
+                                maxWidth: '360px',
+                                width: '100%',
+                                margin: '0 auto',
+                                cursor: 'pointer',
+                              }}
+                              onMouseEnter={e => {
+                                const card = e.currentTarget as HTMLElement
+                                card.style.transform = 'translateY(-6px)'
+                                card.style.borderColor = 'rgba(14, 165, 233, 0.35)'
+                                card.style.boxShadow = '0 15px 35px rgba(14, 165, 233, 0.08)'
+                              }}
+                              onMouseLeave={e => {
+                                const card = e.currentTarget as HTMLElement
+                                card.style.transform = 'translateY(0)'
+                                card.style.borderColor = 'rgba(14, 165, 233, 0.12)'
+                                card.style.boxShadow = '0 10px 30px rgba(14, 165, 233, 0.04)'
+                              }}
+                            >
+                              <div style={{ height: '180px', width: '100%', position: 'relative', overflow: 'hidden', background: '#f1f5f9' }}>
+                                {exp.images && exp.images.length > 0 ? (
+                                  <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)' }}>🗺️ Chưa có ảnh</div>
+                                )}
+                                {(() => {
+                                  const badge = getCategoryBadgeDetails(exp.category)
+                                  return (
+                                    <div style={{
+                                      position: 'absolute',
+                                      top: '1rem',
+                                      left: '1rem',
+                                      background: badge.bg,
+                                      border: `1px solid ${badge.border}`,
+                                      borderRadius: '8px',
+                                      padding: '4px 12px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 800,
+                                      color: '#fff',
+                                      boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}>
+                                      {badge.label}
+                                    </div>
+                                  )
+                                })()}
+                              </div>
 
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem', lineHeight: 1.4, color: 'var(--color-text)' }}>{exp.title}</h3>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0 0 1.25rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
+                              <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                  <MapPin size={12} style={{ color: 'var(--color-primary)' }} />
+                                  <span>{exp.city || 'Đà Nẵng'}</span>
+                                  <span style={{ margin: '0 4px', color: 'var(--color-text-faint)' }}>•</span>
+                                  <Clock size={12} style={{ color: 'var(--color-primary)' }} />
+                                  <span>{exp.minHours}h tối thiểu</span>
+                                </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-                        <div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chi phí</div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>{exp.price?.toLocaleString()}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{exp.currency || 'VND'}/h</span>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem', lineHeight: 1.4, color: 'var(--color-text)' }}>{exp.title}</h3>
+                                <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0 0 1.25rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                                  <div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chi phí</div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                                      <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>{exp.price?.toLocaleString()}</span>
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{exp.currency || 'VND'}/h</span>
+                                    </div>
+                                  </div>
+
+                                  <div style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
+                                    Xem chi tiết <ArrowRight size={12} />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            </Link>
+                          ))}
+                        </div>
+
+                        {/* ── Pagination ── */}
+                        {filteredExperiences.length > ITEMS_PER_PAGE && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            marginTop: '3rem',
+                            flexWrap: 'wrap',
+                          }}>
+                            {/* Nút Trước */}
+                            <button
+                              disabled={currentPage === 1}
+                              onClick={() => {
+                                setCurrentPage(p => p - 1)
+                                document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '0.6rem 1.1rem',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(14,165,233,0.25)',
+                                background: currentPage === 1 ? '#f8fafc' : '#ffffff',
+                                color: currentPage === 1 ? '#94a3b8' : 'var(--color-primary)',
+                                fontWeight: 600, fontSize: '0.85rem',
+                                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: currentPage === 1 ? 'none' : '0 2px 8px rgba(14,165,233,0.1)',
+                              }}
+                            >
+                              ← Trước
+                            </button>
+
+                            {/* Số trang */}
+                            {Array.from({ length: Math.ceil(filteredExperiences.length / ITEMS_PER_PAGE) }, (_, i) => i + 1).map(page => (
+                              <button
+                                key={page}
+                                onClick={() => {
+                                  setCurrentPage(page)
+                                  document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                }}
+                                style={{
+                                  width: '40px', height: '40px',
+                                  borderRadius: '10px',
+                                  border: page === currentPage ? 'none' : '1px solid rgba(14,165,233,0.2)',
+                                  background: page === currentPage
+                                    ? 'var(--gradient-primary)'
+                                    : '#ffffff',
+                                  color: page === currentPage ? '#ffffff' : 'var(--color-text)',
+                                  fontWeight: 700, fontSize: '0.9rem',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  boxShadow: page === currentPage
+                                    ? '0 4px 14px rgba(2,132,199,0.35)'
+                                    : '0 2px 6px rgba(14,165,233,0.06)',
+                                }}
+                              >
+                                {page}
+                              </button>
+                            ))}
+
+                            {/* Nút Sau */}
+                            <button
+                              disabled={currentPage === Math.ceil(filteredExperiences.length / ITEMS_PER_PAGE)}
+                              onClick={() => {
+                                setCurrentPage(p => p + 1)
+                                document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '0.6rem 1.1rem',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(14,165,233,0.25)',
+                                background: currentPage === Math.ceil(filteredExperiences.length / ITEMS_PER_PAGE) ? '#f8fafc' : '#ffffff',
+                                color: currentPage === Math.ceil(filteredExperiences.length / ITEMS_PER_PAGE) ? '#94a3b8' : 'var(--color-primary)',
+                                fontWeight: 600, fontSize: '0.85rem',
+                                cursor: currentPage === Math.ceil(filteredExperiences.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: currentPage === Math.ceil(filteredExperiences.length / ITEMS_PER_PAGE) ? 'none' : '0 2px 8px rgba(14,165,233,0.1)',
+                              }}
+                            >
+                              Sau →
+                            </button>
+
+                            {/* Thông tin tổng */}
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              fontSize: '0.8rem',
+                              color: 'var(--color-text-muted)',
+                              fontWeight: 500,
+                            }}>
+                              {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredExperiences.length)} / {filteredExperiences.length} tour
+                            </span>
                           </div>
-                        </div>
-
-                        <div style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
-                          Xem chi tiết <ArrowRight size={12} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  </Link>
-                ))}
-              </div>
-
-              {/* ── Pagination ── */}
-              {experiences.length > ITEMS_PER_PAGE && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  marginTop: '3rem',
-                  flexWrap: 'wrap',
-                }}>
-                  {/* Nút Trước */}
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => {
-                      setCurrentPage(p => p - 1)
-                      document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      padding: '0.6rem 1.1rem',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(14,165,233,0.25)',
-                      background: currentPage === 1 ? '#f8fafc' : '#ffffff',
-                      color: currentPage === 1 ? '#94a3b8' : 'var(--color-primary)',
-                      fontWeight: 600, fontSize: '0.85rem',
-                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: currentPage === 1 ? 'none' : '0 2px 8px rgba(14,165,233,0.1)',
-                    }}
-                  >
-                    ← Trước
-                  </button>
-
-                  {/* Số trang */}
-                  {Array.from({ length: Math.ceil(experiences.length / ITEMS_PER_PAGE) }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => {
-                        setCurrentPage(page)
-                        document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      }}
-                      style={{
-                        width: '40px', height: '40px',
-                        borderRadius: '10px',
-                        border: page === currentPage ? 'none' : '1px solid rgba(14,165,233,0.2)',
-                        background: page === currentPage
-                          ? 'var(--gradient-primary)'
-                          : '#ffffff',
-                        color: page === currentPage ? '#ffffff' : 'var(--color-text)',
-                        fontWeight: 700, fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: page === currentPage
-                          ? '0 4px 14px rgba(2,132,199,0.35)'
-                          : '0 2px 6px rgba(14,165,233,0.06)',
-                      }}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
-                  {/* Nút Sau */}
-                  <button
-                    disabled={currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE)}
-                    onClick={() => {
-                      setCurrentPage(p => p + 1)
-                      document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      padding: '0.6rem 1.1rem',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(14,165,233,0.25)',
-                      background: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? '#f8fafc' : '#ffffff',
-                      color: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? '#94a3b8' : 'var(--color-primary)',
-                      fontWeight: 600, fontSize: '0.85rem',
-                      cursor: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? 'none' : '0 2px 8px rgba(14,165,233,0.1)',
-                    }}
-                  >
-                    Sau →
-                  </button>
-
-                  {/* Thông tin tổng */}
-                  <span style={{
-                    marginLeft: '0.5rem',
-                    fontSize: '0.8rem',
-                    color: 'var(--color-text-muted)',
-                    fontWeight: 500,
-                  }}>
-                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, experiences.length)} / {experiences.length} tour
-                  </span>
-                </div>
-              )}
+                        )}
+                      </>
+                    )}
+                  </>
+                )
+              })()}
             </>
           )}
         </div>
