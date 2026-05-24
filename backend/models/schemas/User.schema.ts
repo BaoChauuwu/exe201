@@ -30,6 +30,12 @@ export interface IUser {
     username?: string
     avatar?: string
     cover_photo?: string
+    walletBalance?: number
+    refundPaymentMethod?: {
+        bankCode: string
+        accountNumber: string
+        accountName: string
+    }
 }
 
 export const userSchema = new Schema<IUser>(
@@ -55,7 +61,13 @@ export const userSchema = new Schema<IUser>(
         website: { type: String, default: '' },
         username: { type: String, default: '' },
         avatar: { type: String, default: '' },
-        cover_photo: { type: String, default: '' }
+        cover_photo: { type: String, default: '' },
+        walletBalance: { type: Number, default: 0 },
+        refundPaymentMethod: {
+            bankCode: { type: String, default: '' },
+            accountNumber: { type: String, default: '' },
+            accountName: { type: String, default: '' }
+        }
     },
     {
         timestamps: {

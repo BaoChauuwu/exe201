@@ -7,6 +7,7 @@ import IdentityVerification from '../models/IdentityVerification.model'
 import PayoutRequest from '../models/PayoutRequest.model'
 import BuddyProfile from '../models/BuddyProfile.model'
 import ExperienceModel from '../models/Experience.model'
+import UserModel from '../models/User.model'
 
 // eKYC Management
 export const getPendingEkyc = async (req: Request, res: Response) => {
@@ -73,11 +74,17 @@ export const approvePayout = async (req: Request, res: Response) => {
         await payout.save({ session })
 
         if (status === 'rejected') {
-            // Refund the buddy's wallet
+            // Refund the buddy's wallet or tourist's wallet
             const profile = await BuddyProfile.findOne({ userId: payout.buddyId }).session(session)
             if (profile) {
                 profile.walletBalance += payout.amount
                 await profile.save({ session })
+            } else {
+                const user = await UserModel.findById(payout.buddyId).session(session)
+                if (user) {
+                    user.walletBalance = (user.walletBalance || 0) + payout.amount
+                    await user.save({ session })
+                }
             }
         }
 
