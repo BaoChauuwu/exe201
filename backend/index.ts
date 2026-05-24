@@ -12,15 +12,18 @@ import adminRouter from './routes/admin.routes'
 import experiencesRouter from './routes/experiences.routes'
 import tripRequestsRouter from './routes/tripRequests.routes'
 import biddingsRouter from './routes/biddings.routes'
+import categoriesRouter from './routes/categories.routes'
 import databaseService from './services/database.services'
+import categoriesService from './services/categories.services'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
 import './middlewares/passport.middleware'
 import passport from 'passport'
 
 const app = express()
 const port = 3000
-databaseService.connect().then(() => {
+databaseService.connect().then(async () => {
   console.log('Connected to database')
+  await categoriesService.seedCategories()
 }).catch((err) => {
   console.error('Failed to connect to database', err)
   process.exit(1)
@@ -46,6 +49,7 @@ app.use('/admin', adminRouter)
 app.use('/experiences', experiencesRouter)
 app.use('/trip-requests', tripRequestsRouter)
 app.use('/biddings', biddingsRouter)
+app.use('/categories', categoriesRouter)
 
 app.use(defaultErrorHandler)
 
