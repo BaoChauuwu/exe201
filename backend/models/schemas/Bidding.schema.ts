@@ -29,4 +29,5 @@ const biddingSchema = new Schema<IBidding>(
   }
 )
 
-export default mongoose.models.Biddings || mongoose.model<IBidding>('Biddings', biddingSchema)
+const BiddingModel = mongoose.models.Biddings || mongoose.model<IBidding>('Biddings', biddingSchema)
+export default BiddingModel as mongoose.Model<IBidding>

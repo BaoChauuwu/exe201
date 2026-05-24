@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import {
   createBidding,
-  acceptBidding
+  acceptBidding,
+  getMyBiddings
 } from '../controllers/biddings.controllers'
 import { accessTokenValidator, requireRole } from '../middlewares/users.middlewares'
 import { wrapRequestHandler } from '../utils/handlers'
@@ -14,6 +15,14 @@ biddingsRouter.post(
   accessTokenValidator,
   requireRole(['buddy']),
   wrapRequestHandler(createBidding)
+)
+
+// Buddy: Get my biddings
+biddingsRouter.get(
+  '/my',
+  accessTokenValidator,
+  requireRole(['buddy']),
+  wrapRequestHandler(getMyBiddings)
 )
 
 // Tourist: Accept a bidding

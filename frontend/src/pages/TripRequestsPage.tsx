@@ -9,6 +9,7 @@ import { MapPin, Calendar, Clock, DollarSign, Search, User } from 'lucide-react'
 export const TripRequestsPage = () => {
   const { accessToken, user } = useAuthStore();
   const [requests, setRequests] = useState<ITripRequest[]>([]);
+  const [myBiddings, setMyBiddings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<ITripRequest | null>(null);
   
@@ -20,8 +21,12 @@ export const TripRequestsPage = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await tripRequestApi.getOpenRequests({ headers: { Authorization: `Bearer ${accessToken}` } });
-      setRequests(res.data.result);
+      const [reqRes, bidRes] = await Promise.all([
+        tripRequestApi.getOpenRequests({ headers: { Authorization: `Bearer ${accessToken}` } }),
+        biddingApi.getMyBiddings({ headers: { Authorization: `Bearer ${accessToken}` } })
+      ]);
+      setRequests(reqRes.data.result);
+      setMyBiddings(bidRes.data.result);
     } catch (err) {
       console.error(err);
     } finally {
@@ -128,14 +133,26 @@ export const TripRequestsPage = () => {
                   {req.description}
                 </p>
 
-                <button onClick={() => {
-                  setSelectedRequest(req);
-                  setOfferPrice(req.budget); // Default to their budget
-                }} style={{ width: '100%', padding: '0.875rem', background: 'var(--color-bg)', border: '1px solid var(--color-primary)', color: 'var(--color-primary-dark)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-bg)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-primary-dark)'; }}>
-                  Nhận Kèo (Bidding)
-                </button>
+                {(() => {
+                  const hasBidded = myBiddings.some(b => String(b.tripRequestId) === String(req._id));
+                  if (hasBidded) {
+                    return (
+                      <button disabled style={{ width: '100%', padding: '0.875rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#059669', borderRadius: '12px', fontWeight: 700, cursor: 'not-allowed' }}>
+                        Đã Gửi Đề Xuất
+                      </button>
+                    );
+                  }
+                  return (
+                    <button onClick={() => {
+                      setSelectedRequest(req);
+                      setOfferPrice(req.budget); // Default to their budget
+                    }} style={{ width: '100%', padding: '0.875rem', background: 'var(--color-bg)', border: '1px solid var(--color-primary)', color: 'var(--color-primary-dark)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-bg)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-primary-dark)'; }}>
+                      Nhận Kèo (Bidding)
+                    </button>
+                  );
+                })()}
               </div>
             ))}
           </div>

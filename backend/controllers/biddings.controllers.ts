@@ -19,14 +19,14 @@ export const createBidding = async (req: Request, res: Response) => {
 
     // Check if buddy already bid
     const existingBidding = await BiddingModel.findOne({
-      tripRequestId: new ObjectId(tripRequestId),
-      buddyId: new ObjectId(buddyId)
+      tripRequestId: new ObjectId(tripRequestId as string),
+      buddyId: new ObjectId(buddyId as string)
     })
     if (existingBidding) return res.status(httpStatus.BAD_REQUEST).json({ message: 'You have already bid on this request' })
 
     const newBidding = new BiddingModel({
-      tripRequestId: new ObjectId(tripRequestId),
-      buddyId: new ObjectId(buddyId),
+      tripRequestId: new ObjectId(tripRequestId as string),
+      buddyId: new ObjectId(buddyId as string),
       offerPrice,
       proposal,
       status: 'pending'
@@ -86,6 +86,22 @@ export const acceptBidding = async (req: Request, res: Response) => {
     return res.status(httpStatus.OK).json({
       message: 'Bidding accepted successfully',
       result: bidding
+    })
+  } catch (error: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server error', error: error.message })
+  }
+}
+
+// Buddy: Get my biddings
+export const getMyBiddings = async (req: Request, res: Response) => {
+  try {
+    const buddyId = req.decoded_authorization?.user_id
+    if (!buddyId) return res.status(httpStatus.UNAUTHORIZED).json({ message: 'Unauthorized' })
+
+    const biddings = await BiddingModel.find({ buddyId: new ObjectId(buddyId as string) })
+    return res.status(httpStatus.OK).json({
+      message: 'My biddings fetched successfully',
+      result: biddings
     })
   } catch (error: any) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server error', error: error.message })

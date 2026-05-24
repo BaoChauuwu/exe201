@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import {
   Map, Users, TrendingUp, Star, Compass,
-  ArrowRight, Heart, Bell, Calendar, Award, Wallet, Plus
+  ArrowRight, Heart, Bell, Calendar, Award, Wallet, Plus, Navigation
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -72,16 +72,21 @@ export default function DashboardPage() {
               {isBuddy ? 'Hôm nay bạn sẵn sàng đón khách chứ?' : 'Bạn muốn khám phá thành phố nào hôm nay?'}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button style={{ background: '#ffffff', border: '1px solid rgba(14, 165, 233, 0.2)', borderRadius: '10px', padding: '0.6rem 1.2rem', color: 'var(--color-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem' }}>
-              <Bell size={16} /> Thông báo
-            </button>
-            <Link to='/profile'>
-              <button style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.6rem 1.2rem', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)' }}>
-                Hồ sơ của tôi
-              </button>
-            </Link>
-          </div>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                  <button id='dashboard-plan-trip' style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', padding: '0.75rem 1.5rem', color: '#a5b4fc', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                    <Compass size={16} /> Thuê Local Buddy ngay
+                  </button>
+                  <Link to='/live-tracking/demo-booking-123' style={{ textDecoration: 'none' }}>
+                    <button style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '12px', padding: '0.75rem 1.5rem', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', boxShadow: '0 8px 20px rgba(16,185,129,0.3)' }}>
+                      <Navigation size={16} /> Test Live Tracking
+                    </button>
+                  </Link>
+                  <Link to='/tourist/live/demo-booking-123' style={{ textDecoration: 'none' }}>
+                    <button style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '12px', padding: '0.75rem 1.5rem', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', boxShadow: '0 8px 20px rgba(59,130,246,0.3)' }}>
+                      <Map size={16} /> Tourist Map
+                    </button>
+                  </Link>
+                </div>
         </div>
       </div>
 
