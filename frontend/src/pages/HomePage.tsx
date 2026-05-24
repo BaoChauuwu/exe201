@@ -53,6 +53,8 @@ export default function HomePage() {
   const [experiences, setExperiences] = useState<IExperience[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 6
 
   useEffect(() => {
     experienceApi.getAllPublic()
@@ -269,79 +271,179 @@ export default function HomePage() {
               <p>Hiện tại chưa có tour trải nghiệm nào được duyệt. Quay lại sau nhé!</p>
             </div>
           ) : (
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
-              {experiences.slice(0, 6).map(exp => (
-                <div
-                  key={exp._id}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid rgba(14, 165, 233, 0.12)',
-                    borderRadius: '24px',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 10px 30px rgba(14, 165, 233, 0.04)',
-                    maxWidth: '360px',
-                    width: '100%',
-                    margin: '0 auto',
-                  }}
-                  onMouseEnter={e => {
-                    const card = e.currentTarget as HTMLElement
-                    card.style.transform = 'translateY(-6px)'
-                    card.style.borderColor = 'rgba(14, 165, 233, 0.35)'
-                    card.style.boxShadow = '0 15px 35px rgba(14, 165, 233, 0.08)'
-                  }}
-                  onMouseLeave={e => {
-                    const card = e.currentTarget as HTMLElement
-                    card.style.transform = 'translateY(0)'
-                    card.style.borderColor = 'rgba(14, 165, 233, 0.12)'
-                    card.style.boxShadow = '0 10px 30px rgba(14, 165, 233, 0.04)'
-                  }}
-                >
-                  <div style={{ height: '180px', width: '100%', position: 'relative', overflow: 'hidden', background: '#f1f5f9' }}>
-                    {exp.images && exp.images.length > 0 ? (
-                      <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)' }}>🗺️ Chưa có ảnh</div>
-                    )}
-                    <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: 'rgba(15, 12, 41, 0.75)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
-                      {getCategoryLabel(exp.category)}
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                      <MapPin size={12} style={{ color: 'var(--color-primary)' }} />
-                      <span>{exp.city || 'Đà Nẵng'}</span>
-                      <span style={{ margin: '0 4px', color: 'var(--color-text-faint)' }}>•</span>
-                      <Clock size={12} style={{ color: 'var(--color-primary)' }} />
-                      <span>{exp.minHours}h tối thiểu</span>
+            <>
+              {/* ── Tour grid ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
+                {experiences
+                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                  .map(exp => (
+                  <div
+                    key={exp._id}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid rgba(14, 165, 233, 0.12)',
+                      borderRadius: '24px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 10px 30px rgba(14, 165, 233, 0.04)',
+                      maxWidth: '360px',
+                      width: '100%',
+                      margin: '0 auto',
+                    }}
+                    onMouseEnter={e => {
+                      const card = e.currentTarget as HTMLElement
+                      card.style.transform = 'translateY(-6px)'
+                      card.style.borderColor = 'rgba(14, 165, 233, 0.35)'
+                      card.style.boxShadow = '0 15px 35px rgba(14, 165, 233, 0.08)'
+                    }}
+                    onMouseLeave={e => {
+                      const card = e.currentTarget as HTMLElement
+                      card.style.transform = 'translateY(0)'
+                      card.style.borderColor = 'rgba(14, 165, 233, 0.12)'
+                      card.style.boxShadow = '0 10px 30px rgba(14, 165, 233, 0.04)'
+                    }}
+                  >
+                    <div style={{ height: '180px', width: '100%', position: 'relative', overflow: 'hidden', background: '#f1f5f9' }}>
+                      {exp.images && exp.images.length > 0 ? (
+                        <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)' }}>🗺️ Chưa có ảnh</div>
+                      )}
+                      <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: 'rgba(15, 12, 41, 0.75)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
+                        {getCategoryLabel(exp.category)}
+                      </div>
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem', lineHeight: 1.4, color: 'var(--color-text)' }}>{exp.title}</h3>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0 0 1.25rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-                      <div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chi phí</div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>{exp.price?.toLocaleString()}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{exp.currency || 'VND'}/h</span>
-                        </div>
+                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                        <MapPin size={12} style={{ color: 'var(--color-primary)' }} />
+                        <span>{exp.city || 'Đà Nẵng'}</span>
+                        <span style={{ margin: '0 4px', color: 'var(--color-text-faint)' }}>•</span>
+                        <Clock size={12} style={{ color: 'var(--color-primary)' }} />
+                        <span>{exp.minHours}h tối thiểu</span>
                       </div>
 
-                      <Link to={isAuthenticated ? `/buddies/${exp.buddyId}` : '/register'} style={{ textDecoration: 'none' }}>
-                        <button style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
-                          Khám phá Buddy <ArrowRight size={12} />
-                        </button>
-                      </Link>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem', lineHeight: 1.4, color: 'var(--color-text)' }}>{exp.title}</h3>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0 0 1.25rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chi phí</div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>{exp.price?.toLocaleString()}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{exp.currency || 'VND'}/h</span>
+                          </div>
+                        </div>
+
+                        <Link to={isAuthenticated ? `/buddies/${exp.buddyId}` : '/register'} style={{ textDecoration: 'none' }}>
+                          <button style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
+                            Khám phá Buddy <ArrowRight size={12} />
+                          </button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* ── Pagination ── */}
+              {experiences.length > ITEMS_PER_PAGE && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  marginTop: '3rem',
+                  flexWrap: 'wrap',
+                }}>
+                  {/* Nút Trước */}
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => {
+                      setCurrentPage(p => p - 1)
+                      document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '0.6rem 1.1rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(14,165,233,0.25)',
+                      background: currentPage === 1 ? '#f8fafc' : '#ffffff',
+                      color: currentPage === 1 ? '#94a3b8' : 'var(--color-primary)',
+                      fontWeight: 600, fontSize: '0.85rem',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: currentPage === 1 ? 'none' : '0 2px 8px rgba(14,165,233,0.1)',
+                    }}
+                  >
+                    ← Trước
+                  </button>
+
+                  {/* Số trang */}
+                  {Array.from({ length: Math.ceil(experiences.length / ITEMS_PER_PAGE) }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        setCurrentPage(page)
+                        document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }}
+                      style={{
+                        width: '40px', height: '40px',
+                        borderRadius: '10px',
+                        border: page === currentPage ? 'none' : '1px solid rgba(14,165,233,0.2)',
+                        background: page === currentPage
+                          ? 'var(--gradient-primary)'
+                          : '#ffffff',
+                        color: page === currentPage ? '#ffffff' : 'var(--color-text)',
+                        fontWeight: 700, fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: page === currentPage
+                          ? '0 4px 14px rgba(2,132,199,0.35)'
+                          : '0 2px 6px rgba(14,165,233,0.06)',
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  {/* Nút Sau */}
+                  <button
+                    disabled={currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE)}
+                    onClick={() => {
+                      setCurrentPage(p => p + 1)
+                      document.getElementById('experiences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '0.6rem 1.1rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(14,165,233,0.25)',
+                      background: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? '#f8fafc' : '#ffffff',
+                      color: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? '#94a3b8' : 'var(--color-primary)',
+                      fontWeight: 600, fontSize: '0.85rem',
+                      cursor: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: currentPage === Math.ceil(experiences.length / ITEMS_PER_PAGE) ? 'none' : '0 2px 8px rgba(14,165,233,0.1)',
+                    }}
+                  >
+                    Sau →
+                  </button>
+
+                  {/* Thông tin tổng */}
+                  <span style={{
+                    marginLeft: '0.5rem',
+                    fontSize: '0.8rem',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: 500,
+                  }}>
+                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, experiences.length)} / {experiences.length} tour
+                  </span>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
