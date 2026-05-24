@@ -6,7 +6,7 @@ import { authApi } from '../../api/auth.api'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const { isAuthenticated, logout, refreshToken } = useAuthStore()
+  const { isAuthenticated, user, logout, refreshToken } = useAuthStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -187,6 +187,24 @@ export default function Navbar() {
                     Tin nhắn
                   </Link>
                 </li>
+                {user?.role === 'tourist' && (
+                  <li>
+                    <Link to='/my-requests' style={linkStyle}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
+                      Yêu cầu chuyến đi
+                    </Link>
+                  </li>
+                )}
+                {user?.role === 'buddy' && (
+                  <li>
+                    <Link to='/trip-requests/open' style={linkStyle}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
+                      Bảng yêu cầu
+                    </Link>
+                  </li>
+                )}
               </>
             )}
           </ul>

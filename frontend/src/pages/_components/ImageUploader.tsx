@@ -48,12 +48,12 @@ export const ImageUploader = ({ value, onChange, maxFiles = 5, error }: ImageUpl
   }
 
   const dropZoneStyle: React.CSSProperties = {
-    border: `2px dashed ${dragging ? '#8b5cf6' : error ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)'}`,
+    border: `2px dashed ${dragging ? '#4f46e5' : error ? 'rgba(239,68,68,0.5)' : 'rgba(14, 165, 233, 0.2)'}`,
     borderRadius: '16px',
     padding: '2rem 1rem',
     textAlign: 'center',
     cursor: value.length >= maxFiles ? 'not-allowed' : 'pointer',
-    background: dragging ? 'rgba(139,92,246,0.08)' : 'rgba(255,255,255,0.03)',
+    background: dragging ? 'rgba(79,70,229,0.05)' : '#f8fafc',
     transition: 'all 0.2s',
     opacity: value.length >= maxFiles ? 0.5 : 1,
   }
@@ -69,8 +69,8 @@ export const ImageUploader = ({ value, onChange, maxFiles = 5, error }: ImageUpl
     borderRadius: '12px',
     overflow: 'hidden',
     aspectRatio: '1',
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: '#f8fafc',
+    border: '1px solid rgba(14, 165, 233, 0.15)',
   }
 
   return (
@@ -151,27 +151,27 @@ export const ImageUploader = ({ value, onChange, maxFiles = 5, error }: ImageUpl
           />
           <div style={{
             width: '48px', height: '48px', borderRadius: '14px',
-            background: dragging ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.06)',
+            background: dragging ? 'rgba(79,70,229,0.1)' : 'rgba(14, 165, 233, 0.05)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 0.875rem', transition: 'all 0.2s',
           }}>
             {dragging ? (
-              <UploadCloud size={22} style={{ color: '#a78bfa' }} />
+              <UploadCloud size={22} style={{ color: '#4f46e5' }} />
             ) : (
-              <Image size={22} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              <Image size={22} style={{ color: '#94a3b8' }} />
             )}
           </div>
-          <p style={{ color: dragging ? '#c4b5fd' : 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: '0.85rem', margin: '0 0 0.35rem' }}>
+          <p style={{ color: dragging ? '#4f46e5' : '#475569', fontWeight: 600, fontSize: '0.85rem', margin: '0 0 0.35rem' }}>
             {dragging ? 'Thả ảnh vào đây' : 'Kéo thả hoặc click để chọn ảnh'}
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem', margin: 0 }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.72rem', margin: 0 }}>
             JPEG, PNG, WebP — tối đa 5MB/ảnh · còn {maxFiles - value.length}/{maxFiles} slot
           </p>
         </div>
       )}
 
       {error && (
-        <p style={{ color: '#fca5a5', fontSize: '0.8rem', margin: 0 }}>⚠️ {error}</p>
+        <p style={{ color: '#ef4444', fontSize: '0.8rem', margin: 0 }}>⚠️ {error}</p>
       )}
     </div>
   )

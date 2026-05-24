@@ -5,7 +5,9 @@ import { z } from 'zod'
 import { MapPin, DollarSign, Users, Clock, Tag, FileText, AlignLeft, Loader2 } from 'lucide-react'
 import { ImageUploader } from './ImageUploader'
 import { IncludedItemsList } from './IncludedItemsList'
+import { LocationPicker } from './LocationPicker'
 import type { ExperienceFormValues } from '../../api/experience.api'
+import toast from 'react-hot-toast'
 
 // ─── Zod Schema ────────────────────────────────────────────────────────────────
 
@@ -14,10 +16,6 @@ const experienceSchema = z.object({
   description: z.string().min(10, 'Tối thiểu 10 ký tự').max(2000, 'Tối đa 2000 ký tự'),
   category: z.enum(['food', 'adventure', 'culture', 'nightlife', 'other']),
   city: z.string().optional(),
-  price: z
-    .number({ message: 'Nhập số hợp lệ' })
-    .min(0, 'Giá phải là số dương'),
-  currency: z.string().optional(),
   minHours: z.number({ message: 'Nhập số hợp lệ' }).min(0.5, 'Tối thiểu 0.5 giờ'),
   maxGroupSize: z.number({ message: 'Nhập số hợp lệ' }).min(1, 'Tối thiểu 1 người'),
   includedItems: z.array(z.string().min(1)).min(1, 'Thêm ít nhất 1 mục bao gồm'),
@@ -32,12 +30,12 @@ const experienceSchema = z.object({
   meetingPoint: z.object({
     longitude: z
       .number({ message: 'Nhập số hợp lệ' })
-      .min(107.9, 'Kinh độ phải trong khoảng Đà Nẵng (107.9–108.3)')
-      .max(108.3, 'Kinh độ phải trong khoảng Đà Nẵng (107.9–108.3)'),
+      .min(102.0, 'Kinh độ phải trong khu vực Việt Nam (102.0–110.0)')
+      .max(110.0, 'Kinh độ phải trong khu vực Việt Nam (102.0–110.0)'),
     latitude: z
       .number({ message: 'Nhập số hợp lệ' })
-      .min(15.9, 'Vĩ độ phải trong khoảng Đà Nẵng (15.9–16.3)')
-      .max(16.3, 'Vĩ độ phải trong khoảng Đà Nẵng (15.9–16.3)'),
+      .min(8.0, 'Vĩ độ phải trong khu vực Việt Nam (8.0–24.0)')
+      .max(24.0, 'Vĩ độ phải trong khu vực Việt Nam (8.0–24.0)'),
   }),
 })
 
@@ -55,8 +53,9 @@ interface ExperienceFormProps {
 // ─── Style helpers ──────────────────────────────────────────────────────────────
 
 const sectionStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: '#ffffff',
+  border: '1px solid rgba(14, 165, 233, 0.15)',
+  boxShadow: '0 4px 20px rgba(14,165,233,0.05)',
   borderRadius: '20px',
   padding: '1.75rem',
   marginBottom: '1.25rem',
@@ -64,7 +63,7 @@ const sectionStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
-  color: 'rgba(255,255,255,0.5)',
+  color: '#475569',
   fontSize: '0.72rem',
   fontWeight: 700,
   textTransform: 'uppercase' as const,
@@ -75,11 +74,11 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: '100%',
   boxSizing: 'border-box' as const,
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: '#f8fafc',
+  border: '1px solid rgba(14, 165, 233, 0.2)',
   borderRadius: '12px',
   padding: '0.875rem 0.875rem 0.875rem 2.6rem',
-  color: 'white',
+  color: '#0f172a',
   fontSize: '0.9rem',
   outline: 'none',
   fontFamily: 'inherit',
@@ -95,12 +94,12 @@ const iconWrap: React.CSSProperties = {
   left: '0.875rem',
   top: '50%',
   transform: 'translateY(-50%)',
-  color: 'rgba(255,255,255,0.3)',
+  color: '#94a3b8',
   pointerEvents: 'none' as const,
 }
 
 const errorText: React.CSSProperties = {
-  color: '#fca5a5',
+  color: '#ef4444',
   fontSize: '0.78rem',
   marginTop: '0.35rem',
 }
@@ -126,7 +125,7 @@ const sectionTitleStyle: React.CSSProperties = {
   margin: 0,
   fontSize: '1rem',
   fontWeight: 700,
-  color: 'rgba(255,255,255,0.85)',
+  color: '#0f172a',
 }
 
 // ─── Category options ───────────────────────────────────────────────────────────
@@ -151,6 +150,8 @@ export const ExperienceForm = ({
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(experienceSchema),
@@ -159,8 +160,6 @@ export const ExperienceForm = ({
       description: defaultValues?.description ?? '',
       category: defaultValues?.category ?? 'other',
       city: defaultValues?.city ?? 'Da Nang',
-      price: defaultValues?.price ?? 0,
-      currency: defaultValues?.currency ?? 'VND',
       minHours: defaultValues?.minHours ?? 1,
       maxGroupSize: defaultValues?.maxGroupSize ?? 1,
       includedItems: defaultValues?.includedItems ?? [],
@@ -173,8 +172,18 @@ export const ExperienceForm = ({
     await onSubmit(data as ExperienceFormValues)
   }
 
+  const onInvalid = (errors: any) => {
+    console.log('Form validation errors:', errors)
+    const errorMessages = Object.values(errors).map((err: any) => err.message || err?.longitude?.message || err?.latitude?.message || 'Có lỗi').filter(Boolean)
+    if (errorMessages.length > 0) {
+      toast.error(`Sửa các lỗi sau: ${errorMessages[0]}`, { duration: 4000 })
+    } else {
+      toast.error('Vui lòng kiểm tra lại tất cả các thông tin bắt buộc.')
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)}>
+    <form onSubmit={handleSubmit(handleFormSubmit, onInvalid)}>
       {/* ── THÔNG TIN CƠ BẢN ── */}
       <div style={sectionStyle}>
         <div style={sectionHeaderStyle}>
@@ -209,11 +218,11 @@ export const ExperienceForm = ({
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
-                background: 'rgba(255,255,255,0.06)',
-                border: `1px solid ${errors.description ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                background: '#f8fafc',
+                border: `1px solid ${errors.description ? 'rgba(239,68,68,0.5)' : 'rgba(14, 165, 233, 0.2)'}`,
                 borderRadius: '12px',
                 padding: '0.875rem',
-                color: 'white',
+                color: '#0f172a',
                 fontSize: '0.9rem',
                 outline: 'none',
                 fontFamily: 'inherit',
@@ -242,9 +251,9 @@ export const ExperienceForm = ({
                           alignItems: 'center',
                           padding: '0.5rem 1rem',
                           borderRadius: '10px',
-                          border: `1px solid ${field.value === opt.value ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.1)'}`,
-                          background: field.value === opt.value ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.04)',
-                          color: field.value === opt.value ? '#c4b5fd' : 'rgba(255,255,255,0.5)',
+                          border: `1px solid ${field.value === opt.value ? 'rgba(79,70,229,0.4)' : 'rgba(14, 165, 233, 0.2)'}`,
+                          background: field.value === opt.value ? 'rgba(79,70,229,0.08)' : '#f8fafc',
+                          color: field.value === opt.value ? '#4f46e5' : '#64748b',
                           fontSize: '0.85rem',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -274,20 +283,23 @@ export const ExperienceForm = ({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          {/* Price */}
+          {/* Calculated Price Notice */}
           <div>
-            <label style={labelStyle}>Giá (VND) *</label>
-            <div style={{ position: 'relative' }}>
-              <DollarSign size={15} style={iconWrap} />
-              <input
-                {...register('price', { valueAsNumber: true })}
-                type='number'
-                min={0}
-                placeholder='150000'
-                style={errors.price ? inputErrorStyle : inputStyle}
-              />
+            <label style={labelStyle}>Giá Tour (Tự động)</label>
+            <div style={{
+              background: 'rgba(16,185,129,0.07)',
+              border: '1px solid rgba(16,185,129,0.15)',
+              borderRadius: '12px',
+              padding: '0.875rem 1rem',
+              color: '#34d399',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <DollarSign size={16} />
+              Giá = Giá theo giờ của bạn × Thời gian tối thiểu
             </div>
-            {errors.price && <p style={errorText}>{errors.price.message}</p>}
           </div>
 
           {/* Max group size */}
@@ -346,6 +358,17 @@ export const ExperienceForm = ({
           </div>
           <h2 style={sectionTitleStyle}>Điểm hẹn gặp</h2>
         </div>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label style={labelStyle}>Nhấn vào bản đồ để chọn điểm hẹn *</label>
+          <LocationPicker
+            latitude={watch('meetingPoint.latitude') || 16.0544}
+            longitude={watch('meetingPoint.longitude') || 108.2022}
+            onChange={(lng, lat) => {
+              setValue('meetingPoint.longitude', Number(lng.toFixed(6)), { shouldValidate: true })
+              setValue('meetingPoint.latitude', Number(lat.toFixed(6)), { shouldValidate: true })
+            }}
+          />
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
@@ -355,7 +378,7 @@ export const ExperienceForm = ({
               <input
                 {...register('meetingPoint.longitude', { valueAsNumber: true })}
                 type='number'
-                step='0.0001'
+                step='any'
                 placeholder='108.2022'
                 style={errors.meetingPoint?.longitude ? inputErrorStyle : inputStyle}
               />
@@ -372,7 +395,7 @@ export const ExperienceForm = ({
               <input
                 {...register('meetingPoint.latitude', { valueAsNumber: true })}
                 type='number'
-                step='0.0001'
+                step='any'
                 placeholder='16.0544'
                 style={errors.meetingPoint?.latitude ? inputErrorStyle : inputStyle}
               />
@@ -391,7 +414,7 @@ export const ExperienceForm = ({
           padding: '0.75rem 1rem',
         }}>
           <p style={{ color: 'rgba(251,191,36,0.8)', fontSize: '0.75rem', margin: 0 }}>
-            📍 Toạ độ phải nằm trong khu vực Đà Nẵng: Kinh độ 107.9–108.3 · Vĩ độ 15.9–16.3
+            📍 Toạ độ phải nằm trong khu vực Việt Nam: Kinh độ 102.0–110.0 · Vĩ độ 8.0–24.0
           </p>
         </div>
       </div>
@@ -426,7 +449,7 @@ export const ExperienceForm = ({
           </div>
           <div>
             <h2 style={sectionTitleStyle}>Ảnh tour *</h2>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+            <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem' }}>
               Tối đa 5 ảnh · JPEG, PNG, WebP · Mỗi ảnh ≤ 5MB
             </p>
           </div>

@@ -24,6 +24,7 @@ interface AvailabilitySlot {
 export const BuddyProfilePage = () => {
     const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
     const [languages, setLanguages] = useState('');
+    const [hourlyRate, setHourlyRate] = useState<number>(0);
     const [bankCode, setBankCode] = useState('VCB');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
@@ -49,6 +50,7 @@ export const BuddyProfilePage = () => {
                 }
                 setSlots(parsedSlots);
                 setLanguages(d.languages?.join(', ') || '');
+                setHourlyRate(d.hourlyRate || 0);
                 setBankCode(d.payoutMethod?.bankCode || 'VCB');
                 setAccountNumber(d.payoutMethod?.accountNumber || '');
                 setAccountName(d.payoutMethod?.accountName || '');
@@ -87,6 +89,7 @@ export const BuddyProfilePage = () => {
             await axios.post('http://localhost:3000/buddy-profile/update', {
                 availability: availabilityArray,
                 languages: languages.split(',').map(s => s.trim()).filter(Boolean),
+                hourlyRate: hourlyRate,
                 bankCode, accountNumber, accountName
             }, { headers: { Authorization: `Bearer ${accessToken}` } });
             toast.success('Cập nhật thành công!');
@@ -133,7 +136,7 @@ export const BuddyProfilePage = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f0f9ff 0%, #f8fafc 40%, #ffffff 100%)', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+        <div style={{ minHeight: '100vh', background: 'var(--gradient-hero)', fontFamily: "'Inter', -apple-system, sans-serif" }}>
             <Navbar />
 
             <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
@@ -294,12 +297,22 @@ export const BuddyProfilePage = () => {
                                 </button>
                             </div>
 
-                            <div>
-                                <label style={labelStyle}>Ngôn ngữ</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Globe2 size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                    <input type='text' value={languages} onChange={e => setLanguages(e.target.value)}
-                                        placeholder='vd: Tiếng Việt, English, 한국어' style={inputStyle} className='buddy-input' />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={labelStyle}>Ngôn ngữ</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <Globe2 size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                        <input type='text' value={languages} onChange={e => setLanguages(e.target.value)}
+                                            placeholder='vd: Tiếng Việt, English' style={inputStyle} className='buddy-input' />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Giá thuê mỗi giờ (VND)</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>₫</span>
+                                        <input type='number' value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))}
+                                            placeholder='150000' style={{ ...inputStyle, paddingLeft: '2.5rem' }} className='buddy-input' min="0" step="10000" />
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -52,11 +52,6 @@ export const createExperienceValidator = validate(
         isString: true,
         trim: true
       },
-      price: {
-        notEmpty: { errorMessage: 'Giá không được để trống' },
-        isFloat: { options: { min: 0 }, errorMessage: 'Giá phải là số dương' },
-        toFloat: true
-      },
       currency: {
         optional: true,
         isString: true,
@@ -75,16 +70,16 @@ export const createExperienceValidator = validate(
       meetingPointLng: {
         notEmpty: { errorMessage: 'Kinh độ không được để trống' },
         isFloat: {
-          options: { min: 107.9, max: 108.3 },
-          errorMessage: 'Kinh độ phải trong khoảng 107.9–108.3 (Đà Nẵng)'
+          options: { min: 102.0, max: 110.0 },
+          errorMessage: 'Kinh độ phải trong khu vực Việt Nam'
         },
         toFloat: true
       },
       meetingPointLat: {
         notEmpty: { errorMessage: 'Vĩ độ không được để trống' },
         isFloat: {
-          options: { min: 15.9, max: 16.3 },
-          errorMessage: 'Vĩ độ phải trong khoảng 15.9–16.3 (Đà Nẵng)'
+          options: { min: 8.0, max: 24.0 },
+          errorMessage: 'Vĩ độ phải trong khu vực Việt Nam'
         },
         toFloat: true
       }
@@ -120,11 +115,6 @@ export const updateExperienceValidator = validate(
         isString: true,
         trim: true
       },
-      price: {
-        optional: true,
-        isFloat: { options: { min: 0 }, errorMessage: 'Giá phải là số dương' },
-        toFloat: true
-      },
       currency: {
         optional: true,
         isString: true,
@@ -143,16 +133,16 @@ export const updateExperienceValidator = validate(
       meetingPointLng: {
         optional: true,
         isFloat: {
-          options: { min: 107.9, max: 108.3 },
-          errorMessage: 'Kinh độ phải trong khoảng 107.9–108.3 (Đà Nẵng)'
+          options: { min: 102.0, max: 110.0 },
+          errorMessage: 'Kinh độ phải trong khu vực Việt Nam'
         },
         toFloat: true
       },
       meetingPointLat: {
         optional: true,
         isFloat: {
-          options: { min: 15.9, max: 16.3 },
-          errorMessage: 'Vĩ độ phải trong khoảng 15.9–16.3 (Đà Nẵng)'
+          options: { min: 8.0, max: 24.0 },
+          errorMessage: 'Vĩ độ phải trong khu vực Việt Nam'
         },
         toFloat: true
       },

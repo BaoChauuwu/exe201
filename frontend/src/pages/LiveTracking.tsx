@@ -4,6 +4,7 @@ import Navbar from '../components/layout/Navbar';
 import { Navigation, MapPin, Activity, ShieldAlert } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 export const LiveTracking = () => {
     const [status, setStatus] = useState('Đang khởi tạo...');
@@ -38,8 +39,8 @@ export const LiveTracking = () => {
         if (!bookingId || !buddyId) return;
         if (window.confirm('⚠️ BẠN CÓ CHẮC MUỐN KÊU CỨU KHẨN CẤP? Admin sẽ được thông báo ngay lập tức!')) {
             axios.post('http://localhost:3000/safety/sos', { bookingId, userId: buddyId, message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.' })
-                .then(() => { setSosTriggered(true); alert('✅ Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
-                .catch(() => alert('❌ Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
+                .then(() => { setSosTriggered(true); toast.success('Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
+                .catch(() => toast.error('Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
         }
     };
 

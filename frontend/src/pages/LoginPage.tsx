@@ -34,7 +34,15 @@ export default function LoginPage() {
       toast.success('Đăng nhập thành công!')
       navigate(userState?.role === 'admin' ? '/admin' : '/dashboard')
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+      const data = err.response?.data
+      // Backend trả 422 với errors object chi tiết từng field
+      if (data?.errors) {
+        const fieldErrors = Object.values(data.errors) as any[]
+        const firstMsg = fieldErrors[0]?.msg
+        toast.error(typeof firstMsg === 'string' ? firstMsg : (data.message || 'Đăng nhập thất bại.'))
+      } else {
+        toast.error(data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+      }
     }
   }
 

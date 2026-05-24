@@ -36,7 +36,6 @@ export interface ExperienceFormValues {
   description: string
   category: 'food' | 'adventure' | 'culture' | 'nightlife' | 'other'
   city?: string
-  price: number
   currency?: string
   minHours: number
   maxGroupSize: number
@@ -58,7 +57,6 @@ const buildFormData = (data: ExperienceFormValues): FormData => {
   formData.append('title', data.title)
   formData.append('description', data.description)
   formData.append('category', data.category)
-  formData.append('price', String(data.price))
   formData.append('minHours', String(data.minHours))
   formData.append('maxGroupSize', String(data.maxGroupSize))
   formData.append('meetingPointLng', String(data.meetingPoint.longitude))

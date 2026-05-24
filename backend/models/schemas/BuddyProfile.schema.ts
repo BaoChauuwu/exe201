@@ -24,6 +24,7 @@ export interface IBuddyProfile {
     availability?: string[]
     isAvailable?: boolean
     isApproved?: boolean
+    hourlyRate?: number
     created_at?: Date
     updated_at?: Date
 }
@@ -50,7 +51,8 @@ export const buddyProfileSchema = new Schema<IBuddyProfile>(
         pendingBalance: { type: Number, default: 0 },
         availability: { type: [String], default: [] },
         isAvailable: { type: Boolean, default: false },
-        isApproved: { type: Boolean, default: false }
+        isApproved: { type: Boolean, default: false },
+        hourlyRate: { type: Number, default: 0 }
     },
     {
         timestamps: {

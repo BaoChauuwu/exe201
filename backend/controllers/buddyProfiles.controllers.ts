@@ -22,7 +22,7 @@ export const getMyBuddyProfile = async (req: Request, res: Response) => {
 
 export const updateBuddyProfile = async (req: Request, res: Response) => {
     const { user_id } = req.decoded_authorization as TokenPayload
-    const { availability, languages, bankCode, accountNumber, accountName } = req.body
+    const { availability, languages, bankCode, accountNumber, accountName, hourlyRate } = req.body
 
     try {
         const profile = await BuddyProfile.findOne({ userId: new ObjectId(user_id) })
@@ -30,6 +30,7 @@ export const updateBuddyProfile = async (req: Request, res: Response) => {
         if (profile) {
             if (availability) profile.availability = availability
             if (languages) profile.languages = languages
+            if (hourlyRate !== undefined) profile.hourlyRate = hourlyRate
             
             if (!profile.payoutMethod) profile.payoutMethod = { bankCode: '', accountNumber: '', accountName: '' }
             if (bankCode) profile.payoutMethod.bankCode = bankCode
@@ -43,6 +44,7 @@ export const updateBuddyProfile = async (req: Request, res: Response) => {
                 userId: new ObjectId(user_id),
                 availability: availability || [],
                 languages: languages || [],
+                hourlyRate: hourlyRate || 0,
                 walletBalance: 0,
                 payoutMethod: { bankCode, accountNumber, accountName }
             })

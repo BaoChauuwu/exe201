@@ -29,6 +29,8 @@ const fieldStyle = (hasError: boolean): React.CSSProperties => ({
 export default function ProfilePage() {
   const { user, updateProfile } = useAuthStore()
   const [isUploading, setIsUploading] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAvatarClick = () => {
@@ -99,10 +101,15 @@ export default function ProfilePage() {
 
   const onSubmit = async (data: ProfileForm) => {
     try {
+      setSaveSuccess(false)
+      setSaveError('')
       await updateProfile(data)
+      setSaveSuccess(true)
       toast.success('Cập nhật hồ sơ thành công!')
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Cập nhật thất bại.')
+      const msg = err.response?.data?.message || 'Cập nhật thất bại.'
+      setSaveError(msg)
+      toast.error(msg)
     }
   }
 

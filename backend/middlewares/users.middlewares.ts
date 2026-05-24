@@ -124,7 +124,10 @@ export const loginValidator = validate(
               password: hashPassword(req.body.password)
             })
             if (user === null) {
-              throw new Error(userMessages.USER_NOT_FOUND)
+              throw new ErrorWithStatus({
+                message: userMessages.USER_NOT_FOUND,
+                status: httpStatus.UNAUTHORIZED
+              })
             }
             req.user = user
             return true
@@ -262,38 +265,38 @@ export const registerValidator = validate(
 // 1 la` xem thu no co tồn tại hay không
 // 2 là verify có đúng hay không
 export const accessTokenValidator = validate(
-  checkSchema({
-    Authorization: {
-      trim: true,
-
-      custom: {
-        options: async (value: string, { req }) => {
-          const access_token = (value || '').split(' ')[1]
-          if (!access_token) {
-            throw new ErrorWithStatus({
-              message: userMessages.ACCESS_TOKEN_IS_REQUIRED,
-              status: httpStatus.UNAUTHORIZED
-            })
+  checkSchema(
+    {
+      Authorization: {
+        trim: true,
+        custom: {
+          options: async (value: string, { req }) => {
+            const access_token = (value || '').split(' ')[1]
+            if (!access_token) {
+              throw new ErrorWithStatus({
+                message: userMessages.ACCESS_TOKEN_IS_REQUIRED,
+                status: httpStatus.UNAUTHORIZED
+              })
+            }
+            try {
+              const decoded_authorization = await verifyToken({
+                token: access_token,
+                secretOrPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+              })
+              req.decoded_authorization = decoded_authorization
+            } catch (error) {
+              throw new ErrorWithStatus({
+                message: userMessages.ACCESS_TOKEN_IS_INVALID,
+                status: httpStatus.UNAUTHORIZED
+              })
+            }
+            return true
           }
-          // ồ try catch try lỗi nhảy xún catch throw lỗi đó ra thuiii ngon thíiii
-          try {
-            const decoded_authorization = await verifyToken({
-              token: access_token,
-              secretOrPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
-            })
-            req.decoded_authorization = decoded_authorization
-          } catch (error) {
-            throw new ErrorWithStatus({
-              message: userMessages.ACCESS_TOKEN_IS_INVALID,
-              status: httpStatus.UNAUTHORIZED
-            })
-          }
-
-          return true
         }
       }
-    }
-  })
+    },
+    ['headers']
+  )
 )
 export const refreshTokenMiddleware = validate(
   checkSchema(

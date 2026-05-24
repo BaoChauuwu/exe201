@@ -35,22 +35,22 @@ export const IncludedItemsList = ({ value, onChange, error }: IncludedItemsListP
 
   const inputStyle: React.CSSProperties = {
     flex: 1,
-    background: 'rgba(255,255,255,0.06)',
-    border: `1px solid ${error ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.12)'}`,
+    background: '#f8fafc',
+    border: `1px solid ${error ? 'rgba(239,68,68,0.5)' : 'rgba(14, 165, 233, 0.2)'}`,
     borderRadius: '10px',
     padding: '0.7rem 1rem',
-    color: 'white',
+    color: '#0f172a',
     fontSize: '0.875rem',
     outline: 'none',
     fontFamily: 'inherit',
   }
 
   const addBtnStyle: React.CSSProperties = {
-    background: 'rgba(139,92,246,0.2)',
-    border: '1px solid rgba(139,92,246,0.4)',
+    background: 'rgba(79,70,229,0.1)',
+    border: '1px solid rgba(79,70,229,0.2)',
     borderRadius: '10px',
     padding: '0.7rem 1rem',
-    color: '#c4b5fd',
+    color: '#4f46e5',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -65,11 +65,11 @@ export const IncludedItemsList = ({ value, onChange, error }: IncludedItemsListP
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.4rem',
-    background: 'rgba(99,102,241,0.15)',
-    border: '1px solid rgba(99,102,241,0.3)',
+    background: 'rgba(79,70,229,0.08)',
+    border: '1px solid rgba(79,70,229,0.2)',
     borderRadius: '8px',
     padding: '0.35rem 0.75rem',
-    color: '#a5b4fc',
+    color: '#4f46e5',
     fontSize: '0.8rem',
     fontWeight: 500,
   }
@@ -98,7 +98,7 @@ export const IncludedItemsList = ({ value, onChange, error }: IncludedItemsListP
               <button
                 type='button'
                 onClick={() => removeAt(i)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: 'rgba(165,180,252,0.6)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#6366f1' }}
               >
                 <X size={13} />
               </button>
@@ -108,7 +108,7 @@ export const IncludedItemsList = ({ value, onChange, error }: IncludedItemsListP
       )}
 
       {error && (
-        <p style={{ color: '#fca5a5', fontSize: '0.8rem', margin: 0 }}>⚠️ {error}</p>
+        <p style={{ color: '#ef4444', fontSize: '0.8rem', margin: 0 }}>⚠️ {error}</p>
       )}
     </div>
   )

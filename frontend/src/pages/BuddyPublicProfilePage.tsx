@@ -8,12 +8,27 @@ export const BuddyPublicProfilePage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<any>(null);
+    const [experiences, setExperiences] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get(`http://localhost:3000/buddy-profile/${id}`)
-            .then(res => {
-                setProfile(res.data.data);
+        Promise.all([
+            axios.get(`http://localhost:3000/buddy-profile/${id}`),
+            axios.get(`http://localhost:3000/experiences`)
+        ])
+            .then(([profileRes, expRes]) => {
+                const buddyProfile = profileRes.data.data;
+                setProfile(buddyProfile);
+                
+                const allExp = expRes.data.result || [];
+                // Filter experiences belonging to this buddy
+                const buddyUserId = buddyProfile.userId?._id || buddyProfile.userId;
+                const buddyExp = allExp.filter((exp: any) => {
+                    const expBuddyId = exp.buddyId?._id || exp.buddyId;
+                    return String(expBuddyId) === String(buddyUserId);
+                });
+                setExperiences(buddyExp);
+                
                 setLoading(false);
             })
             .catch(err => {
@@ -156,6 +171,44 @@ export const BuddyPublicProfilePage = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Experiences Section */}
+                <div style={{ marginTop: '3rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        Tours trải nghiệm của {user.name}
+                    </h2>
+                    
+                    {experiences.length === 0 ? (
+                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                            Buddy này chưa đăng tour trải nghiệm nào.
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                            {experiences.map(exp => (
+                                <div key={exp._id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', overflow: 'hidden', transition: 'all 0.3s' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-5px)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.4)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}>
+                                    <div style={{ height: '180px', background: 'rgba(0,0,0,0.2)', position: 'relative' }}>
+                                        <img src={exp.images?.[0] || 'https://images.unsplash.com/photo-1559508551-44bff1de756b?auto=format&fit=crop&q=80&w=800'} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '4px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <Clock size={12} /> {exp.minHours}h
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '1.25rem' }}>
+                                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 700, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.title}</h3>
+                                        <p style={{ margin: '0 0 1rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Giá ước tính</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#34d399' }}>
+                                                {((profile.hourlyRate || 0) * exp.minHours).toLocaleString()} ₫
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

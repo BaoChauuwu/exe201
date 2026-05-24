@@ -19,7 +19,7 @@ export const CreateExperiencePage = () => {
     try {
       await experienceApi.create(data)
       setSuccessMsg('Tour đã được tạo thành công! Đang chờ admin duyệt.')
-      setTimeout(() => navigate('/dashboard'), 2000)
+      setTimeout(() => navigate('/experiences/my'), 2000)
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } }; message?: string }
       setErrorMsg(e.response?.data?.message ?? e.message ?? 'Tạo tour thất bại. Vui lòng thử lại.')
@@ -31,12 +31,12 @@ export const CreateExperiencePage = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(180deg, #0f0c29 0%, #1a1040 60%, #0d1117 100%)',
-      fontFamily: "'Inter', -apple-system, sans-serif",
+      background: 'var(--gradient-hero)',
+      fontFamily: "'Inter', sans-serif"
     }}>
       <Navbar />
 
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '2.5rem 1.5rem 5rem' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem 1.5rem', color: 'var(--color-text)' }}>
 
         {/* ── Hero header ── */}
         <div style={{
