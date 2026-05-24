@@ -38,6 +38,21 @@ export const updateBuddyProfile = async (req: Request, res: Response) => {
             if (accountName) profile.payoutMethod.accountName = accountName
             
             await profile.save()
+
+            // ── Tự động cập nhật lại giá (price) cho tất cả tour của buddy này ──
+            // Khi buddy thay đổi giá theo giờ, giá của tất cả tour phải được tính lại
+            // Công thức: price = hourlyRate * minHours
+            if (hourlyRate !== undefined) {
+                const ExperienceModel = require('../models/Experience.model').default
+                const buddyExperiences = await ExperienceModel.find({ buddyId: new ObjectId(user_id) })
+                await Promise.all(
+                    buddyExperiences.map((exp: any) => {
+                        exp.price = hourlyRate * (exp.minHours || 1)
+                        return exp.save()
+                    })
+                )
+            }
+
             return res.status(httpStatus.OK).json({ message: 'Buddy profile updated successfully', data: profile })
         } else {
             const newProfile = await BuddyProfile.create({
