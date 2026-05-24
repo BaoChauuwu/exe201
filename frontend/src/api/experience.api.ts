@@ -65,18 +65,16 @@ const buildFormData = (data: ExperienceFormValues): FormData => {
   if (data.city) formData.append('city', data.city)
   if (data.currency) formData.append('currency', data.currency)
 
-  // Append includedItems với cả 2 key 'includedItems' và 'includedItems[]' để tăng khả năng tương thích 100% với backend
+  // Append includedItems với duy nhất 1 key 'includedItems'
   data.includedItems.forEach((item) => {
-    formData.append('includedItems[]', item)
     formData.append('includedItems', item)
   })
 
-  // Append File ảnh mới vào 'images', URL ảnh cũ cần giữ lại vào 'keepImages' / 'keepImages[]'
+  // Append File ảnh mới vào 'images', URL ảnh cũ cần giữ lại vào 'keepImages'
   data.images.forEach((img) => {
     if (img instanceof File) {
       formData.append('images', img)
     } else if (typeof img === 'string') {
-      formData.append('keepImages[]', img)
       formData.append('keepImages', img)
     }
   })

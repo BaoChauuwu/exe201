@@ -29,6 +29,7 @@ import { TripRequestsPage } from './pages/TripRequestsPage'
 import { MyTripRequestsPage } from './pages/MyTripRequestsPage'
 import { TouristLiveMap } from './pages/TouristLiveMap'
 import UnauthorizedPage from './pages/UnauthorizedPage'
+import ExperienceDetailPage from './pages/ExperienceDetailPage'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -81,6 +82,7 @@ function App() {
         <Route path='/oauth-success' element={<OAuthSuccessPage />} />
         <Route path='/buddies' element={<FindBuddyPage />} />
         <Route path='/buddies/:id' element={<BuddyPublicProfilePage />} />
+        <Route path='/experiences/:id' element={<ExperienceDetailPage />} />
         <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
         {/* Guest only (redirect to /dashboard if logged in) */}
