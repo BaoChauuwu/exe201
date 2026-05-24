@@ -17,8 +17,8 @@ export const TripRequestForm = () => {
     description: '',
     date: '',
     time: '',
-    durationHours: '' as number | string,
-    budget: '' as number | string,
+    durationHours: '' as any,
+    budget: '' as any,
     city: 'Đà Nẵng',
     meetingPointLng: 108.2208,
     meetingPointLat: 16.0471

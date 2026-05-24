@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/layout/Navbar';
 import { tripRequestApi } from '../api/tripRequest.api';
 import type { ITripRequest } from '../api/tripRequest.api';
 import { biddingApi } from '../api/bidding.api';
 import { useAuthStore } from '../store/authStore';
-import { Calendar, Clock, DollarSign, CheckCircle2, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Calendar, Clock, DollarSign, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 

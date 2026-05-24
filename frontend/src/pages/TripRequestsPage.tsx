@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/layout/Navbar';
 import { tripRequestApi } from '../api/tripRequest.api';
 import type { ITripRequest } from '../api/tripRequest.api';
 import { biddingApi } from '../api/bidding.api';
 import { useAuthStore } from '../store/authStore';
-import { MapPin, Calendar, Clock, DollarSign, Search, User } from 'lucide-react';
+import { MapPin, Calendar, Clock, DollarSign, Search } from 'lucide-react';
 
 export const TripRequestsPage = () => {
   const { accessToken, user } = useAuthStore();

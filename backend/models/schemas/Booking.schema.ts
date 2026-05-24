@@ -27,6 +27,11 @@ export interface IBooking {
     status?: string // 'pending', 'confirmed', 'ongoing', 'completed', 'cancelled'
     cancelReason?: string
     emergencyTriggeredAt?: Date
+    refundBankInfo?: {
+        bankCode: string
+        accountNumber: string
+        accountName: string
+    }
     created_at?: Date
     updated_at?: Date
 }
@@ -46,6 +51,11 @@ export const bookingSchema = new Schema<IBooking>(
         meetingPoint: {
             type: { type: String, enum: ['Point'] },
             coordinates: { type: [Number] }
+        },
+        refundBankInfo: {
+            bankCode: { type: String, default: '' },
+            accountNumber: { type: String, default: '' },
+            accountName: { type: String, default: '' }
         },
         pricePerHourSnapshot: { type: Number, required: true },
         currency: { type: String, default: 'VND' },

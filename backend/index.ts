@@ -13,6 +13,7 @@ import experiencesRouter from './routes/experiences.routes'
 import tripRequestsRouter from './routes/tripRequests.routes'
 import biddingsRouter from './routes/biddings.routes'
 import categoriesRouter from './routes/categories.routes'
+import bookingsRouter from './routes/bookings.routes'
 import databaseService from './services/database.services'
 import categoriesService from './services/categories.services'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
@@ -50,6 +51,7 @@ app.use('/experiences', experiencesRouter)
 app.use('/trip-requests', tripRequestsRouter)
 app.use('/biddings', biddingsRouter)
 app.use('/categories', categoriesRouter)
+app.use('/bookings', bookingsRouter)
 
 app.use(defaultErrorHandler)
 
