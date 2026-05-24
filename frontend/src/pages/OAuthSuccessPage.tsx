@@ -5,20 +5,24 @@ import { useAuthStore } from '../store/authStore'
 export default function OAuthSuccessPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { setTokens } = useAuthStore()
+  const { setTokens, fetchMe } = useAuthStore()
 
   useEffect(() => {
-    const access_token = searchParams.get('access_token')
-    const refresh_token = searchParams.get('refresh_token')
-    const error = searchParams.get('error')
+    const run = async () => {
+      const access_token = searchParams.get('access_token')
+      const refresh_token = searchParams.get('refresh_token')
+      const error = searchParams.get('error')
 
-    if (error || !access_token || !refresh_token) {
-      navigate('/login?error=oauth_failed')
-      return
+      if (error || !access_token || !refresh_token) {
+        navigate('/login?error=oauth_failed')
+        return
+      }
+
+      setTokens(access_token, refresh_token)
+      await fetchMe()
+      navigate('/dashboard')
     }
-
-    setTokens(access_token, refresh_token)
-    navigate('/dashboard')
+    run()
   }, [])
 
   return (

@@ -18,6 +18,11 @@ export async function uploadToCloudinary(
   buffer: Buffer,
   folder: string
 ): Promise<{ url: string; publicId: string }> {
+  if (!process.env.CLOUDINARY_API_KEY) {
+    console.warn('⚠️ No CLOUDINARY_API_KEY found, using mock image URL.')
+    return { url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000', publicId: `mock_${Date.now()}` }
+  }
+
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
@@ -38,6 +43,9 @@ export async function uploadToCloudinary(
  * Xóa ảnh trên Cloudinary theo public_id
  */
 export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  if (!process.env.CLOUDINARY_API_KEY || publicId.startsWith('mock_')) {
+    return
+  }
   await cloudinary.uploader.destroy(publicId)
 }
 

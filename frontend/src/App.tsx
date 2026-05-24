@@ -24,6 +24,9 @@ import { BuddyPublicProfilePage } from './pages/BuddyPublicProfilePage'
 import { CreateExperiencePage } from './pages/CreateExperiencePage'
 import { EditExperiencePage } from './pages/EditExperiencePage'
 import { MyExperiencesPage } from './pages/MyExperiencesPage'
+import { TripRequestForm } from './pages/TripRequestForm'
+import { TripRequestsPage } from './pages/TripRequestsPage'
+import { MyTripRequestsPage } from './pages/MyTripRequestsPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 import { Toaster } from 'react-hot-toast'
@@ -96,6 +99,12 @@ function App() {
           <Route path='/chat/:receiverId' element={<Chat />} />
         </Route>
 
+        {/* Tourist specific routes */}
+        <Route element={<ProtectedRoute allowedRoles={['tourist']} />}>
+          <Route path='/trip-requests/new' element={<TripRequestForm />} />
+          <Route path='/my-requests' element={<MyTripRequestsPage />} />
+        </Route>
+
         {/* Buddy specific routes */}
         <Route element={<ProtectedRoute allowedRoles={['buddy']} />}>
           <Route path='/buddy-profile' element={<BuddyProfilePage />} />
@@ -103,6 +112,7 @@ function App() {
           <Route path='/experiences/my' element={<MyExperiencesPage />} />
           <Route path='/experiences/create' element={<CreateExperiencePage />} />
           <Route path='/experiences/:id/edit' element={<EditExperiencePage />} />
+          <Route path='/trip-requests/open' element={<TripRequestsPage />} />
         </Route>
 
         {/* Admin specific routes */}

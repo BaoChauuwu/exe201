@@ -6,17 +6,28 @@ import httpStatus from '~/constants/httpStatus'
 import { CreateExperienceRequestBody, UpdateExperienceRequestBody } from '~/models/requests/Experience.requests'
 
 class ExperiencesService {
-  async createExperience(
-    buddyId: string,
-    body: CreateExperienceRequestBody,
-    files: Express.Multer.File[]
-  ) {
+  async createExperience(buddyId: string, body: CreateExperienceRequestBody, files: Express.Multer.File[]) {
     const imageUrls: string[] = []
+
+    // Đọc các URL ảnh đã upload từ Frontend
+    const keepImagesRaw = body.keepImages ?? body['keepImages[]'] ?? []
+    const keepImages = Array.isArray(keepImagesRaw)
+      ? keepImagesRaw
+      : typeof keepImagesRaw === 'string'
+        ? [keepImagesRaw]
+        : []
+    imageUrls.push(...keepImages)
 
     for (const file of files) {
       const { url } = await uploadToCloudinary(file.buffer, `experiences/${buddyId}`)
       imageUrls.push(url)
     }
+
+    const BuddyProfile = require('~/models/BuddyProfile.model').default
+    const profile = await BuddyProfile.findOne({ userId: new ObjectId(buddyId) })
+    const hourlyRate = profile?.hourlyRate || 0
+    const minHours = body.minHours ?? 1
+    const price = hourlyRate * minHours
 
     const experience = await ExperienceModel.create({
       buddyId: new ObjectId(buddyId),
@@ -24,9 +35,9 @@ class ExperiencesService {
       description: body.description,
       category: body.category,
       city: body.city ?? 'Da Nang',
-      price: body.price,
+      price: price,
       currency: body.currency ?? 'VND',
-      minHours: body.minHours ?? 1,
+      minHours: minHours,
       maxGroupSize: body.maxGroupSize ?? 1,
       includedItems: (() => {
         const raw = body.includedItems ?? body['includedItems[]'] ?? []
@@ -37,7 +48,7 @@ class ExperiencesService {
         type: 'Point',
         coordinates: [body.meetingPointLng, body.meetingPointLat]
       },
-      isApproved: false
+      isApproved: true // Auto-approve for testing purposes
     })
 
     return experience
@@ -67,8 +78,8 @@ class ExperiencesService {
     const keepImages = Array.isArray(keepImagesRaw)
       ? keepImagesRaw
       : typeof keepImagesRaw === 'string'
-      ? [keepImagesRaw]
-      : []
+        ? [keepImagesRaw]
+        : []
 
     // 2. Tìm những ảnh cũ bị loại bỏ khỏi danh sách giữ lại để xóa trên Cloudinary
     const currentImages = experience.images ?? []
@@ -88,13 +99,20 @@ class ExperiencesService {
     // 4. Gán lại mảng ảnh cuối cùng (gồm các ảnh cũ giữ lại và ảnh mới tải lên)
     experience.images = [...keepImages, ...newImageUrls]
 
+    const BuddyProfile = require('~/models/BuddyProfile.model').default
+    const profile = await BuddyProfile.findOne({ userId: new ObjectId(buddyId) })
+    const hourlyRate = profile?.hourlyRate || 0
+
     if (body.title !== undefined) experience.title = body.title
     if (body.description !== undefined) experience.description = body.description
     if (body.category !== undefined) experience.category = body.category
     if (body.city !== undefined) experience.city = body.city
-    if (body.price !== undefined) experience.price = body.price
     if (body.currency !== undefined) experience.currency = body.currency
     if (body.minHours !== undefined) experience.minHours = body.minHours
+
+    // Automatically recalculate price
+    experience.price = hourlyRate * experience.minHours
+
     if (body.maxGroupSize !== undefined) experience.maxGroupSize = body.maxGroupSize
     if (body.isActive !== undefined) experience.isActive = body.isActive
 
@@ -104,8 +122,8 @@ class ExperiencesService {
       experience.includedItems = Array.isArray(includedItemsRaw)
         ? includedItemsRaw
         : typeof includedItemsRaw === 'string'
-        ? [includedItemsRaw]
-        : []
+          ? [includedItemsRaw]
+          : []
     }
 
     if (body.meetingPointLng !== undefined && body.meetingPointLat !== undefined) {

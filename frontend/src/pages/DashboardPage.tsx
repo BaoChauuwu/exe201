@@ -34,18 +34,18 @@ export default function DashboardPage() {
 
   const quickActions = isBuddy
     ? [
-        { icon: <Plus size={22} />, label: 'Đăng ký tour mới', desc: 'Tạo bài đăng trải nghiệm bản địa', color: '#10b981', to: '/experiences/create', actionId: 'action-create-experience' },
+        { icon: <Plus size={22} />, label: 'Tạo chuyến đi (Tour)', desc: 'Tạo bài đăng trải nghiệm bản địa', color: '#10b981', to: '/experiences/create', actionId: 'action-create-experience' },
+        { icon: <Bell size={22} />, label: 'Bảng yêu cầu (Nhận kèo)', desc: 'Xem yêu cầu tìm Buddy từ khách', color: '#8b5cf6', to: '/trip-requests/open', actionId: 'action-bidding' },
         { icon: <Map size={22} />, label: 'Tour của tôi', desc: 'Quản lý bài đăng & trạng thái duyệt', color: '#0284c7', to: '/experiences/my', actionId: 'action-my-experiences' },
         { icon: <Calendar size={22} />, label: 'Quản lý lịch rảnh', desc: 'Thiết lập thời gian dẫn tour', color: '#0ea5e9', to: '/buddy-profile', actionId: 'action-schedule' },
-        { icon: <Bell size={22} />, label: 'Đơn đặt lịch', desc: 'Xem & xác nhận yêu cầu thuê', color: '#8b5cf6', to: '/dashboard', actionId: 'action-bookings' },
         { icon: <Wallet size={22} />, label: 'Ví & Rút tiền', desc: 'Theo dõi doanh thu & rút tiền', color: '#10b981', to: '/wallet', actionId: 'action-wallet' },
-        { icon: <Users size={22} />, label: 'Hồ sơ Buddy', desc: 'Cập nhật giới thiệu, ngôn ngữ', color: '#fbbf24', to: '/buddy-profile', actionId: 'action-profile' }
+        { icon: <Users size={22} />, label: 'Hồ sơ Buddy', desc: 'Cập nhật giới thiệu, mức giá', color: '#fbbf24', to: '/buddy-profile', actionId: 'action-profile' }
       ]
     : [
-        { icon: <Compass size={22} />, label: 'Tìm Local Buddy', desc: 'Tìm hướng dẫn viên bản địa', color: '#0284c7', to: '/dashboard', actionId: 'action-find-buddy' },
-        { icon: <Map size={22} />, label: 'Lịch trình của tôi', desc: 'Quản lý các chuyến đi sắp tới', color: '#8b5cf6', to: '/dashboard', actionId: 'action-my-trips' },
-        { icon: <Users size={22} />, label: 'Cộng đồng du lịch', desc: 'Kết nối với du khách khác', color: '#fbbf24', to: '/chat', actionId: 'action-community' },
-        { icon: <Star size={22} />, label: 'Đánh giá Buddy', desc: 'Chia sẻ nhận xét sau chuyến đi', color: '#10b981', to: '/dashboard', actionId: 'action-review' }
+        { icon: <Plus size={22} />, label: 'Tạo Yêu cầu chuyến đi', desc: 'Đăng nhu cầu tìm Buddy', color: '#10b981', to: '/trip-requests/new', actionId: 'action-create-req' },
+        { icon: <Map size={22} />, label: 'Yêu cầu của tôi', desc: 'Quản lý yêu cầu & duyệt báo giá', color: '#0284c7', to: '/my-requests', actionId: 'action-my-reqs' },
+        { icon: <Compass size={22} />, label: 'Tìm Local Buddy', desc: 'Tìm hướng dẫn viên bản địa', color: '#8b5cf6', to: '/buddies', actionId: 'action-find-buddy' },
+        { icon: <Users size={22} />, label: 'Cộng đồng du lịch', desc: 'Kết nối với du khách khác', color: '#fbbf24', to: '/chat', actionId: 'action-community' }
       ]
 
   return (
@@ -200,10 +200,12 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✈️</div>
-                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.25rem', fontSize: '0.9rem' }}>Bạn chưa có chuyến đi nào được lên lịch</p>
-                <button id='dashboard-plan-trip' style={{ background: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.3)', borderRadius: '12px', padding: '0.75rem 1.5rem', color: 'var(--color-primary-dark)', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                  <Compass size={16} /> Thuê Local Buddy ngay
-                </button>
+                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.25rem', fontSize: '0.9rem' }}>Bạn chưa có yêu cầu chuyến đi nào đang mở</p>
+                <Link to='/trip-requests/new'>
+                  <button id='dashboard-plan-trip' style={{ background: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.3)', borderRadius: '12px', padding: '0.75rem 1.5rem', color: 'var(--color-primary-dark)', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                    <Plus size={16} /> Tạo Yêu Cầu Tìm Buddy Ngay
+                  </button>
+                </Link>
               </>
             )}
           </div>

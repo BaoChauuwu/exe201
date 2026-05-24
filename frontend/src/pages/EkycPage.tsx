@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { CreditCard, Camera, UploadCloud, CheckCircle, Shield, X } from 'lucide-react';
+import { CreditCard, Camera, UploadCloud, CheckCircle, Shield, X, AlertCircle } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -129,6 +129,7 @@ export const EkycPage = () => {
   const [selfiePreview, setSelfiePreview] = useState('');
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const allUploaded = frontPreview && backPreview && selfiePreview;
 
@@ -164,7 +165,9 @@ export const EkycPage = () => {
       setStatus('success');
     } catch (err: any) {
       setStatus('error');
-      toast.error(err.response?.data?.message || err.message || 'Gửi eKYC thất bại. Vui lòng thử lại.');
+      const msg = err.response?.data?.message || err.message || 'Gửi eKYC thất bại. Vui lòng thử lại.';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
