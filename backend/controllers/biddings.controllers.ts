@@ -19,14 +19,14 @@ export const createBidding = async (req: Request, res: Response) => {
 
     // Check if buddy already bid
     const existingBidding = await BiddingModel.findOne({
-      tripRequestId: new ObjectId(tripRequestId),
-      buddyId: new ObjectId(buddyId)
+      tripRequestId: new ObjectId(tripRequestId as string),
+      buddyId: new ObjectId(buddyId as string)
     })
     if (existingBidding) return res.status(httpStatus.BAD_REQUEST).json({ message: 'You have already bid on this request' })
 
     const newBidding = new BiddingModel({
-      tripRequestId: new ObjectId(tripRequestId),
-      buddyId: new ObjectId(buddyId),
+      tripRequestId: new ObjectId(tripRequestId as string),
+      buddyId: new ObjectId(buddyId as string),
       offerPrice,
       proposal,
       status: 'pending'

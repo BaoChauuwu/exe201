@@ -17,8 +17,8 @@ export const TripRequestForm = () => {
     description: '',
     date: '',
     time: '',
-    durationHours: 1,
-    budget: 0,
+    durationHours: '' as number | string,
+    budget: '' as number | string,
     city: 'Đà Nẵng',
     meetingPointLng: 108.2208,
     meetingPointLat: 16.0471
@@ -26,7 +26,12 @@ export const TripRequestForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'durationHours' || name === 'budget' ? Number(value) : value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: (name === 'durationHours' || name === 'budget') 
+        ? (value === '' ? '' : Number(value)) 
+        : value 
+    } as any));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,14 +122,14 @@ export const TripRequestForm = () => {
                 <label style={labelStyle}>Số giờ dự kiến</label>
                 <div style={{ position: 'relative' }}>
                   <Clock size={18} style={iconStyle} />
-                  <input type="number" name="durationHours" value={formData.durationHours} onChange={handleChange} min="1" style={inputStyle} required />
+                  <input type="number" name="durationHours" value={formData.durationHours} onChange={handleChange} min="1" placeholder="vd: 4" style={inputStyle} required />
                 </div>
               </div>
               <div>
                 <label style={labelStyle}>Ngân sách tối đa (VND)</label>
                 <div style={{ position: 'relative' }}>
                   <DollarSign size={18} style={iconStyle} />
-                  <input type="number" name="budget" value={formData.budget} onChange={handleChange} min="0" step="50000" placeholder="500000" style={inputStyle} required />
+                  <input type="number" name="budget" value={formData.budget} onChange={handleChange} min="0" step="50000" placeholder="vd: 500000" style={inputStyle} required />
                 </div>
               </div>
             </div>

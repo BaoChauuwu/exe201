@@ -10,7 +10,7 @@ class ExperiencesService {
     const imageUrls: string[] = []
 
     // Đọc các URL ảnh đã upload từ Frontend
-    const keepImagesRaw = body.keepImages ?? body['keepImages[]'] ?? []
+    const keepImagesRaw = (body as any).keepImages ?? (body as any)['keepImages[]'] ?? []
     const keepImages = Array.isArray(keepImagesRaw)
       ? keepImagesRaw
       : typeof keepImagesRaw === 'string'
@@ -74,7 +74,7 @@ class ExperiencesService {
     }
 
     // 1. Phân tích ảnh cũ được giữ lại từ request body
-    const keepImagesRaw = body.keepImages ?? body['keepImages[]'] ?? []
+    const keepImagesRaw = (body as any).keepImages ?? (body as any)['keepImages[]'] ?? []
     const keepImages = Array.isArray(keepImagesRaw)
       ? keepImagesRaw
       : typeof keepImagesRaw === 'string'

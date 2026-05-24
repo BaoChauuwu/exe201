@@ -160,8 +160,8 @@ export const ExperienceForm = ({
       description: defaultValues?.description ?? '',
       category: defaultValues?.category ?? 'other',
       city: defaultValues?.city ?? 'Da Nang',
-      minHours: defaultValues?.minHours ?? 1,
-      maxGroupSize: defaultValues?.maxGroupSize ?? 1,
+      minHours: defaultValues?.minHours ?? ('' as unknown as number),
+      maxGroupSize: defaultValues?.maxGroupSize ?? ('' as unknown as number),
       includedItems: defaultValues?.includedItems ?? [],
       images: defaultValues?.images ?? [],
       meetingPoint: defaultValues?.meetingPoint ?? { longitude: 108.2022, latitude: 16.0544 },
@@ -311,7 +311,7 @@ export const ExperienceForm = ({
                 {...register('maxGroupSize', { valueAsNumber: true })}
                 type='number'
                 min={1}
-                placeholder='6'
+                placeholder='vd: 6'
                 style={errors.maxGroupSize ? inputErrorStyle : inputStyle}
               />
             </div>
@@ -328,7 +328,7 @@ export const ExperienceForm = ({
                 type='number'
                 min={0.5}
                 step={0.5}
-                placeholder='2'
+                placeholder='vd: 2'
                 style={errors.minHours ? inputErrorStyle : inputStyle}
               />
             </div>

@@ -13,7 +13,7 @@ export const createTripRequest = async (req: Request, res: Response) => {
     const { title, description, date, time, durationHours, budget, city, meetingPointLng, meetingPointLat } = req.body
 
     const newRequest = new TripRequestModel({
-      touristId: new ObjectId(touristId),
+      touristId: new ObjectId(touristId as string),
       title,
       description,
       date,
@@ -61,7 +61,7 @@ export const getMyTripRequests = async (req: Request, res: Response) => {
     const touristId = req.decoded_authorization?.user_id
     if (!touristId) return res.status(httpStatus.UNAUTHORIZED).json({ message: 'Unauthorized' })
 
-    const requests = await TripRequestModel.find({ touristId: new ObjectId(touristId) })
+    const requests = await TripRequestModel.find({ touristId: new ObjectId(touristId as string) })
       .sort({ created_at: -1 })
 
     return res.status(httpStatus.OK).json({
@@ -81,7 +81,7 @@ export const getTripRequestById = async (req: Request, res: Response) => {
     const request = await TripRequestModel.findById(id).populate('touristId', 'name avatar')
     if (!request) return res.status(httpStatus.NOT_FOUND).json({ message: 'Trip request not found' })
 
-    const biddings = await BiddingModel.find({ tripRequestId: new ObjectId(id) })
+    const biddings = await BiddingModel.find({ tripRequestId: new ObjectId(id as string) })
       .populate('buddyId', 'name avatar')
       .sort({ created_at: -1 })
 
