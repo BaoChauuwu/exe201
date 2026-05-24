@@ -277,8 +277,12 @@ export default function HomePage() {
                 {experiences
                   .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                   .map(exp => (
-                  <div
+                  <Link
                     key={exp._id}
+                    to={`/experiences/${exp._id}`}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'contents' }}
+                  >
+                  <div
                     style={{
                       background: '#ffffff',
                       border: '1px solid rgba(14, 165, 233, 0.12)',
@@ -291,6 +295,7 @@ export default function HomePage() {
                       maxWidth: '360px',
                       width: '100%',
                       margin: '0 auto',
+                      cursor: 'pointer',
                     }}
                     onMouseEnter={e => {
                       const card = e.currentTarget as HTMLElement
@@ -337,14 +342,13 @@ export default function HomePage() {
                           </div>
                         </div>
 
-                        <Link to={isAuthenticated ? `/buddies/${exp.buddyId}` : '/register'} style={{ textDecoration: 'none' }}>
-                          <button style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
-                            Khám phá Buddy <ArrowRight size={12} />
-                          </button>
-                        </Link>
+                        <div style={{ background: 'var(--gradient-primary)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: 'white', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)' }}>
+                          Xem chi tiết <ArrowRight size={12} />
+                        </div>
                       </div>
                     </div>
                   </div>
+                  </Link>
                 ))}
               </div>
 
