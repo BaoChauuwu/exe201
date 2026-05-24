@@ -54,6 +54,7 @@ export const MyTripRequestsPage = () => {
   const handleAccept = async (biddingId: string, requestId: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn chọn Buddy này không? Hành động này sẽ đóng yêu cầu.')) return;
     try {
+      await biddingApi.accept(biddingId, { headers: { Authorization: `Bearer ${accessToken}` } });
       toast.success('Đã chọn Buddy thành công!');
       fetchRequests();
       
