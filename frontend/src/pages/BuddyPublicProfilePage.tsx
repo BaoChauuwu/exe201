@@ -199,9 +199,14 @@ export const BuddyPublicProfilePage = () => {
                                         <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 700, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.title}</h3>
                                         <p style={{ margin: '0 0 1rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{exp.description}</p>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Giá ước tính</div>
-                                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#34d399' }}>
-                                                {((profile.hourlyRate || 0) * exp.minHours).toLocaleString()} ₫
+                                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Chi phí</div>
+                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                                <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#34d399' }}>
+                                                    {(exp.price || 0).toLocaleString()}
+                                                </span>
+                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                                                    {exp.currency || 'VND'}/h
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

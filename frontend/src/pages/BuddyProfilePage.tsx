@@ -310,8 +310,8 @@ export const BuddyProfilePage = () => {
                                     <label style={labelStyle}>Giá thuê mỗi giờ (VND)</label>
                                     <div style={{ position: 'relative' }}>
                                         <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>₫</span>
-                                        <input type='number' value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))}
-                                            placeholder='150000' style={{ ...inputStyle, paddingLeft: '2.5rem' }} className='buddy-input' min="0" step="10000" />
+                                        <input type='text' value={hourlyRate === 0 ? '' : hourlyRate.toLocaleString('en-US')} onChange={e => setHourlyRate(e.target.value.replace(/\D/g, '') === '' ? 0 : Number(e.target.value.replace(/\D/g, '')))}
+                                            placeholder='150,000' style={{ ...inputStyle, paddingLeft: '2.5rem' }} className='buddy-input' />
                                     </div>
                                 </div>
                             </div>
