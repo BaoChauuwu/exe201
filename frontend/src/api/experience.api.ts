@@ -130,6 +130,12 @@ export const experienceApi = {
     axiosInstance.get<{ message: string; result: IExperience[] }>('/experiences'),
 
   /**
+   * Lấy danh sách danh mục lưu trong DB (Động)
+   */
+  getCategories: () =>
+    axiosInstance.get<{ message: string; result: any[] }>('/categories'),
+
+  /**
    * [ADMIN] Lấy danh sách các tour đang chờ duyệt
    */
   getPending: (cfg?: any) =>

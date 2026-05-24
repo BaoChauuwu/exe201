@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,7 +6,7 @@ import { MapPin, DollarSign, Users, Clock, Tag, FileText, AlignLeft, Loader2 } f
 import { ImageUploader } from './ImageUploader'
 import { IncludedItemsList } from './IncludedItemsList'
 import { LocationPicker } from './LocationPicker'
-import type { ExperienceFormValues } from '../../api/experience.api'
+import { experienceApi, type ExperienceFormValues } from '../../api/experience.api'
 import toast from 'react-hot-toast'
 
 // ─── Zod Schema ────────────────────────────────────────────────────────────────
@@ -128,16 +128,6 @@ const sectionTitleStyle: React.CSSProperties = {
   color: '#0f172a',
 }
 
-// ─── Category options ───────────────────────────────────────────────────────────
-
-const CATEGORY_OPTIONS = [
-  { value: 'food', label: '🍜 Ẩm thực' },
-  { value: 'adventure', label: '🧗 Phiêu lưu' },
-  { value: 'culture', label: '🏛️ Văn hóa' },
-  { value: 'nightlife', label: '🌙 Cuộc sống về đêm' },
-  { value: 'other', label: '✨ Khác' },
-] as const
-
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export const ExperienceForm = ({
@@ -146,6 +136,14 @@ export const ExperienceForm = ({
   isLoading,
   submitLabel = 'Đăng tour',
 }: ExperienceFormProps) => {
+  const [categories, setCategories] = useState<any[]>([])
+
+  useEffect(() => {
+    experienceApi.getCategories()
+      .then(res => setCategories(res.data.result || []))
+      .catch(() => null)
+  }, [])
+
   const {
     register,
     handleSubmit,
@@ -237,23 +235,23 @@ export const ExperienceForm = ({
           <div>
             <label style={labelStyle}>Danh mục *</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {CATEGORY_OPTIONS.map((opt) => (
-                <label key={opt.value} style={{ cursor: 'pointer' }}>
-                  <input {...register('category')} type='radio' value={opt.value} style={{ display: 'none' }} />
+              {categories.map((opt) => (
+                <label key={opt._id} style={{ cursor: 'pointer' }}>
+                  <input {...register('category')} type='radio' value={opt.slug} style={{ display: 'none' }} />
                   <Controller
                     name='category'
                     control={control}
                     render={({ field }) => (
                       <span
-                        onClick={() => field.onChange(opt.value)}
+                        onClick={() => field.onChange(opt.slug)}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           padding: '0.5rem 1rem',
                           borderRadius: '10px',
-                          border: `1px solid ${field.value === opt.value ? 'rgba(79,70,229,0.4)' : 'rgba(14, 165, 233, 0.2)'}`,
-                          background: field.value === opt.value ? 'rgba(79,70,229,0.08)' : '#f8fafc',
-                          color: field.value === opt.value ? '#4f46e5' : '#64748b',
+                          border: `1px solid ${field.value === opt.slug ? 'rgba(79,70,229,0.4)' : 'rgba(14, 165, 233, 0.2)'}`,
+                          background: field.value === opt.slug ? 'rgba(79,70,229,0.08)' : '#f8fafc',
+                          color: field.value === opt.slug ? '#4f46e5' : '#64748b',
                           fontSize: '0.85rem',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -261,7 +259,7 @@ export const ExperienceForm = ({
                           userSelect: 'none',
                         }}
                       >
-                        {opt.label}
+                        {opt.icon} {opt.name}
                       </span>
                     )}
                   />

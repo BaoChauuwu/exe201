@@ -17,6 +17,7 @@ export const ExperienceDetailPage = () => {
 
   const [experience, setExperience] = useState<IExperience | null>(null)
   const [buddyProfile, setBuddyProfile] = useState<any>(null)
+  const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [imgIndex, setImgIndex] = useState(0)
@@ -24,6 +25,11 @@ export const ExperienceDetailPage = () => {
   useEffect(() => {
     if (!id) return
     setLoading(true)
+
+    // Load categories động
+    experienceApi.getCategories()
+      .then(res => setCategories(res.data.result || []))
+      .catch(() => null)
 
     experienceApi.getById(id)
       .then(async (res) => {
@@ -43,13 +49,14 @@ export const ExperienceDetailPage = () => {
   }, [id])
 
   const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case 'food': return { label: '🍴 Ẩm thực', color: '#f59e0b' }
-      case 'adventure': return { label: '🧗 Phiêu lưu', color: '#10b981' }
-      case 'culture': return { label: '🏛️ Văn hóa', color: '#8b5cf6' }
-      case 'nightlife': return { label: '💃 Giải trí đêm', color: '#ec4899' }
-      default: return { label: '🗺️ Khác', color: '#64748b' }
+    const found = categories.find(c => c.slug === cat)
+    if (found) {
+      return {
+        label: `${found.icon} ${found.name}`,
+        color: found.color
+      }
     }
+    return { label: '🗺️ Khác', color: '#64748b' }
   }
 
   const buddyUser = buddyProfile?.userId || {}
