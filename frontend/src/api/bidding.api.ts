@@ -22,5 +22,8 @@ export const biddingApi = {
     axiosInstance.post<{ message: string; result: IBidding }>('/biddings', data, cfg),
 
   accept: (biddingId: string, cfg?: any) =>
-    axiosInstance.post<{ message: string; result: IBidding }>(`/biddings/${biddingId}/accept`, {}, cfg)
+    axiosInstance.post<{ message: string; result: IBidding }>(`/biddings/${biddingId}/accept`, {}, cfg),
+
+  getMyBiddings: (cfg?: any) =>
+    axiosInstance.get<{ message: string; result: IBidding[] }>('/biddings/my', cfg)
 }
