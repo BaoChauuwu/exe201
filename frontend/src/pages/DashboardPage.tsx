@@ -37,15 +37,17 @@ export default function DashboardPage() {
         { icon: <Plus size={22} />, label: 'Tạo chuyến đi (Tour)', desc: 'Tạo bài đăng trải nghiệm bản địa', color: '#10b981', to: '/experiences/create', actionId: 'action-create-experience' },
         { icon: <Bell size={22} />, label: 'Bảng yêu cầu (Nhận kèo)', desc: 'Xem yêu cầu tìm Buddy từ khách', color: '#8b5cf6', to: '/trip-requests/open', actionId: 'action-bidding' },
         { icon: <Map size={22} />, label: 'Tour của tôi', desc: 'Quản lý bài đăng & trạng thái duyệt', color: '#0284c7', to: '/experiences/my', actionId: 'action-my-experiences' },
-        { icon: <Calendar size={22} />, label: 'Quản lý lịch rảnh', desc: 'Thiết lập thời gian dẫn tour', color: '#0ea5e9', to: '/buddy-profile', actionId: 'action-schedule' },
+        { icon: <Calendar size={22} />, label: 'Lịch trình dẫn khách', desc: 'Xem và quản lý lịch dẫn khách bằng lịch biểu tương tác', color: '#0ea5e9', to: '/calendar', actionId: 'action-schedule' },
         { icon: <Wallet size={22} />, label: 'Ví & Rút tiền', desc: 'Theo dõi doanh thu & rút tiền', color: '#10b981', to: '/wallet', actionId: 'action-wallet' },
         { icon: <Users size={22} />, label: 'Hồ sơ Buddy', desc: 'Cập nhật giới thiệu, mức giá', color: '#fbbf24', to: '/buddy-profile', actionId: 'action-profile' }
       ]
     : [
         { icon: <Plus size={22} />, label: 'Tạo Yêu cầu chuyến đi', desc: 'Đăng nhu cầu tìm Buddy', color: '#10b981', to: '/trip-requests/new', actionId: 'action-create-req' },
         { icon: <Map size={22} />, label: 'Yêu cầu của tôi', desc: 'Quản lý yêu cầu & duyệt báo giá', color: '#0284c7', to: '/my-requests', actionId: 'action-my-reqs' },
+        { icon: <Calendar size={22} />, label: 'Lịch trình đặt tour', desc: 'Theo dõi lộ trình, thời gian bận bằng lịch biểu tương tác', color: '#0ea5e9', to: '/calendar', actionId: 'action-bookings' },
         { icon: <Compass size={22} />, label: 'Tìm Local Buddy', desc: 'Tìm hướng dẫn viên bản địa', color: '#8b5cf6', to: '/buddies', actionId: 'action-find-buddy' },
-        { icon: <Users size={22} />, label: 'Cộng đồng du lịch', desc: 'Kết nối với du khách khác', color: '#fbbf24', to: '/chat', actionId: 'action-community' }
+        { icon: <Wallet size={22} />, label: 'Ví tiền của tôi', desc: 'Theo dõi số dư & rút tiền hoàn', color: '#10b981', to: '/wallet', actionId: 'action-wallet' },
+        { icon: <Users size={22} />, label: 'Hồ sơ của tôi', desc: 'Quản lý tài khoản cá nhân', color: '#ec4899', to: '/profile', actionId: 'action-profile-view' }
       ]
 
   return (

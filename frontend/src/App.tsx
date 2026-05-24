@@ -30,6 +30,8 @@ import { MyTripRequestsPage } from './pages/MyTripRequestsPage'
 import { TouristLiveMap } from './pages/TouristLiveMap'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 import ExperienceDetailPage from './pages/ExperienceDetailPage'
+import MyBookingsPage from './pages/MyBookingsPage'
+import { CalendarPage } from './pages/CalendarPage'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -101,6 +103,9 @@ function App() {
           <Route path='/tourist/live/:bookingId' element={<TouristLiveMap />} />
           <Route path='/conversations' element={<ConversationsPage />} />
           <Route path='/chat/:receiverId' element={<Chat />} />
+          <Route path='/my-bookings' element={<MyBookingsPage />} />
+          <Route path='/wallet' element={<Wallet />} />
+          <Route path='/calendar' element={<CalendarPage />} />
         </Route>
 
         {/* Tourist specific routes */}
@@ -112,7 +117,6 @@ function App() {
         {/* Buddy specific routes */}
         <Route element={<ProtectedRoute allowedRoles={['buddy']} />}>
           <Route path='/buddy-profile' element={<BuddyProfilePage />} />
-          <Route path='/wallet' element={<Wallet />} />
           <Route path='/experiences/my' element={<MyExperiencesPage />} />
           <Route path='/experiences/create' element={<CreateExperiencePage />} />
           <Route path='/experiences/:id/edit' element={<EditExperiencePage />} />

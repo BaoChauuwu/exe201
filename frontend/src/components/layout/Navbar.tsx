@@ -158,13 +158,6 @@ export default function Navbar() {
               </Link>
             </li>
             <li>
-              <a href='#features' style={linkStyle}
-                onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                Tính năng
-              </a>
-            </li>
-            <li>
               <Link to='/buddies' style={linkStyle}
                 onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
@@ -185,6 +178,20 @@ export default function Navbar() {
                     onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                     Tin nhắn
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/wallet' style={linkStyle}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
+                    Ví tiền
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/calendar' style={linkStyle}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
+                    Lịch trình
                   </Link>
                 </li>
                 {user?.role === 'tourist' && (

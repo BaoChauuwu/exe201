@@ -46,4 +46,10 @@ export interface UserProfile {
   cover_photo: string
   verify: number
   role: 'tourist' | 'buddy' | 'admin'
+  walletBalance?: number
+  refundPaymentMethod?: {
+    bankCode: string
+    accountNumber: string
+    accountName: string
+  }
 }
