@@ -9,6 +9,15 @@ class ExperiencesService {
   async createExperience(buddyId: string, body: CreateExperienceRequestBody, files: Express.Multer.File[]) {
     const imageUrls: string[] = []
 
+    // Đọc các URL ảnh đã upload từ Frontend
+    const keepImagesRaw = body.keepImages ?? body['keepImages[]'] ?? []
+    const keepImages = Array.isArray(keepImagesRaw)
+      ? keepImagesRaw
+      : typeof keepImagesRaw === 'string'
+        ? [keepImagesRaw]
+        : []
+    imageUrls.push(...keepImages)
+
     for (const file of files) {
       const { url } = await uploadToCloudinary(file.buffer, `experiences/${buddyId}`)
       imageUrls.push(url)

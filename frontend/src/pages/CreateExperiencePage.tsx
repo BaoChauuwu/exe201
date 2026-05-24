@@ -17,6 +17,41 @@ export const CreateExperiencePage = () => {
     setErrorMsg('')
     setSuccessMsg('')
     try {
+      // 1. Upload ảnh lên Cloudinary từ Frontend nếu có File
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+      
+      const uploadedImageUrls: string[] = []
+      
+      for (const img of data.images) {
+        if (img instanceof File) {
+          if (!cloudName || !uploadPreset) {
+            throw new Error('Chưa cấu hình Cloudinary credentials (VITE_CLOUDINARY_CLOUD_NAME) trong file .env frontend')
+          }
+          const formData = new FormData()
+          formData.append('file', img)
+          formData.append('upload_preset', uploadPreset)
+
+          const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            body: formData
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error?.message || 'Không thể tải ảnh lên Cloudinary')
+          }
+
+          const result = await response.json()
+          uploadedImageUrls.push(result.secure_url)
+        } else if (typeof img === 'string') {
+          uploadedImageUrls.push(img)
+        }
+      }
+      
+      // 2. Gán lại danh sách URL vừa upload vào data
+      data.images = uploadedImageUrls
+
       await experienceApi.create(data)
       setSuccessMsg('Tour đã được tạo thành công! Đang chờ admin duyệt.')
       setTimeout(() => navigate('/experiences/my'), 2000)
