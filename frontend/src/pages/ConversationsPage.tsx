@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Navbar from '../components/layout/Navbar';
@@ -13,9 +13,7 @@ export const ConversationsPage = () => {
 
     useEffect(() => {
         if (!user || !accessToken) return;
-        axios.get('http://localhost:3000/messages/conversations', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        })
+        axiosInstance.get('/messages/conversations')
             .then(res => {
                 setConversations(res.data.data || []);
                 setLoading(false);

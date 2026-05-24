@@ -8,13 +8,16 @@ export const updateLocation = async (req: Request, res: Response) => {
 
     try {
         const tracking = await LiveTracking.create({
-            bookingId: new ObjectId(bookingId),
-            buddyId: new ObjectId(buddyId),
+            bookingId: new ObjectId(bookingId as string),
+            buddyId: new ObjectId(buddyId as string),
             location: {
                 type: 'Point',
                 coordinates: [lng, lat]
             }
         })
+
+        const io = getIO()
+        io.emit(`location_updated_${bookingId}`, { lat, lng })
 
         res.json({
             message: 'Location updated',

@@ -27,6 +27,7 @@ import { MyExperiencesPage } from './pages/MyExperiencesPage'
 import { TripRequestForm } from './pages/TripRequestForm'
 import { TripRequestsPage } from './pages/TripRequestsPage'
 import { MyTripRequestsPage } from './pages/MyTripRequestsPage'
+import { TouristLiveMap } from './pages/TouristLiveMap'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 import { Toaster } from 'react-hot-toast'
@@ -95,6 +96,7 @@ function App() {
           <Route path='/profile' element={<ProfilePage />} />
           <Route path='/ekyc' element={<EkycPage />} />
           <Route path='/live-tracking/:bookingId' element={<LiveTracking />} />
+          <Route path='/tourist/live/:bookingId' element={<TouristLiveMap />} />
           <Route path='/conversations' element={<ConversationsPage />} />
           <Route path='/chat/:receiverId' element={<Chat />} />
         </Route>

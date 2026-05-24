@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axios';
 import { socket } from '../socket';
 import Navbar from '../components/layout/Navbar';
 import { Send, Phone, Video, MoreHorizontal, Image as ImageIcon } from 'lucide-react';
@@ -24,13 +24,11 @@ export const Chat = () => {
         if (!userId || !receiverId || !accessToken) return;
 
         // Fetch receiver info
-        axios.get(`http://localhost:3000/users/${receiverId}`)
+        axiosInstance.get(`/users/${receiverId}`)
             .then(res => setReceiverInfo(res.data.result))
             .catch(console.error);
 
-        axios.get(`http://localhost:3000/messages/user/${receiverId}`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        })
+        axiosInstance.get(`/messages/user/${receiverId}`)
             .then(res => { setMessages(res.data.data || []); setTimeout(scrollToBottom, 100); })
             .catch(console.error);
 
@@ -60,9 +58,7 @@ export const Chat = () => {
     const sendMessage = () => {
         if (!newMessage.trim() || !userId || !receiverId) return;
         
-        axios.post(`http://localhost:3000/messages/user/${receiverId}`, { content: newMessage }, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        })
+        axiosInstance.post(`/messages/user/${receiverId}`, { content: newMessage })
             .then(res => {
                 const savedMsg = res.data.data;
                 socket.emit('send_message', { receiverId, message: savedMsg });

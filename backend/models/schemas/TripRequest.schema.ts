@@ -56,4 +56,5 @@ const tripRequestSchema = new Schema<ITripRequest>(
 
 tripRequestSchema.index({ meetingPoint: '2dsphere' })
 
-export default mongoose.models.TripRequests || mongoose.model<ITripRequest>('TripRequests', tripRequestSchema)
+const TripRequestModel = mongoose.models.TripRequests || mongoose.model<ITripRequest>('TripRequests', tripRequestSchema)
+export default TripRequestModel as mongoose.Model<ITripRequest>
