@@ -41,6 +41,7 @@ export const authApi = {
 
   // Google OAuth — redirect trực tiếp tới backend
   loginWithGoogle: () => {
-    window.location.href = '/api/users/google'
+    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : '/api'
+    window.location.href = `${baseUrl}/users/google`
   }
 }
