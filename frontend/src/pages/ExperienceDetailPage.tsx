@@ -57,7 +57,7 @@ export const ExperienceDetailPage = () => {
 
   useEffect(() => {
     if (isPaymentModalOpen && accessToken) {
-      axios.get('http://localhost:3000/users/me', {
+      axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/users/me', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
       .then(res => {
@@ -86,7 +86,7 @@ export const ExperienceDetailPage = () => {
 
         // Fetch buddy profile by buddyId (userId)
         try {
-          const profileRes = await axios.get(`http://localhost:3000/buddy-profile/${exp.buddyId}`)
+          const profileRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/buddy-profile/${exp.buddyId}`)
           setBuddyProfile(profileRes.data.data)
         } catch {
           // Buddy profile optional, not fatal

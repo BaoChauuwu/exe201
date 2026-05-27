@@ -20,9 +20,9 @@ export const AdminDashboard = () => {
     const cfg = { headers: { Authorization: `Bearer ${accessToken}` } };
 
     const fetchAll = () => {
-        axios.get('http://localhost:3000/admin/ekyc/pending', cfg).then(r => setEkycs(r.data.data || [])).catch(console.error);
-        axios.get('http://localhost:3000/admin/payouts/pending', cfg).then(r => setPayouts(r.data.data || [])).catch(console.error);
-        axios.get('http://localhost:3000/admin/users', cfg).then(r => setUsers(r.data.data || [])).catch(console.error);
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/ekyc/pending', cfg).then(r => setEkycs(r.data.data || [])).catch(console.error);
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/payouts/pending', cfg).then(r => setPayouts(r.data.data || [])).catch(console.error);
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/users', cfg).then(r => setUsers(r.data.data || [])).catch(console.error);
         experienceApi.getPending(cfg).then(r => setExperiences(r.data.data || [])).catch(console.error);
     };
 
@@ -31,13 +31,13 @@ export const AdminDashboard = () => {
     const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
     const approveEkyc = async (id: string, status: string) => {
-        await axios.post('http://localhost:3000/admin/ekyc/approve', { ekycId: id, status }, cfg).catch(console.error);
+        await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/ekyc/approve', { ekycId: id, status }, cfg).catch(console.error);
         showToast(`eKYC ${status} thành công!`);
         fetchAll();
     };
 
     const approvePayout = async (id: string, status: string) => {
-        await axios.post('http://localhost:3000/admin/payouts/approve', { payoutId: id, status }, cfg).catch(console.error);
+        await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/payouts/approve', { payoutId: id, status }, cfg).catch(console.error);
         showToast(`Payout ${status} thành công!`);
         fetchAll();
     };
@@ -56,7 +56,7 @@ export const AdminDashboard = () => {
     const deleteUser = async (id: string) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa user này không? Hành động này không thể hoàn tác!')) return;
         try {
-            await axios.delete(`http://localhost:3000/admin/users/${id}`, cfg);
+            await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/admin/users/${id}`, cfg);
             showToast('Đã xóa user thành công!');
             fetchAll();
         } catch (error) {

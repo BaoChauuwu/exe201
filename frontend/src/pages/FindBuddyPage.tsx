@@ -9,7 +9,7 @@ export const FindBuddyPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get('http://localhost:3000/buddy-profile')
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/buddy-profile')
             .then(res => {
                 setBuddies(res.data.data || []);
                 setLoading(false);

@@ -13,8 +13,8 @@ export const BuddyPublicProfilePage = () => {
 
     useEffect(() => {
         Promise.all([
-            axios.get(`http://localhost:3000/buddy-profile/${id}`),
-            axios.get(`http://localhost:3000/experiences`)
+            axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/buddy-profile/${id}`),
+            axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/experiences`)
         ])
             .then(([profileRes, expRes]) => {
                 const buddyProfile = profileRes.data.data;

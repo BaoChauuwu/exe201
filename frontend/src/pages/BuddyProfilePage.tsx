@@ -33,7 +33,7 @@ export const BuddyProfilePage = () => {
     const { accessToken } = useAuthStore();
 
     useEffect(() => {
-        axios.get('http://localhost:3000/buddy-profile/me', { headers: { Authorization: `Bearer ${accessToken}` } })
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/buddy-profile/me', { headers: { Authorization: `Bearer ${accessToken}` } })
             .then(res => {
                 const d = res.data.data;
                 const parsedSlots: AvailabilitySlot[] = [];
@@ -86,7 +86,7 @@ export const BuddyProfilePage = () => {
         setStatus('loading');
         try {
             const availabilityArray = slots.map(s => `${s.day} ${s.start} - ${s.end}`);
-            await axios.post('http://localhost:3000/buddy-profile/update', {
+            await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/buddy-profile/update', {
                 availability: availabilityArray,
                 languages: languages.split(',').map(s => s.trim()).filter(Boolean),
                 hourlyRate: hourlyRate,
