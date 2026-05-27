@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/layout/Navbar';
 import { bookingApi, type IBooking } from '../api/booking.api';
 import { useAuthStore } from '../store/authStore';
 import { 
-  ChevronLeft, ChevronRight, Calendar, Clock, User, 
+  ChevronLeft, ChevronRight, Calendar, Clock, 
   MessageSquare, MapPin, Navigation, ArrowRight, X, Sparkles
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -304,7 +304,7 @@ export const CalendarPage = () => {
                         </div>
 
                         {/* Weekday headers */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', textAlign: 'center', borderBottom: '1px solid rgba(14,165,233,0.08)', pb: '0.75rem', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', textAlign: 'center', borderBottom: '1px solid rgba(14,165,233,0.08)', paddingBottom: '0.75rem', marginBottom: '0.5rem' }}>
                             {['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'].map((w, idx) => (
                                 <span key={idx} style={{ fontSize: '0.75rem', fontWeight: 700, color: idx === 6 ? '#ef4444' : 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', paddingBottom: '0.5rem' }}>
                                     {w}
