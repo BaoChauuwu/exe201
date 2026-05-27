@@ -58,16 +58,14 @@ class BookingsService {
             throw new Error('Không tìm thấy hồ sơ của Local Buddy dẫn tour này.')
         }
 
-        // Validate Trùng Lịch bận của Buddy
-        const hasOverlap = await this.checkBuddyAvailability(
+        // Validate Trùng Lịch bận của Buddy và Khung giờ làm việc
+        await this.checkBuddyAvailability(
             experience.buddyId.toString(),
             scheduledDateObj,
             startTime,
-            hours
+            hours,
+            buddyProfile.availability || []
         )
-        if (hasOverlap) {
-            throw new Error('Local Buddy đã bận dẫn tour hoặc bị khóa lịch vào khung giờ này.')
-        }
 
         // Tính toán chi phí snapshot
         const pricePerHourSnapshot = experience.price
@@ -124,12 +122,44 @@ class BookingsService {
         buddyId: string,
         date: Date,
         startTime: string,
-        hours: number
-    ): Promise<boolean> {
+        hours: number,
+        buddyAvailability: string[]
+    ): Promise<void> {
         // Quy đổi booking mới ra số phút tính từ đầu ngày
         const [newHour, newMin] = startTime.split(':').map(Number)
         const newStartMin = newHour * 60 + newMin
         const newEndMin = newStartMin + hours * 60
+
+        // 2.0. Kiểm tra khung giờ làm việc của Buddy (Availability)
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        const dayName = daysOfWeek[date.getDay()]
+        
+        let isWithinWorkingHours = false
+        if (buddyAvailability && buddyAvailability.length > 0) {
+            for (const slotStr of buddyAvailability) {
+                const parts = slotStr.split(' ')
+                // format: "Monday 08:00 - 17:00"
+                if (parts.length >= 3 && parts[0] === dayName) {
+                    const slotStart = parts[1]
+                    const slotEnd = parts[3]
+                    
+                    const [slotStartHour, slotStartMin] = slotStart.split(':').map(Number)
+                    const slotStartMins = slotStartHour * 60 + slotStartMin
+                    
+                    const [slotEndHour, slotEndMin] = slotEnd.split(':').map(Number)
+                    const slotEndMins = slotEndHour * 60 + slotEndMin
+                    
+                    if (newStartMin >= slotStartMins && newEndMin <= slotEndMins) {
+                        isWithinWorkingHours = true
+                        break
+                    }
+                }
+            }
+        }
+        
+        if (!isWithinWorkingHours) {
+            throw new Error(`Local Buddy không làm việc vào khung giờ này (Yêu cầu thuộc khoảng thời gian rảnh trong ngày ${dayName}).`)
+        }
 
         // 2.1. Kiểm tra các Booking đã Confirm/Ongoing của Buddy trong ngày
         const startOfDay = new Date(date)
@@ -150,7 +180,7 @@ class BookingsService {
 
             // Kiểm tra overlap
             if (newStartMin < existEndMin && newEndMin > existStartMin) {
-                return true // Trùng giờ!
+                throw new Error('Local Buddy đã bận dẫn tour vào khung giờ này.')
             }
         }
 
@@ -168,11 +198,9 @@ class BookingsService {
             const existEndMin = slotEndHour * 60 + slotEndMin
 
             if (newStartMin < existEndMin && newEndMin > existStartMin) {
-                return true // Trùng giờ slots bị khóa!
+                throw new Error('Local Buddy đã bị khóa lịch vào khung giờ này.')
             }
         }
-
-        return false
     }
 
     // 3. Xử lý thanh toán giả lập bằng VNPAY/MOMO (Confirm & Paid)

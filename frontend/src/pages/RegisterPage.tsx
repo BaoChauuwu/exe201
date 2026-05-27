@@ -25,15 +25,6 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>
 
-const inputStyle = (hasError: boolean): React.CSSProperties => ({
-  width: '100%', boxSizing: 'border-box' as any,
-  background: 'rgba(255,255,255,0.06)',
-  border: `1px solid ${hasError ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`,
-  borderRadius: '12px', padding: '0.875rem 1rem 0.875rem 2.75rem',
-  color: 'white', fontSize: '0.9rem', outline: 'none', transition: 'border-color 0.2s',
-  colorScheme: 'dark' as any
-})
-
 export default function RegisterPage() {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -56,7 +47,6 @@ export default function RegisterPage() {
       setTimeout(() => navigate('/dashboard'), 1500)
     } catch (err: any) {
       const data = err.response?.data
-      // Backend trả 422 với errors object chi tiết từng field
       if (data?.errors) {
         const fieldErrors = Object.values(data.errors) as any[]
         const firstMsg = fieldErrors[0]?.msg
@@ -70,154 +60,276 @@ export default function RegisterPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '2rem 1.5rem', fontFamily: "'Inter', -apple-system, sans-serif",
-      position: 'relative', overflow: 'hidden'
+      display: 'flex',
+      fontFamily: "'Inter', -apple-system, sans-serif"
     }}>
-      <div style={{ position: 'absolute', top: '-10rem', right: '-10rem', width: '40rem', height: '40rem', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '-10rem', left: '-10rem', width: '35rem', height: '35rem', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-
-      <div style={{ width: '100%', maxWidth: '500px', position: 'relative', zIndex: 1 }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Link to='/' style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textDecoration: 'none' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(139,92,246,0.4)', fontSize: '28px' }}>✈️</div>
-            <div>
-              <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'white', margin: 0 }}>Tạo tài khoản mới</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>Tham gia cộng đồng UniTravel ngay hôm nay</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Card */}
-        <div style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', padding: '2rem', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <GoogleButton onClick={() => authApi.loginWithGoogle()} label='Đăng ký với Google' />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem' }}>hoặc đăng ký bằng email</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          </div>
-
-
-
-          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-            {/* Role Selector */}
-            <div>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Bạn tham gia với vai trò</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div
-                  id='role-tourist-btn'
-                  onClick={() => setValue('role', 'tourist')}
-                  style={{
-                    background: selectedRole === 'tourist' ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${selectedRole === 'tourist' ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
-                    borderRadius: '16px', padding: '1.25rem 0.75rem', cursor: 'pointer',
-                    textAlign: 'center', transition: 'all 0.25s',
-                    boxShadow: selectedRole === 'tourist' ? '0 0 20px rgba(99,102,241,0.3)' : 'none'
-                  }}
-                >
-                  <Plane size={24} style={{ color: selectedRole === 'tourist' ? '#818cf8' : 'rgba(255,255,255,0.3)', marginBottom: '0.5rem' }} />
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: selectedRole === 'tourist' ? 'white' : 'rgba(255,255,255,0.4)' }}>Khách du lịch</div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.25rem', lineHeight: 1.3 }}>Tìm & thuê hướng dẫn viên</div>
-                </div>
-                <div
-                  id='role-buddy-btn'
-                  onClick={() => setValue('role', 'buddy')}
-                  style={{
-                    background: selectedRole === 'buddy' ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${selectedRole === 'buddy' ? '#8b5cf6' : 'rgba(255,255,255,0.1)'}`,
-                    borderRadius: '16px', padding: '1.25rem 0.75rem', cursor: 'pointer',
-                    textAlign: 'center', transition: 'all 0.25s',
-                    boxShadow: selectedRole === 'buddy' ? '0 0 20px rgba(139,92,246,0.3)' : 'none'
-                  }}
-                >
-                  <Users size={24} style={{ color: selectedRole === 'buddy' ? '#c4b5fd' : 'rgba(255,255,255,0.3)', marginBottom: '0.5rem' }} />
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: selectedRole === 'buddy' ? 'white' : 'rgba(255,255,255,0.4)' }}>Local Buddy</div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.25rem', lineHeight: 1.3 }}>Dẫn tour & chia sẻ văn hóa</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Name + DOB grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Họ và tên</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                  <input id='reg-name' type='text' placeholder='Nguyễn Văn A' {...register('name')} style={inputStyle(!!errors.name)} />
-                </div>
-                {errors.name && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{errors.name.message}</span>}
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Ngày sinh</label>
-                <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                  <input id='reg-dob' type='date' {...register('date_of_birth')} style={inputStyle(!!errors.date_of_birth)} />
-                </div>
-                {errors.date_of_birth && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{errors.date_of_birth.message}</span>}
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Email</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                <input id='reg-email' type='email' placeholder='your@email.com' {...register('email')} style={inputStyle(!!errors.email)} />
-              </div>
-              {errors.email && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{errors.email.message}</span>}
-            </div>
-
-            {/* Password + Confirm */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Mật khẩu</label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                  <input id='reg-password' type={showPass ? 'text' : 'password'} placeholder='Tối thiểu 8 ký tự' {...register('password')} style={{ ...inputStyle(!!errors.password), paddingRight: '3rem' }} />
-                  <button type='button' onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}>
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                {errors.password && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{errors.password.message}</span>}
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Xác nhận</label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                  <input id='reg-confirm' type={showConfirm ? 'text' : 'password'} placeholder='Nhập lại' {...register('confirm_password')} style={{ ...inputStyle(!!errors.confirm_password), paddingRight: '3rem' }} />
-                  <button type='button' onClick={() => setShowConfirm(!showConfirm)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}>
-                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                {errors.confirm_password && <span style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', display: 'block' }}>{errors.confirm_password.message}</span>}
-              </div>
-            </div>
-
-            <button
-              id='btn-register-submit'
-              type='submit'
-              disabled={isSubmitting}
-              style={{ width: '100%', background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 8px 20px rgba(139,92,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isSubmitting ? 0.7 : 1 }}
-            >
-              {isSubmitting ? (
-                <><div style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Đang tạo tài khoản...</>
-              ) : 'Tạo tài khoản'}
-            </button>
-          </form>
-
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '1.5rem' }}>
-            Đã có tài khoản?{' '}
-            <Link to='/login' style={{ color: '#a78bfa', fontWeight: 600, textDecoration: 'none' }}>Đăng nhập</Link>
+      {/* Nửa trái: Background Image & Branding */}
+      <div className="auth-image-side" style={{
+        flex: 1.2,
+        position: 'relative',
+        background: 'url("https://images.unsplash.com/photo-1488085061387-422e29b40080?q=80&w=2000&auto=format&fit=crop") center/cover no-repeat',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.4) 0%, rgba(15, 23, 42, 0.7) 100%)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          padding: '2rem',
+          textAlign: 'center'
+        }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '1rem', color: 'rgba(255,255,255,0.8)' }}>
+            Team Nexus
+          </h2>
+          <h1 style={{ fontSize: '4rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0, textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+            UniTravel
+          </h1>
+          <p style={{ fontSize: '1.25rem', marginTop: '1.5rem', maxWidth: '400px', lineHeight: 1.6, color: 'rgba(255,255,255,0.9)' }}>
+            Khám phá thế giới qua góc nhìn của người bản địa. Trải nghiệm du lịch chân thực, an toàn và độc đáo.
           </p>
         </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+
+      {/* Nửa phải: Form đăng ký */}
+      <div style={{
+        flex: 1,
+        background: 'var(--gradient-hero)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Decorative orbs */}
+        <div className="auth-bg-orb auth-bg-orb-1" />
+        <div className="auth-bg-orb auth-bg-orb-2" />
+
+        <div style={{ width: '100%', maxWidth: '500px', position: 'relative', zIndex: 1 }}>
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <Link to='/' style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textDecoration: 'none' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-glow)', fontSize: '28px' }}>✈️</div>
+              <div>
+                <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--color-text)', margin: 0 }}>Tạo tài khoản mới</h1>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>Tham gia cộng đồng UniTravel ngay hôm nay</p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Card */}
+          <div style={{ background: '#ffffff', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 40px rgba(14, 165, 233, 0.08)', border: '1px solid var(--color-border)' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <GoogleButton onClick={() => authApi.loginWithGoogle()} label='Đăng ký với Google' />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 500 }}>hoặc đăng ký bằng email</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+              {/* Role Selector */}
+              <div>
+                <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Bạn tham gia với vai trò</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div
+                    id='role-tourist-btn'
+                    onClick={() => setValue('role', 'tourist')}
+                    className={`role-btn ${selectedRole === 'tourist' ? 'active tourist' : ''}`}
+                  >
+                    <Plane size={24} style={{ color: selectedRole === 'tourist' ? '#0ea5e9' : 'var(--color-text-faint)', marginBottom: '0.5rem' }} />
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: selectedRole === 'tourist' ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Khách du lịch</div>
+                    <div style={{ fontSize: '0.7rem', color: selectedRole === 'tourist' ? 'var(--color-text-muted)' : 'var(--color-text-faint)', marginTop: '0.25rem', lineHeight: 1.3 }}>Tìm & thuê hướng dẫn viên</div>
+                  </div>
+                  <div
+                    id='role-buddy-btn'
+                    onClick={() => setValue('role', 'buddy')}
+                    className={`role-btn ${selectedRole === 'buddy' ? 'active buddy' : ''}`}
+                  >
+                    <Users size={24} style={{ color: selectedRole === 'buddy' ? '#8b5cf6' : 'var(--color-text-faint)', marginBottom: '0.5rem' }} />
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: selectedRole === 'buddy' ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Local Buddy</div>
+                    <div style={{ fontSize: '0.7rem', color: selectedRole === 'buddy' ? 'var(--color-text-muted)' : 'var(--color-text-faint)', marginTop: '0.25rem', lineHeight: 1.3 }}>Dẫn tour & chia sẻ văn hóa</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Name + DOB grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label className="input-label">Họ và tên</label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={16} className="input-icon" />
+                    <input id='reg-name' type='text' placeholder='Nguyễn Văn A' {...register('name')} className={`auth-input ${errors.name ? 'error' : ''}`} />
+                  </div>
+                  {errors.name && <span className="error-text">{errors.name.message}</span>}
+                </div>
+                <div>
+                  <label className="input-label">Ngày sinh</label>
+                  <div style={{ position: 'relative' }}>
+                    <Calendar size={16} className="input-icon" />
+                    <input id='reg-dob' type='date' {...register('date_of_birth')} className={`auth-input ${errors.date_of_birth ? 'error' : ''}`} style={{ paddingRight: '1rem' }} />
+                  </div>
+                  {errors.date_of_birth && <span className="error-text">{errors.date_of_birth.message}</span>}
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="input-label">Email</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} className="input-icon" />
+                  <input id='reg-email' type='email' placeholder='your@email.com' {...register('email')} className={`auth-input ${errors.email ? 'error' : ''}`} />
+                </div>
+                {errors.email && <span className="error-text">{errors.email.message}</span>}
+              </div>
+
+              {/* Password + Confirm */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label className="input-label">Mật khẩu</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} className="input-icon" />
+                    <input id='reg-password' type={showPass ? 'text' : 'password'} placeholder='Tối thiểu 8 ký tự' {...register('password')} className={`auth-input ${errors.password ? 'error' : ''}`} style={{ paddingRight: '2.5rem' }} />
+                    <button type='button' onClick={() => setShowPass(!showPass)} className="pass-toggle-btn">
+                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.password && <span className="error-text">{errors.password.message}</span>}
+                </div>
+                <div>
+                  <label className="input-label">Xác nhận</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} className="input-icon" />
+                    <input id='reg-confirm' type={showConfirm ? 'text' : 'password'} placeholder='Nhập lại' {...register('confirm_password')} className={`auth-input ${errors.confirm_password ? 'error' : ''}`} style={{ paddingRight: '2.5rem' }} />
+                    <button type='button' onClick={() => setShowConfirm(!showConfirm)} className="pass-toggle-btn">
+                      {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.confirm_password && <span className="error-text">{errors.confirm_password.message}</span>}
+                </div>
+              </div>
+
+              <button
+                id='btn-register-submit'
+                type='submit'
+                disabled={isSubmitting}
+                style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 8px 20px rgba(14,165,233,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isSubmitting ? 0.7 : 1, marginTop: '0.5rem', transition: 'all 0.2s' }}
+              >
+                {isSubmitting ? (
+                  <><div style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Đang tạo tài khoản...</>
+                ) : 'Tạo tài khoản'}
+              </button>
+            </form>
+
+            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: 0 }}>
+              Đã có tài khoản?{' '}
+              <Link to='/login' style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}>Đăng nhập</Link>
+            </p>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+        
+        .input-label {
+          display: block; 
+          color: var(--color-text-muted); 
+          font-size: 0.8rem; 
+          font-weight: 600; 
+          text-transform: uppercase; 
+          letter-spacing: 0.05em; 
+          margin-bottom: 0.5rem;
+        }
+        
+        .input-icon {
+          position: absolute; 
+          left: 1rem; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          color: var(--color-text-faint);
+        }
+
+        .auth-input {
+          width: 100%; 
+          box-sizing: border-box;
+          background: var(--color-bg); 
+          border: 1px solid var(--color-border);
+          border-radius: 12px; 
+          padding: 0.875rem 1rem 0.875rem 2.75rem;
+          color: var(--color-text); 
+          font-size: 0.95rem; 
+          outline: none;
+          transition: all 0.2s;
+        }
+        .auth-input:focus {
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        .auth-input.error {
+          border-color: var(--color-error);
+        }
+        
+        .error-text {
+          color: var(--color-error); 
+          font-size: 0.75rem; 
+          margin-top: 0.35rem; 
+          display: block;
+        }
+
+        .pass-toggle-btn {
+          position: absolute; 
+          right: 1rem; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          background: none; 
+          border: none; 
+          cursor: pointer; 
+          color: var(--color-text-faint); 
+          padding: 0;
+        }
+        .pass-toggle-btn:hover {
+          color: var(--color-primary);
+        }
+
+        .role-btn {
+          background: var(--color-bg);
+          border: 1px solid var(--color-border);
+          border-radius: 16px; 
+          padding: 1.25rem 0.75rem; 
+          cursor: pointer;
+          text-align: center; 
+          transition: all 0.25s;
+        }
+        .role-btn:hover {
+          border-color: var(--color-primary);
+        }
+        .role-btn.active.tourist {
+          background: rgba(14, 165, 233, 0.05);
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 1px var(--color-primary);
+        }
+        .role-btn.active.buddy {
+          background: rgba(139, 92, 246, 0.05);
+          border-color: #8b5cf6;
+          box-shadow: 0 0 0 1px #8b5cf6;
+        }
+        
+        @media (max-width: 900px) {
+          .auth-image-side {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
