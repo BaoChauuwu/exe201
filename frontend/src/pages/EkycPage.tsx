@@ -157,7 +157,7 @@ export const EkycPage = () => {
       ]);
 
       await axios.post(
-        'http://localhost:3000/ekyc/submit',
+        (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/ekyc/submit',
         { idCardFrontUrl, idCardBackUrl, selfieUrl },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );

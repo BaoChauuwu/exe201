@@ -28,7 +28,7 @@ export const MyBookingsPage = () => {
 
   useEffect(() => {
     if (isPayModalOpen && accessToken) {
-      axios.get('http://localhost:3000/users/me', {
+      axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/users/me', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
       .then(res => {

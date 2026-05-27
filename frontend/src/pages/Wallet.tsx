@@ -19,7 +19,7 @@ export const Wallet = () => {
     useEffect(() => {
         if (buddyId && accessToken) {
             if (user?.role === 'buddy') {
-                axios.get('http://localhost:3000/buddy-profile/me', {
+                axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/buddy-profile/me', {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 })
                 .then(res => {
@@ -34,7 +34,7 @@ export const Wallet = () => {
                 })
                 .catch(console.error);
             } else {
-                axios.get('http://localhost:3000/users/me', {
+                axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/users/me', {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 })
                 .then(res => {
@@ -61,7 +61,7 @@ export const Wallet = () => {
             return;
         }
         setStatus('loading');
-        axios.post('http://localhost:3000/payouts/request', { buddyId, amount: withdrawAmount, bankCode, accountNumber, accountName }, {
+        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/payouts/request', { buddyId, amount: withdrawAmount, bankCode, accountNumber, accountName }, {
             headers: { Authorization: `Bearer ${accessToken}` }
         })
             .then(() => {

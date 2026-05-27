@@ -26,7 +26,7 @@ export const LiveTracking = () => {
                 setLocation({ lat: coords.latitude, lng: coords.longitude });
                 setStatus('Đang theo dõi');
                 if (bookingId && buddyId) {
-                    axios.post('http://localhost:3000/safety/tracking', { bookingId, buddyId, lat: coords.latitude, lng: coords.longitude }).catch(console.error);
+                    axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', { bookingId, buddyId, lat: coords.latitude, lng: coords.longitude }).catch(console.error);
                 }
             },
             err => setStatus('Lỗi: ' + err.message),
@@ -38,7 +38,7 @@ export const LiveTracking = () => {
     const handleSOS = () => {
         if (!bookingId || !buddyId) return;
         if (window.confirm('⚠️ BẠN CÓ CHẮC MUỐN KÊU CỨU KHẨN CẤP? Admin sẽ được thông báo ngay lập tức!')) {
-            axios.post('http://localhost:3000/safety/sos', { bookingId, userId: buddyId, message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.' })
+            axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', { bookingId, userId: buddyId, message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.' })
                 .then(() => { setSosTriggered(true); toast.success('Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
                 .catch(() => toast.error('Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
         }
