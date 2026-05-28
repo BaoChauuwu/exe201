@@ -84,12 +84,10 @@ class UsersService {
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token }).toObject()
     )
-    // Gửi email xác thực
-    try {
-      await sendVerifyEmail(payload.email, payload.name, email_verify_token)
-    } catch (error) {
+    // Gửi email xác thực (fire-and-forget)
+    sendVerifyEmail(payload.email, payload.name, email_verify_token).catch((error) => {
       console.error('Lỗi khi gửi email xác thực:', error)
-    }
+    })
     return {
       access_token,
       refresh_token
@@ -153,13 +151,11 @@ class UsersService {
       { _id: new ObjectId(user_id) },
       { $set: { email_verify_token, updated_at: new Date() } }
     )
-    // Gửi lại email xác thực
+    // Gửi lại email xác thực (fire-and-forget)
     if (user) {
-      try {
-        await sendVerifyEmail(user.email, user.name, email_verify_token)
-      } catch (error) {
+      sendVerifyEmail(user.email, user.name, email_verify_token).catch((error) => {
         console.error('Lỗi khi gửi email xác thực:', error)
-      }
+      })
     }
     return {
       message: userMessages.RESEND_EMAIL_VERIFY_SUCCESS
@@ -179,13 +175,11 @@ class UsersService {
         }
       }
     )
-    // Gửi email đặt lại mật khẩu
+    // Gửi email đặt lại mật khẩu (fire-and-forget)
     if (user) {
-      try {
-        await sendForgotPasswordEmail(user.email, user.name, forgot_password_token)
-      } catch (error) {
+      sendForgotPasswordEmail(user.email, user.name, forgot_password_token).catch((error) => {
         console.error('Lỗi khi gửi email đặt lại mật khẩu:', error)
-      }
+      })
     }
     return {
       message: userMessages.CREATE_FORGOT_PASSWORD_TOKEN_SUCCESS
