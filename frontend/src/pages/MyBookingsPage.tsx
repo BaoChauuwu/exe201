@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/layout/Navbar';
 import { bookingApi, type IBooking } from '../api/booking.api';
+import { vnpayApi } from '../api/vnpay.api';
 import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
 import { 
@@ -117,16 +118,34 @@ export const MyBookingsPage = () => {
     setPaymentLoading(true);
     try {
       if (paymentMethod === 'Wallet') {
+        // Thanh toán bằng ví nội bộ UniTravel
         await bookingApi.payWithWallet(selectedBooking._id);
+        toast.success('Thanh toán thành công! Chuyến đi đã sẵn sàng khởi hành 🎉');
+        setIsPayModalOpen(false);
+        fetchBookings();
+      } else if (paymentMethod === 'VNPay') {
+        // Thanh toán qua cổng VNPAY — redirect sang trang VNPAY
+        const res = await vnpayApi.createPaymentUrl({
+          bookingId: selectedBooking._id,
+          orderDescription: `Thanh toán tour ${selectedBooking.bookingCode}`
+        });
+        const paymentUrl = res.data?.data?.paymentUrl;
+        if (paymentUrl) {
+          // Redirect toàn bộ trình duyệt sang cổng VNPAY
+          window.location.href = paymentUrl;
+        } else {
+          toast.error('Không tạo được link thanh toán. Vui lòng thử lại.');
+          setPaymentLoading(false);
+        }
       } else {
+        // Các phương thức khác (MoMo giả lập, v.v.)
         await bookingApi.pay(selectedBooking._id, paymentMethod);
+        toast.success('Thanh toán thành công! Chuyến đi đã sẵn sàng khởi hành 🎉');
+        setIsPayModalOpen(false);
+        fetchBookings();
       }
-      toast.success('Thanh toán thành công! Chuyến đi đã sẵn sàng khởi hành 🎉');
-      setIsPayModalOpen(false);
-      fetchBookings();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Thanh toán thất bại.');
-    } finally {
       setPaymentLoading(false);
     }
   };
