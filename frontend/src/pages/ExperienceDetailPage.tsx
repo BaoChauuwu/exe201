@@ -9,6 +9,7 @@ import {
 import Navbar from '../components/layout/Navbar'
 import { experienceApi, type IExperience } from '../api/experience.api'
 import { bookingApi } from '../api/booking.api'
+import { vnpayApi } from '../api/vnpay.api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 
@@ -163,21 +164,34 @@ export const ExperienceDetailPage = () => {
     setPaymentLoading(true)
     try {
       if (paymentMethod === 'Wallet') {
+        // Thanh toán bằng ví nội bộ UniTravel
         await bookingApi.payWithWallet(createdBookingId)
+        toast.success('Thanh toán thành công! Chúc bạn có một chuyến đi tuyệt vời 🎉')
+        setIsPaymentModalOpen(false)
+        setTimeout(() => navigate('/my-bookings'), 1500)
+      } else if (paymentMethod === 'VNPay') {
+        // Thanh toán qua cổng VNPAY thật — redirect toàn trình duyệt
+        const res = await vnpayApi.createPaymentUrl({
+          bookingId: createdBookingId,
+          orderDescription: `Thanh toán tour ${experience?.title || ''}`
+        })
+        const paymentUrl = res.data?.data?.paymentUrl
+        if (paymentUrl) {
+          window.location.href = paymentUrl
+        } else {
+          toast.error('Không tạo được link thanh toán. Vui lòng thử lại.')
+          setPaymentLoading(false)
+        }
       } else {
+        // Các phương thức khác (MoMo giả lập)
         await bookingApi.pay(createdBookingId, paymentMethod)
+        toast.success('Thanh toán thành công! Chúc bạn có một chuyến đi tuyệt vời 🎉')
+        setIsPaymentModalOpen(false)
+        setTimeout(() => navigate('/my-bookings'), 1500)
       }
-      toast.success('Thanh toán thành công! Chúc bạn có một chuyến đi tuyệt vời 🎉')
-      setIsPaymentModalOpen(false)
-      
-      // Chuyển hướng sang trang quản lý đặt tour sau 1.5 giây
-      setTimeout(() => {
-        navigate('/my-bookings')
-      }, 1500)
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.message || 'Thanh toán thất bại.'
       toast.error(errMsg)
-    } finally {
       setPaymentLoading(false)
     }
   }
@@ -736,8 +750,8 @@ export const ExperienceDetailPage = () => {
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', margin: '0 auto 0.75rem' }}>
                 <CreditCard size={28} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Cổng Thanh Toán Giả Lập</h3>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: '4px 0 0' }}>UniTravel Secure Sandbox Payment</p>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Chọn Phương Thức Thanh Toán</h3>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: '4px 0 0' }}>Bảo mật bởi UniTravel Payment Gateway</p>
             </div>
 
             {/* Tóm tắt booking */}
@@ -851,11 +865,17 @@ export const ExperienceDetailPage = () => {
             >
               {paymentLoading ? (
                 <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              ) : 'Xác nhận Thanh toán giả lập'}
+              ) : paymentMethod === 'VNPay' ? (
+                'Đến trang thanh toán VNPAY →'
+              ) : paymentMethod === 'MoMo' ? (
+                'Thanh toán qua MoMo'
+              ) : (
+                'Xác nhận thanh toán bằng Ví'
+              )}
             </button>
 
             <p style={{ margin: '1rem 0 0', textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-text-faint)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-              🔒 Giao dịch giả lập an toàn bảo vệ bởi Sandbox
+              🔒 {paymentMethod === 'VNPay' ? 'Bảo mật bởi VNPAY Sandbox — môi trường kiểm thử' : 'Giao dịch an toàn bảo vệ bởi Sandbox'}
             </p>
 
           </div>

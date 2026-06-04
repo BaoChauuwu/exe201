@@ -32,6 +32,7 @@ import UnauthorizedPage from './pages/UnauthorizedPage'
 import ExperienceDetailPage from './pages/ExperienceDetailPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import { CalendarPage } from './pages/CalendarPage'
+import PaymentResultPage from './pages/PaymentResultPage'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -112,6 +113,7 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={['tourist']} />}>
           <Route path='/trip-requests/new' element={<TripRequestForm />} />
           <Route path='/my-requests' element={<MyTripRequestsPage />} />
+          <Route path='/payment/result' element={<PaymentResultPage />} />
         </Route>
 
         {/* Buddy specific routes */}
