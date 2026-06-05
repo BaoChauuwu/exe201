@@ -104,5 +104,17 @@ export const bookingApi = {
      * Hủy lịch trình đặt tour (Tourist, Buddy hoặc Admin)
      */
     cancel: (id: string, cancelReason: string) =>
-        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/cancel`, { cancelReason })
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/cancel`, { cancelReason }),
+
+    /**
+     * Lấy danh sách chuyến đi đã thanh toán thành công của Tourist
+     */
+    getTouristBookings: (touristId: string) =>
+        axiosInstance.get<{ message: string; result: IBooking[] }>(`/bookings/tourist/${touristId}`),
+
+    /**
+     * Lấy danh sách chuyến đi đã thanh toán thành công của Buddy
+     */
+    getBuddyBookings: (buddyId: string) =>
+        axiosInstance.get<{ message: string; result: IBooking[] }>(`/bookings/buddy/${buddyId}`)
 }
