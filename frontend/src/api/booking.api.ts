@@ -116,5 +116,17 @@ export const bookingApi = {
      * Lấy danh sách chuyến đi đã thanh toán thành công của Buddy
      */
     getBuddyBookings: (buddyId: string) =>
-        axiosInstance.get<{ message: string; result: IBooking[] }>(`/bookings/buddy/${buddyId}`)
+        axiosInstance.get<{ message: string; result: IBooking[] }>(`/bookings/buddy/${buddyId}`),
+
+    /**
+     * Buddy check-in bắt đầu chuyến đi
+     */
+    startTour: (id: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/start`),
+
+    /**
+     * Tourist xác nhận hoàn thành chuyến đi để giải ngân tiền
+     */
+    touristCompleteTour: (id: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/tourist-complete`)
 }
