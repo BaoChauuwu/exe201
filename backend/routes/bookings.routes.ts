@@ -6,9 +6,12 @@ import {
     completeBookingController,
     cancelBookingController,
     getMyBookingsController,
-    getBookingByIdController
+    getBookingByIdController,
+    getTouristBookingsController,
+    getBuddyBookingsController
 } from '../controllers/bookings.controllers'
 import { accessTokenValidator } from '../middlewares/users.middlewares'
+import { getTouristBookingsValidator, getBuddyBookingsValidator } from '../middlewares/bookings.middlewares'
 import { wrapRequestHandler } from '../utils/handlers'
 
 const bookingsRouter = Router()
@@ -56,6 +59,20 @@ bookingsRouter.post(
 bookingsRouter.post(
     '/:id/cancel',
     wrapRequestHandler(cancelBookingController)
+)
+
+// 7. Lấy danh sách chuyến đi thành công của Tourist
+bookingsRouter.get(
+    '/tourist/:touristId',
+    getTouristBookingsValidator,
+    wrapRequestHandler(getTouristBookingsController)
+)
+
+// 8. Lấy danh sách chuyến đi thành công của Buddy
+bookingsRouter.get(
+    '/buddy/:buddyId',
+    getBuddyBookingsValidator,
+    wrapRequestHandler(getBuddyBookingsController)
 )
 
 export default bookingsRouter

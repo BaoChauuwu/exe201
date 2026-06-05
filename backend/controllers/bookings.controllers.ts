@@ -170,3 +170,23 @@ export const getBookingByIdController = async (req: Request, res: Response) => {
         })
     }
 }
+
+// 7. Lấy chuyến đi thành công của Tourist
+export const getTouristBookingsController = async (req: Request, res: Response) => {
+    const { touristId } = req.params
+    const bookings = await bookingsService.getTouristBookings(touristId as string)
+    return res.status(httpStatus.OK).json({
+        message: 'Lấy danh sách chuyến đi của Tourist thành công.',
+        result: bookings
+    })
+}
+
+// 8. Lấy chuyến đi thành công của Buddy
+export const getBuddyBookingsController = async (req: Request, res: Response) => {
+    const { buddyId } = req.params
+    const bookings = await bookingsService.getBuddyBookings(buddyId as string)
+    return res.status(httpStatus.OK).json({
+        message: 'Lấy danh sách chuyến đi của Buddy thành công.',
+        result: bookings
+    })
+}

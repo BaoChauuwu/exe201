@@ -729,6 +729,38 @@ class BookingsService {
 
         return booking
     }
+
+    // 9. Lấy danh sách booking đã thanh toán thành công của Tourist
+    async getTouristBookings(touristId: string) {
+        const bookings = await BookingModel.find({
+            touristId: new ObjectId(touristId),
+            $or: [{ paymentStatus: 'paid' }, { status: 'Success' }]
+        })
+            .populate('experienceId')
+            .populate({
+                path: 'buddyId',
+                select: 'name avatar email phone'
+            })
+            .sort({ created_at: -1 })
+
+        return bookings
+    }
+
+    // 10. Lấy danh sách booking đã thanh toán thành công của Buddy
+    async getBuddyBookings(buddyId: string) {
+        const bookings = await BookingModel.find({
+            buddyId: new ObjectId(buddyId),
+            $or: [{ paymentStatus: 'paid' }, { status: 'Success' }]
+        })
+            .populate('experienceId')
+            .populate({
+                path: 'touristId',
+                select: 'name avatar email phone'
+            })
+            .sort({ created_at: -1 })
+
+        return bookings
+    }
 }
 
 const bookingsService = new BookingsService()

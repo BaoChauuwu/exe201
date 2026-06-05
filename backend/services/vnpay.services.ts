@@ -4,6 +4,9 @@ import TransactionModel from '../models/Transaction.model'
 import AvailabilitySlotModel from '../models/AvailabilitySlot.model'
 import BuddyProfileModel from '../models/BuddyProfile.model'
 import { sortObject, formatVnpDate, createVnpSignature } from '../utils/vnpay.utils'
+import UserModel from '../models/User.model'
+import ExperienceModel from '../models/Experience.model'
+import emailService from './emailService'
 config()
 
 // -----------------------------------------------------------------------
@@ -187,6 +190,47 @@ class VnpayService {
         status: 'booked',
         bookingId: booking._id
       })
+
+      // Gửi email xác nhận (Bất đồng bộ - Không dùng await để tránh block luồng phản hồi VNPAY)
+      ;(async () => {
+        try {
+          const [tourist, buddy, experience] = await Promise.all([
+            UserModel.findById(booking.touristId),
+            UserModel.findById(booking.buddyId),
+            ExperienceModel.findById(booking.experienceId)
+          ])
+
+          if (tourist && buddy && experience) {
+            // Gửi email cho Tourist
+            emailService.sendTouristConfirmation(
+              tourist.email,
+              booking,
+              {
+                name: buddy.name,
+                email: buddy.email,
+                avatar: buddy.avatar,
+                phone: buddy.phone
+              },
+              experience.title
+            )
+
+            // Gửi email cho Buddy
+            emailService.sendBuddyNotification(
+              buddy.email,
+              booking,
+              {
+                name: tourist.name,
+                email: tourist.email,
+                avatar: tourist.avatar,
+                phone: tourist.phone
+              },
+              experience.title
+            )
+          }
+        } catch (mailErr) {
+          console.error('[VnpayService] Lỗi khi lấy thông tin gửi email:', mailErr)
+        }
+      })()
 
     } else {
       // ❌ Thanh toán THẤT BẠI hoặc bị hủy
