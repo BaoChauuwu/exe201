@@ -15,6 +15,7 @@ import biddingsRouter from './routes/biddings.routes'
 import categoriesRouter from './routes/categories.routes'
 import bookingsRouter from './routes/bookings.routes'
 import vnpayRouter from './routes/vnpay.routes'
+import reviewsRouter from './routes/reviews.routes'
 import databaseService from './services/database.services'
 import categoriesService from './services/categories.services'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
@@ -54,6 +55,7 @@ app.use('/biddings', biddingsRouter)
 app.use('/categories', categoriesRouter)
 app.use('/bookings', bookingsRouter)
 app.use('/payment', vnpayRouter)
+app.use('/reviews', reviewsRouter)
 
 app.use(defaultErrorHandler)
 

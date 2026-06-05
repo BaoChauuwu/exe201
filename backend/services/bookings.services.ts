@@ -761,6 +761,94 @@ class BookingsService {
 
         return bookings
     }
+
+    // 11. Bắt đầu chuyến đi (Check-in sang 'ongoing')
+    async startBooking(bookingId: string) {
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) {
+            throw new Error('Không tìm thấy thông tin đặt tour này.')
+        }
+
+        booking.status = 'ongoing'
+        booking.actualStartTime = new Date()
+        await booking.save()
+
+        // Phát socket thông báo cho hai bên cùng biết thời gian thực
+        try {
+            const { getIO } = require('../socket')
+            const io = getIO()
+            io.emit(`booking_status_updated_${bookingId}`, { status: 'ongoing', actualStartTime: booking.actualStartTime })
+        } catch (socketErr) {
+            console.error('[BookingsService] Socket.io emit error:', socketErr)
+        }
+
+        return booking
+    }
+
+    // 12. Tourist xác nhận hoàn thành tour (Check-out sang 'completed' & giải ngân)
+    async touristCompleteBooking(bookingId: string) {
+        const session = await mongoose.startSession().catch(() => null)
+        if (session) session.startTransaction()
+
+        try {
+            const booking = session 
+                ? await BookingModel.findById(bookingId).session(session)
+                : await BookingModel.findById(bookingId)
+
+            if (!booking) {
+                throw new Error('Không tìm thấy thông tin đặt tour này.')
+            }
+
+            booking.status = 'completed'
+            booking.actualEndTime = new Date()
+            
+            if (session) {
+                await booking.save({ session })
+            } else {
+                await booking.save()
+            }
+
+            // Giải ngân tiền sang ví khả dụng của Buddy
+            const buddyProfile = session 
+                ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
+                : await BuddyProfileModel.findOne({ userId: booking.buddyId })
+            
+            if (buddyProfile) {
+                // Trừ tiền khỏi pendingBalance
+                buddyProfile.pendingBalance = Math.max(0, (buddyProfile.pendingBalance || 0) - booking.buddyEarning)
+                // Cộng tiền vào walletBalance
+                buddyProfile.walletBalance = (buddyProfile.walletBalance || 0) + booking.buddyEarning
+                
+                if (session) {
+                    await buddyProfile.save({ session })
+                } else {
+                    await buddyProfile.save()
+                }
+            }
+
+            if (session) {
+                await session.commitTransaction()
+                session.endSession()
+            }
+
+            // Phát socket thông báo cho hai bên
+            try {
+                const { getIO } = require('../socket')
+                const io = getIO()
+                io.emit(`booking_status_updated_${bookingId}`, { status: 'completed', actualEndTime: booking.actualEndTime })
+            } catch (socketErr) {
+                console.error('[BookingsService] Socket.io emit error:', socketErr)
+            }
+
+            return booking
+        } catch (error) {
+            if (session) {
+                await session.abortTransaction()
+                session.endSession()
+            }
+            throw error
+        }
+    }
 }
 
 const bookingsService = new BookingsService()

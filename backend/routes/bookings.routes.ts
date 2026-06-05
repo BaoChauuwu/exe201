@@ -8,10 +8,17 @@ import {
     getMyBookingsController,
     getBookingByIdController,
     getTouristBookingsController,
-    getBuddyBookingsController
+    getBuddyBookingsController,
+    startBookingController,
+    touristCompleteBookingController
 } from '../controllers/bookings.controllers'
 import { accessTokenValidator } from '../middlewares/users.middlewares'
-import { getTouristBookingsValidator, getBuddyBookingsValidator } from '../middlewares/bookings.middlewares'
+import { 
+    getTouristBookingsValidator, 
+    getBuddyBookingsValidator,
+    startBookingValidator,
+    touristCompleteBookingValidator
+} from '../middlewares/bookings.middlewares'
 import { wrapRequestHandler } from '../utils/handlers'
 
 const bookingsRouter = Router()
@@ -55,10 +62,24 @@ bookingsRouter.post(
     wrapRequestHandler(completeBookingController)
 )
 
+// 5.2. Tourist xác nhận hoàn thành chuyến đi để giải ngân tiền
+bookingsRouter.post(
+    '/:id/tourist-complete',
+    touristCompleteBookingValidator,
+    wrapRequestHandler(touristCompleteBookingController)
+)
+
 // 6. Hủy Booking (Tourist, Buddy hoặc Admin bấm, áp dụng luật 24h)
 bookingsRouter.post(
     '/:id/cancel',
     wrapRequestHandler(cancelBookingController)
+)
+
+// 6.2. Buddy check-in bắt đầu chuyến đi
+bookingsRouter.post(
+    '/:id/start',
+    startBookingValidator,
+    wrapRequestHandler(startBookingController)
 )
 
 // 7. Lấy danh sách chuyến đi thành công của Tourist

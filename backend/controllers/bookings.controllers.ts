@@ -190,3 +190,23 @@ export const getBuddyBookingsController = async (req: Request, res: Response) =>
         result: bookings
     })
 }
+
+// 9. Bắt đầu chuyến đi (Check-in sang 'ongoing')
+export const startBookingController = async (req: Request, res: Response) => {
+    const { id } = req.params
+    const booking = await bookingsService.startBooking(id as string)
+    return res.status(httpStatus.OK).json({
+        message: 'Bắt đầu chuyến đi thành công! Chúc bạn có một hành trình vui vẻ.',
+        result: booking
+    })
+}
+
+// 10. Tourist xác nhận hoàn thành tour (completed & giải ngân)
+export const touristCompleteBookingController = async (req: Request, res: Response) => {
+    const { id } = req.params
+    const booking = await bookingsService.touristCompleteBooking(id as string)
+    return res.status(httpStatus.OK).json({
+        message: 'Xác nhận hoàn thành chuyến đi thành công! Thu nhập đã được giải ngân cho Buddy.',
+        result: booking
+    })
+}
