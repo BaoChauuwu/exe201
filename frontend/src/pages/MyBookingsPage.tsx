@@ -7,13 +7,16 @@ import axios from 'axios';
 import { 
   Calendar, Clock, Users, CheckCircle2, 
   ChevronDown, ChevronUp, MessageCircle, 
-  AlertTriangle, Shield, CreditCard, Landmark, X 
+  AlertTriangle, Shield, CreditCard, Landmark, X, Star
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { socket } from '../socket';
+import { reviewApi, type IReview } from '../api/review.api';
 
 export const MyBookingsPage = () => {
   const { accessToken, user } = useAuthStore();
+  const navigate = useNavigate();
 
   const [bookings, setBookings] = useState<IBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +29,21 @@ export const MyBookingsPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('VNPay');
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [touristWalletBalance, setTouristWalletBalance] = useState(0);
+
+  // States cho modal vé & Check-in
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [ticketBooking, setTicketBooking] = useState<IBooking | null>(null);
+  const [checkInCode, setCheckInCode] = useState('');
+  const [checkInLoading, setCheckInLoading] = useState(false);
+
+  // States cho modal Đánh giá (Reviews)
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState<IBooking | null>(null);
+  const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [comment, setComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [bookingReviews, setBookingReviews] = useState<Record<string, IReview[]>>({});
 
   useEffect(() => {
     if (isPayModalOpen && accessToken) {
@@ -63,10 +81,31 @@ export const MyBookingsPage = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  const fetchReviewsForCompletedBookings = async (completedList: IBooking[]) => {
+    const reviewsMap: Record<string, IReview[]> = {};
+    await Promise.all(
+      completedList.map(async (booking) => {
+        try {
+          const res = await reviewApi.getBookingReviews(booking._id);
+          reviewsMap[booking._id] = res.data.result || [];
+        } catch (err) {
+          console.error('Failed to fetch reviews for booking:', booking._id, err);
+        }
+      })
+    );
+    setBookingReviews(prev => ({ ...prev, ...reviewsMap }));
+  };
+
   const fetchBookings = async () => {
     try {
       const res = await bookingApi.getMyBookings();
-      setBookings(res.data.result || []);
+      const list = res.data.result || [];
+      setBookings(list);
+
+      const completedList = list.filter(b => b.status === 'completed');
+      if (completedList.length > 0) {
+        fetchReviewsForCompletedBookings(completedList);
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể tải danh sách đặt lịch.');
     } finally {
@@ -74,13 +113,85 @@ export const MyBookingsPage = () => {
     }
   };
 
+  const handleSendReview = async () => {
+    if (!reviewBooking) return;
+    setReviewLoading(true);
+    try {
+      await reviewApi.createReview({
+        bookingId: reviewBooking._id,
+        rating,
+        comment
+      });
+      toast.success('Gửi đánh giá thành công! Cảm ơn phản hồi của bạn 🎉');
+      setIsReviewModalOpen(false);
+      setReviewBooking(null);
+      setComment('');
+      setRating(5);
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gửi đánh giá thất bại.');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleStartTour = async (id: string) => {
+    setCheckInLoading(true);
+    try {
+      await bookingApi.startTour(id);
+      toast.success('Bắt đầu chuyến đi thành công! Chúc bạn có một hành trình vui vẻ 🎉');
+      setIsTicketModalOpen(false);
+      setTicketBooking(null);
+      fetchBookings();
+      navigate(`/live-tracking/${id}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Check-in thất bại.');
+    } finally {
+      setCheckInLoading(false);
+    }
+  };
+
+  const handleTouristCompleteTour = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xác nhận hoàn thành chuyến đi này và giải ngân tiền cho Buddy không?')) return;
+    try {
+      await bookingApi.touristCompleteTour(id);
+      toast.success('Xác nhận hoàn thành chuyến đi thành công! Tiền đã được giải ngân cho Buddy.');
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Xác nhận hoàn thành thất bại.');
+    }
+  };
+
   useEffect(() => {
     if (accessToken) {
       fetchBookings();
+      socket.connect();
+      return () => {
+        socket.disconnect();
+      };
     } else {
       setLoading(false);
     }
   }, [accessToken]);
+
+  // Listen for real-time status updates via Socket.io
+  useEffect(() => {
+    if (!bookings.length) return;
+    
+    bookings.forEach(booking => {
+      const eventName = `booking_status_updated_${booking._id}`;
+      socket.on(eventName, () => {
+        fetchBookings();
+      });
+    });
+    
+    return () => {
+      bookings.forEach(booking => {
+        const eventName = `booking_status_updated_${booking._id}`;
+        socket.off(eventName);
+      });
+    };
+  }, [bookings]);
 
   // Bộ lọc theo tab
   const filteredBookings = bookings.filter(b => {
@@ -395,7 +506,7 @@ export const MyBookingsPage = () => {
                           </div>
 
                           {/* Nhóm Nút Hành động */}
-                          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', flexWrap: 'wrap', width: '100%' }}>
                             
                             {/* Nút Chat */}
                             {partner && (
@@ -405,6 +516,59 @@ export const MyBookingsPage = () => {
                                 </button>
                               </Link>
                             )}
+
+                            {/* [ALL ROLES] - Đánh giá chuyến đi khi trạng thái completed */}
+                            {booking.status === 'completed' && (() => {
+                              const reviews = bookingReviews[booking._id] || [];
+                              const myReview = reviews.find(r => r.reviewerId._id === user?._id);
+                              const partnerReview = reviews.find(r => r.reviewerId._id !== user?._id);
+
+                              return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', width: '100%', alignItems: 'flex-end', marginTop: '0.5rem' }}>
+                                  
+                                  {/* Hiển thị Đánh giá của mình */}
+                                  {myReview ? (
+                                    <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', background: '#f8fafc', padding: '0.6rem 1rem', borderRadius: '10px', border: '1px solid var(--color-border)', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box' }}>
+                                      <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                                        <strong>Bạn đã đánh giá:</strong>
+                                        <span style={{ color: '#f59e0b', fontWeight: 800, display: 'flex', gap: '2px' }}>
+                                          {Array.from({ length: myReview.rating }).map((_, i) => <Star key={i} size={14} fill="#f59e0b" color="#f59e0b" />)}
+                                        </span>
+                                        {myReview.comment && <span style={{ color: 'var(--color-text-faint)', fontStyle: 'italic', marginLeft: '4px' }}>"{myReview.comment}"</span>}
+                                      </span>
+                                      <span style={{ fontSize: '0.7rem', color: 'var(--color-text-faint)', whiteSpace: 'nowrap' }}>Đã gửi</span>
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      onClick={() => {
+                                        setReviewBooking(booking);
+                                        setRating(5);
+                                        setComment('');
+                                        setIsReviewModalOpen(true);
+                                      }}
+                                      style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(245,158,11,0.2)' }}
+                                    >
+                                      ⭐ {isBuddy ? 'Đánh giá du khách' : 'Đánh giá chuyến đi'}
+                                    </button>
+                                  )}
+
+                                  {/* Hiển thị Đánh giá từ đối tác */}
+                                  {partnerReview && (
+                                    <div style={{ fontSize: '0.82rem', color: '#059669', background: '#f0fdf4', padding: '0.6rem 1rem', borderRadius: '10px', border: '1px solid #bbf7d0', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box' }}>
+                                      <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                                        <strong>{isBuddy ? 'Tourist' : 'Buddy'} đã đánh giá:</strong>
+                                        <span style={{ color: '#f59e0b', fontWeight: 800, display: 'flex', gap: '2px' }}>
+                                          {Array.from({ length: partnerReview.rating }).map((_, i) => <Star key={i} size={14} fill="#f59e0b" color="#f59e0b" />)}
+                                        </span>
+                                        {partnerReview.comment && <span style={{ color: '#059669', fontStyle: 'italic', marginLeft: '4px' }}>"{partnerReview.comment}"</span>}
+                                      </span>
+                                      <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Tin cậy</span>
+                                    </div>
+                                  )}
+
+                                </div>
+                              );
+                            })()}
 
                             {/* [TOURIST ONLY] - Thanh toán lại nếu unpaid */}
                             {!isBuddy && !hasPaid && booking.status === 'pending' && (
@@ -416,7 +580,60 @@ export const MyBookingsPage = () => {
                               </button>
                             )}
 
-                            {/* [BUDDY ONLY] - Hoàn thành chuyến đi */}
+                            {/* [TOURIST ONLY] - Vé của tôi (Confirmed & Paid) */}
+                            {!isBuddy && hasPaid && booking.status === 'confirmed' && (
+                              <button 
+                                onClick={() => {
+                                  setTicketBooking(booking);
+                                  setIsTicketModalOpen(true);
+                                }}
+                                style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(14,165,233,0.2)' }}
+                              >
+                                🎟️ Vé của tôi
+                              </button>
+                            )}
+
+                            {/* [BUDDY ONLY] - Bắt đầu chuyến đi / Check-in (Confirmed & Paid) */}
+                            {isBuddy && hasPaid && booking.status === 'confirmed' && (
+                              <button 
+                                onClick={() => {
+                                  setTicketBooking(booking);
+                                  setCheckInCode('');
+                                  setIsTicketModalOpen(true);
+                                }}
+                                style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(245,158,11,0.2)' }}
+                              >
+                                ⚡ Bắt đầu (Check-in)
+                              </button>
+                            )}
+
+                            {/* [TOURIST ONLY] - ongoing state: Xem vị trí Buddy & Xác nhận hoàn thành */}
+                            {!isBuddy && booking.status === 'ongoing' && (
+                              <>
+                                <Link to={`/tourist/live/${booking._id}`} style={{ textDecoration: 'none' }}>
+                                  <button style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(139,92,246,0.2)' }}>
+                                    🗺️ Xem vị trí Buddy
+                                  </button>
+                                </Link>
+                                <button 
+                                  onClick={() => handleTouristCompleteTour(booking._id)}
+                                  style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(16,185,129,0.2)' }}
+                                >
+                                  🏆 Xác nhận hoàn thành
+                                </button>
+                              </>
+                            )}
+
+                            {/* [BUDDY ONLY] - ongoing state: Chia sẻ GPS & SOS */}
+                            {isBuddy && booking.status === 'ongoing' && (
+                              <Link to={`/live-tracking/${booking._id}`} style={{ textDecoration: 'none' }}>
+                                <button style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(239,68,68,0.2)' }}>
+                                  📡 Chia sẻ GPS & SOS
+                                </button>
+                              </Link>
+                            )}
+
+                            {/* [BUDDY ONLY] - Hoàn thành chuyến đi (Fallback/Admin complete) */}
                             {isBuddy && hasPaid && ['confirmed', 'ongoing'].includes(booking.status) && (() => {
                               const ended = checkIsTourCompleted(booking);
                               return (
@@ -439,7 +656,7 @@ export const MyBookingsPage = () => {
                                   }}
                                   title={ended ? 'Xác nhận hoàn thành chuyến đi' : `Chỉ có thể xác nhận sau ${getTourEndTimeFormatted(booking)}`}
                                 >
-                                  <CheckCircle2 size={14} /> {ended ? 'Xác nhận Hoàn thành' : 'Chưa kết thúc'}
+                                  <CheckCircle2 size={14} /> {ended ? 'Xác nhận Hoàn thành (Dành cho Buddy)' : 'Chưa kết thúc'}
                                 </button>
                               );
                             })()}
@@ -654,8 +871,322 @@ export const MyBookingsPage = () => {
         </div>
       )}
 
+      {/* ── MODAL VÉ CHI TIẾT & CHECK-IN (QR / CODE) ── */}
+      {isTicketModalOpen && ticketBooking && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '1rem', boxSizing: 'border-box'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '24px', width: '100%', maxWidth: '440px',
+            padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(14, 165, 233, 0.3)', position: 'relative',
+            boxSizing: 'border-box', color: '#f8fafc'
+          }}>
+            
+            <button 
+              onClick={() => {
+                setIsTicketModalOpen(false);
+                setTicketBooking(null);
+              }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={15} />
+            </button>
+
+            {/* Content for Tourist: Vé của tôi */}
+            {!isBuddy && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ background: 'rgba(14, 165, 233, 0.15)', padding: '0.6rem 1.2rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 800, color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', marginBottom: '1.5rem' }}>
+                  🎫 VÉ TOUR ĐIỆN TỬ
+                </div>
+                
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 0.5rem', color: '#ffffff' }}>
+                  {ticketBooking.experienceId?.title || 'Tour Trải Nghiệm'}
+                </h3>
+                
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 1.5rem' }}>
+                  Hãy cung cấp mã vé dưới đây cho Buddy để làm thủ tục check-in bắt đầu chuyến đi.
+                </p>
+
+                {/* Plain Text Code Display */}
+                <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '0.75rem 2rem', fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.1em', color: '#38bdf8', cursor: 'pointer', marginBottom: '1.5rem' }} onClick={() => {
+                  navigator.clipboard.writeText(ticketBooking.bookingCode);
+                  toast.success('Đã sao chép mã vé!');
+                }} title="Bấm để sao chép">
+                  {ticketBooking.bookingCode}
+                </div>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.4rem' }}>Nhấp vào mã để sao chép</span>
+
+                {/* Details snapshot */}
+                <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '1.5rem', paddingTop: '1rem', display: 'flex', justifyContent: 'space-around', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Ngày đi</div>
+                    <div style={{ fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>{new Date(ticketBooking.scheduledDate).toLocaleDateString('vi-VN')}</div>
+                  </div>
+                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px' }} />
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Giờ xuất phát</div>
+                    <div style={{ fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>{ticketBooking.startTime}</div>
+                  </div>
+                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px' }} />
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Khách hàng</div>
+                    <div style={{ fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>{user?.name}</div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Content for Buddy: Thực hiện Check-in */}
+            {isBuddy && (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'inline-block', background: 'rgba(245, 158, 11, 0.15)', padding: '0.6rem 1.2rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 800, color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '1rem' }}>
+                    ⚡ CHECK-IN KHÁCH HÀNG
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 0.5rem', color: '#ffffff' }}>Khởi hành Chuyến đi</h3>
+                  <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                    Yêu cầu Tourist cung cấp mã vé trên ứng dụng của họ để tiến hành làm thủ tục xuất phát.
+                  </p>
+                </div>
+
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Khách hàng:</span>
+                    <span style={{ fontWeight: 700 }}>{ticketBooking.touristId?.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Liên hệ:</span>
+                    <span style={{ fontWeight: 700 }}>{ticketBooking.touristId?.phone || 'Chưa cung cấp SĐT'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8' }}>Điểm hẹn:</span>
+                    <span style={{ fontWeight: 700, color: '#38bdf8' }}>{ticketBooking.meetingPoint?.coordinates?.length === 2 ? 'Xem bản đồ bên dưới' : 'Tại điểm hẹn'}</span>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                    Nhập mã vé Tourist (Booking Code)
+                  </label>
+                  <input
+                    type='text'
+                    required
+                    value={checkInCode}
+                    onChange={e => setCheckInCode(e.target.value.toUpperCase())}
+                    placeholder='BK-XXXXXXXX'
+                    style={{ width: '100%', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '0.85rem 1rem', fontSize: '1.1rem', fontFamily: 'monospace', outline: 'none', background: 'rgba(0,0,0,0.2)', color: '#ffffff', boxSizing: 'border-box', textAlign: 'center', letterSpacing: '0.05em' }}
+                  />
+                </div>
+
+                <button
+                  onClick={() => {
+                    const cleanInput = checkInCode.trim();
+                    const cleanCode = ticketBooking.bookingCode.trim();
+                    if (!cleanInput) {
+                      toast.error('Vui lòng nhập mã vé.');
+                      return;
+                    }
+                    if (cleanInput !== cleanCode) {
+                      toast.error('Mã vé không chính xác! Vui lòng kiểm tra lại.');
+                      return;
+                    }
+                    handleStartTour(ticketBooking._id);
+                  }}
+                  disabled={checkInLoading}
+                  style={{ width: '100%', padding: '0.9rem', background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', boxShadow: '0 4px 15px rgba(245,158,11,0.3)' }}
+                >
+                  {checkInLoading ? 'Đang thực hiện...' : 'Xác nhận Check-in & Xuất phát'}
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL ĐÁNH GIÁ CHUYẾN ĐI (POST-TRIP REVIEWS) ── */}
+      {isReviewModalOpen && reviewBooking && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '1rem', boxSizing: 'border-box'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '24px', width: '100%', maxWidth: '440px',
+            padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(245, 158, 11, 0.3)', position: 'relative',
+            boxSizing: 'border-box', color: '#f8fafc'
+          }}>
+            
+            <button 
+              onClick={() => {
+                setIsReviewModalOpen(false);
+                setReviewBooking(null);
+                setComment('');
+                setRating(5);
+              }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={15} />
+            </button>
+
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'inline-block', background: 'rgba(245, 158, 11, 0.15)', padding: '0.6rem 1.2rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 800, color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '1rem' }}>
+                ⭐ ĐÁNH GIÁ TRẢI NGHIỆM
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 0.5rem', color: '#ffffff' }}>
+                {isBuddy ? 'Đánh giá du khách' : 'Đánh giá Local Buddy'}
+              </h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                {isBuddy 
+                  ? `Hãy đánh giá thái độ và sự hợp tác của du khách ${reviewBooking.touristId?.name}.`
+                  : `Hãy chia sẻ cảm nhận của bạn về hướng dẫn viên ${reviewBooking.buddyId?.name} và tour của bạn.`
+                }
+              </p>
+            </div>
+
+            {/* Interactive Star Rating */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {[1, 2, 3, 4, 5].map((starValue) => {
+                const isHighlighted = hoverRating !== null ? starValue <= hoverRating : starValue <= rating;
+                return (
+                  <button
+                    key={starValue}
+                    type="button"
+                    onClick={() => setRating(starValue)}
+                    onMouseEnter={() => setHoverRating(starValue)}
+                    onMouseLeave={() => setHoverRating(null)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      transition: 'transform 0.15s ease',
+                      outline: 'none'
+                    }}
+                  >
+                    <Star
+                      size={36}
+                      fill={isHighlighted ? '#fbbf24' : 'transparent'}
+                      color={isHighlighted ? '#fbbf24' : '#4b5563'}
+                      style={{ transition: 'color 0.2s, fill 0.2s' }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Tags Selection */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                Chọn nhanh đánh giá
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {(isBuddy 
+                  ? ['Thân thiện', 'Vui vẻ', 'Đúng giờ', 'Hợp tác tốt', 'Tôn trọng']
+                  : ['Nhiệt tình', 'Chu đáo', 'Đúng giờ', 'Kể chuyện hay', 'Am hiểu', 'Vui tính']
+                ).map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setComment(prev => {
+                        const trimmed = prev.trim();
+                        if (!trimmed) return tag;
+                        if (trimmed.includes(tag)) return prev; // Avoid duplicate tags
+                        return `${trimmed}, ${tag.toLowerCase()}`;
+                      });
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      color: '#94a3b8',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment Textarea */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                Bình luận chi tiết
+              </label>
+              <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder={isBuddy 
+                  ? 'Nhập nhận xét về du khách tại đây...' 
+                  : 'Hãy chia sẻ những trải nghiệm thú vị trong chuyến đi cùng Buddy...'
+                }
+                rows={4}
+                style={{
+                  width: '100%',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  padding: '0.75rem',
+                  fontSize: '0.88rem',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  background: 'rgba(0,0,0,0.2)',
+                  color: '#ffffff',
+                  boxSizing: 'border-box',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSendReview}
+              disabled={reviewLoading}
+              style={{
+                width: '100%',
+                padding: '0.9rem',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                color: 'white',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                boxShadow: '0 4px 15px rgba(245,158,11,0.3)'
+              }}
+            >
+              {reviewLoading ? 'Đang gửi...' : 'Gửi Đánh Giá Ngay'}
+            </button>
+
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes scan {
+          0% { top: 0%; }
+          50% { top: 100%; }
+          100% { top: 0%; }
+        }
       `}</style>
 
     </div>
