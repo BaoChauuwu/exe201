@@ -33,6 +33,7 @@ import ExperienceDetailPage from './pages/ExperienceDetailPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import { CalendarPage } from './pages/CalendarPage'
 import PaymentResultPage from './pages/PaymentResultPage'
+import { MyTrips } from './pages/MyTrips'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -105,6 +106,7 @@ function App() {
           <Route path='/conversations' element={<ConversationsPage />} />
           <Route path='/chat/:receiverId' element={<Chat />} />
           <Route path='/my-bookings' element={<MyBookingsPage />} />
+          <Route path='/my-trips' element={<MyTrips />} />
           <Route path='/wallet' element={<Wallet />} />
           <Route path='/calendar' element={<CalendarPage />} />
         </Route>

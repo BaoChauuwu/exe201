@@ -77,17 +77,18 @@ export default function Navbar() {
   const linksStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '2rem',
+    gap: '1rem',
     listStyle: 'none',
   }
 
   const linkStyle: React.CSSProperties = {
     color: '#475569',
-    fontSize: '0.875rem',
-    fontWeight: 500,
+    fontSize: '0.8rem',
+    fontWeight: 600,
     textDecoration: 'none',
     transition: 'color 0.2s',
     fontFamily: "'Inter', sans-serif",
+    whiteSpace: 'nowrap',
   }
 
   const actionsStyle: React.CSSProperties = {
@@ -171,6 +172,13 @@ export default function Navbar() {
                     onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
                     Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/my-trips' style={linkStyle}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
+                    Chuyến đi của tôi
                   </Link>
                 </li>
                 <li>

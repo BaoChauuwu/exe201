@@ -137,9 +137,9 @@ export default function HomePage() {
                         Khám phá Buddy ngay <ArrowRight size={18} />
                       </button>
                     </Link>
-                    <Link to='/dashboard'>
-                      <button className='btn btn-secondary btn-lg' id='hero-cta-dashboard'>
-                        Vào Dashboard
+                    <Link to='/my-trips'>
+                      <button className='btn btn-secondary btn-lg' id='hero-cta-trips'>
+                        Chuyến đi của tôi
                       </button>
                     </Link>
                   </>
