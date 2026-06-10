@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, Map, BarChart2, CalendarClock } from 'lucide-react';
-import { experienceApi } from '../api/experience.api';
+import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, BarChart2, CalendarClock } from 'lucide-react';
+
 import { socket } from '../socket';
 import { toast as hotToast } from 'react-hot-toast';
 // Tạm thời bỏ Recharts do lỗi tương thích React 19: 
@@ -13,7 +13,7 @@ export const AdminDashboard = () => {
     const [ekycs, setEkycs] = useState<any[]>([]);
     const [payouts, setPayouts] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
-    const [experiences, setExperiences] = useState<any[]>([]);
+
     const [bookings, setBookings] = useState<any[]>([]);
     const [bookingStatusFilter, setBookingStatusFilter] = useState('all');
     const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips'>('overview');
@@ -26,7 +26,7 @@ export const AdminDashboard = () => {
     const [ekycPage, setEkycPage] = useState(1);
     const [payoutsPage, setPayoutsPage] = useState(1);
     const [usersPage, setUsersPage] = useState(1);
-    const [toursPage, setToursPage] = useState(1);
+
     const [tripsPage, setTripsPage] = useState(1);
     const CARD_PAGE_SIZE = 6;
     const LIST_PAGE_SIZE = 10;
@@ -38,7 +38,7 @@ export const AdminDashboard = () => {
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/ekyc/pending', cfg).then(r => setEkycs(r.data.data || [])).catch(console.error);
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/payouts/pending', cfg).then(r => setPayouts(r.data.data || [])).catch(console.error);
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/users', cfg).then(r => setUsers(r.data.data || [])).catch(console.error);
-        experienceApi.getPending(cfg).then(r => setExperiences(r.data.data || [])).catch(console.error);
+
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/bookings', cfg).then(r => setBookings(r.data.data || [])).catch(console.error);
     };
 
@@ -120,16 +120,6 @@ export const AdminDashboard = () => {
         fetchAll();
     };
 
-    const approveTour = async (id: string, status: 'approved' | 'rejected') => {
-        try {
-            await experienceApi.approveExperience(id, status, cfg);
-            showToast(`Tour đã được ${status === 'approved' ? 'duyệt' : 'từ chối'} thành công!`);
-            fetchAll();
-        } catch (error) {
-            console.error(error);
-            showToast('Lỗi khi duyệt tour');
-        }
-    };
 
     const deleteUser = async (id: string) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa user này không? Hành động này không thể hoàn tác!')) return;
@@ -266,7 +256,7 @@ export const AdminDashboard = () => {
                             )}
                             <div style={{ position: 'relative' }}>
                                 <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-faint)' }} />
-                                <input type='text' value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setEkycPage(1); setPayoutsPage(1); setUsersPage(1); setToursPage(1); setTripsPage(1); }} placeholder='Search...' style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 0.875rem 0.5rem 2.25rem', color: 'var(--color-text)', fontSize: '0.8rem', outline: 'none', width: '200px', fontFamily: 'inherit' }} />
+                                <input type='text' value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setEkycPage(1); setPayoutsPage(1); setUsersPage(1); setTripsPage(1); }} placeholder='Search...' style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 0.875rem 0.5rem 2.25rem', color: 'var(--color-text)', fontSize: '0.8rem', outline: 'none', width: '200px', fontFamily: 'inherit' }} />
                             </div>
                         </div>
                     </div>
