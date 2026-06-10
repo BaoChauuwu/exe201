@@ -17,22 +17,6 @@ export const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'tours'>('overview');
     const [searchQuery, setSearchQuery] = useState('');
     
-    // Mock data for charts
-    const revenueData = [
-        { month: 'Jan', revenue: 4000, users: 240 },
-        { month: 'Feb', revenue: 3000, users: 139 },
-        { month: 'Mar', revenue: 2000, users: 980 },
-        { month: 'Apr', revenue: 2780, users: 390 },
-        { month: 'May', revenue: 1890, users: 480 },
-        { month: 'Jun', revenue: 2390, users: 380 },
-        { month: 'Jul', revenue: 3490, users: 430 },
-    ];
-
-    const roleDistribution = [
-        { name: 'Tourist', value: 400 },
-        { name: 'Buddy', value: 300 },
-        { name: 'Admin', value: 10 },
-    ];
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
     const [previewImage, setPreviewImage] = useState<string | null>(null);

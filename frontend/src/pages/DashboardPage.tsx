@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import {
   Map, Users, TrendingUp, Star, Compass,
-  ArrowRight, Heart, Bell, Calendar, Award, Wallet, Plus, Navigation
+  ArrowRight, Heart, Bell, Calendar, Award, Wallet, Plus
 } from 'lucide-react'
 
 export default function DashboardPage() {

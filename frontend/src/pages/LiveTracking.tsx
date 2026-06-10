@@ -55,7 +55,6 @@ export const LiveTracking = () => {
     const [sosTriggered, setSosTriggered] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [isTrackingAllowed, setIsTrackingAllowed] = useState(false);
-    const [bookingChecked, setBookingChecked] = useState(false);
 
     const { bookingId } = useParams();
     const { user } = useAuthStore();
@@ -98,8 +97,6 @@ export const LiveTracking = () => {
             } catch (err: any) {
                 console.error(err);
                 setStatus('Lỗi: ' + (err.response?.data?.message || err.message || 'Không thể xác thực thông tin chuyến đi.'));
-            } finally {
-                setBookingChecked(true);
             }
         };
         
