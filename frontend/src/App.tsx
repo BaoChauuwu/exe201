@@ -36,11 +36,13 @@ import PaymentResultPage from './pages/PaymentResultPage'
 import { MyTrips } from './pages/MyTrips'
 
 import { Toaster } from 'react-hot-toast'
-import { GlobalSOSButton } from './components/common/GlobalSOSButton'
+import { FeedbackModal } from './components/common/FeedbackModal'
+import { MessageSquarePlus } from 'lucide-react'
 
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
   const [loading, setLoading] = useState(true)
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
   useEffect(() => {
     const initAuth = async () => {
@@ -65,6 +67,23 @@ function App() {
 
   return (
     <BrowserRouter>
+      {isAuthenticated && user?.role !== 'admin' && (
+        <button
+          onClick={() => setIsFeedbackOpen(true)}
+          style={{
+            position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 50,
+            background: 'var(--gradient-primary)', color: 'white', border: 'none',
+            borderRadius: '999px', padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '8px',
+            boxShadow: '0 10px 25px rgba(2, 132, 199, 0.3)', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem',
+            transition: 'transform 0.2s, box-shadow 0.2s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 15px 30px rgba(2, 132, 199, 0.4)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(2, 132, 199, 0.3)'; }}
+        >
+          <MessageSquarePlus size={18} /> Góp ý / Đánh giá
+        </button>
+      )}
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
       <Toaster
         position='top-right'
         toastOptions={{
@@ -79,7 +98,6 @@ function App() {
           }
         }}
       />
-      <GlobalSOSButton />
       <Routes>
         {/* Public */}
         <Route path='/' element={<HomePage />} />

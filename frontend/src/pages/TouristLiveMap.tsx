@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -7,7 +7,8 @@ import axios from 'axios';
 import { socket } from '../socket';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { ShieldCheck, MapPin, Navigation } from 'lucide-react';
+import { ShieldCheck, MapPin, Navigation, ShieldAlert } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Custom Colored DivIcons with pulsing animations for professional visual aesthetics
 const createMarkerIcon = (color: string, label: string) => {
@@ -65,13 +66,15 @@ export const TouristLiveMap = () => {
                 setTouristLocation(newLoc);
                 
                 // Gửi tọa độ lên để Buddy cũng có thể nhìn thấy Tourist trên bản đồ của họ
-                axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', {
-                    bookingId,
-                    userId: user._id, // Truyền user._id làm payload
-                    lat: coords.latitude,
-                    lng: coords.longitude,
-                    role: 'tourist'
-                }).catch(err => console.error('Error reporting tourist location:', err));
+                if (bookingId !== 'general') {
+                    axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', {
+                        bookingId,
+                        userId: user._id, // Truyền user._id làm payload
+                        lat: coords.latitude,
+                        lng: coords.longitude,
+                        role: 'tourist'
+                    }).catch(err => console.error('Error reporting tourist location:', err));
+                }
             },
             err => console.error('Tourist GPS error:', err.message),
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
@@ -82,7 +85,7 @@ export const TouristLiveMap = () => {
 
     // 2. Kết nối socket lắng nghe vị trí Buddy cập nhật
     useEffect(() => {
-        if (!bookingId) return;
+        if (!bookingId || bookingId === 'general') return;
 
         socket.connect();
 
@@ -103,6 +106,53 @@ export const TouristLiveMap = () => {
         };
     }, [bookingId, user]);
 
+    const [holdProgress, setHoldProgress] = useState(0);
+    const [sosTriggered, setSosTriggered] = useState(false);
+    const holdTimerRef = useRef<number | null>(null);
+    const holdStartTimeRef = useRef<number | null>(null);
+
+    const startHold = () => {
+        if (sosTriggered) return;
+        holdStartTimeRef.current = Date.now();
+        holdTimerRef.current = window.setInterval(() => {
+            const elapsed = Date.now() - (holdStartTimeRef.current || 0);
+            const progress = Math.min((elapsed / 3000) * 100, 100);
+            setHoldProgress(progress);
+            
+            if (progress >= 100) {
+                stopHold();
+                executeSOS();
+            }
+        }, 50);
+    };
+
+    const stopHold = () => {
+        if (holdTimerRef.current) {
+            clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+        setHoldProgress(0);
+    };
+
+    const executeSOS = () => {
+        if (!bookingId || !user?._id) return;
+        if (bookingId === 'general') {
+            toast.error('Chức năng SOS chỉ khả dụng khi bạn đang trong một chuyến đi.');
+            return;
+        }
+        const loc = touristLocation;
+        const locationData = loc ? { lat: loc.lat, lng: loc.lng, timestamp: new Date() } : null;
+
+        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', { 
+            bookingId, 
+            userId: user._id, 
+            message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.',
+            location: locationData
+        })
+            .then(() => { setSosTriggered(true); toast.success('Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
+            .catch(() => toast.error('Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
+    };
+
     return (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0f', color: 'white', fontFamily: "'Inter', sans-serif" }}>
             <Navbar />
@@ -114,7 +164,7 @@ export const TouristLiveMap = () => {
                         <Navigation size={20} style={{ color: '#34d399' }} />
                     </div>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Theo dõi hành trình (Tourist)</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>{bookingId === 'general' ? 'Bản đồ tự do' : 'Theo dõi hành trình (Tourist)'}</h2>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
                             Tourist ID: <code style={{ color: '#34d399' }}>{user?._id || 'N/A'}</code>
                         </p>
@@ -123,12 +173,12 @@ export const TouristLiveMap = () => {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: buddyLocation ? '#10b981' : '#f59e0b', boxShadow: `0 0 8px ${buddyLocation ? '#10b981' : '#f59e0b'}`, animation: 'ping 1.5s infinite' }} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: buddyLocation ? '#34d399' : '#fbbf24' }}>
-                            {buddyLocation ? 'Đang nhận vị trí Buddy' : 'Đang chờ Buddy bật GPS...'}
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: buddyLocation ? '#10b981' : (bookingId === 'general' ? '#3b82f6' : '#f59e0b'), boxShadow: `0 0 8px ${buddyLocation ? '#10b981' : (bookingId === 'general' ? '#3b82f6' : '#f59e0b')}`, animation: 'ping 1.5s infinite' }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: buddyLocation ? '#34d399' : (bookingId === 'general' ? '#60a5fa' : '#fbbf24') }}>
+                            {bookingId === 'general' ? 'Chế độ xem tự do' : (buddyLocation ? 'Đang nhận vị trí Buddy' : 'Đang chờ Buddy bật GPS...')}
                         </span>
                     </div>
-                    {lastUpdated && (
+                    {lastUpdated && bookingId !== 'general' && (
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
                             Cập nhật lúc: {lastUpdated.toLocaleTimeString()}
                         </div>
@@ -190,6 +240,79 @@ export const TouristLiveMap = () => {
                         </p>
                     </div>
                 )}
+
+                {/* Floating Glassmorphic SOS Panel overlaid on bottom-center of the map */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 1000,
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '24px',
+                    padding: '1rem 2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.5rem',
+                    boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+                    width: '90%',
+                    maxWidth: '400px',
+                    boxSizing: 'border-box'
+                }}>
+                    <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <ShieldAlert size={16} style={{ color: '#ef4444' }} /> Cảnh báo SOS
+                        </h4>
+                        <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.3 }}>
+                            Nhấn và giữ nút SOS 3 giây trong trường hợp khẩn cấp để gọi cứu hộ.
+                        </p>
+                    </div>
+                    
+                    <div style={{ position: 'relative' }}>
+                        {/* Pulsing SOS rings */}
+                        {!sosTriggered && holdProgress === 0 && (
+                            <>
+                                <div style={{ position: 'absolute', inset: '-8px', borderRadius: '50%', border: '2px solid rgba(239,68,68,0.4)', animation: 'ping-sos 1.5s ease-in-out infinite' }} />
+                                <div style={{ position: 'absolute', inset: '-4px', borderRadius: '50%', border: '1px solid rgba(239,68,68,0.5)', animation: 'ping-sos 1.5s ease-in-out infinite', animationDelay: '0.5s' }} />
+                            </>
+                        )}
+                        
+                        <button
+                            onMouseDown={startHold}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={startHold}
+                            onTouchEnd={stopHold}
+                            style={{
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '50%',
+                                background: sosTriggered 
+                                    ? 'linear-gradient(135deg, #16a34a, #15803d)' 
+                                    : holdProgress > 0 
+                                        ? `conic-gradient(#ef4444 ${holdProgress}%, #7f1d1d 0)` 
+                                        : 'linear-gradient(135deg, #dc2626, #991b1b)',
+                                border: `2px solid ${sosTriggered ? 'rgba(74,222,128,0.6)' : 'rgba(252,165,165,0.4)'}`,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: sosTriggered ? '0 0 20px rgba(22,163,74,0.5)' : '0 0 25px rgba(220,38,38,0.6), 0 0 50px rgba(220,38,38,0.2)',
+                                transition: holdProgress > 0 ? 'none' : 'all 0.3s',
+                                color: 'white',
+                                fontWeight: 900,
+                                fontSize: '0.95rem',
+                                outline: 'none',
+                                userSelect: 'none',
+                                WebkitUserSelect: 'none'
+                            }}
+                        >
+                            {sosTriggered ? '✓ SENT' : (holdProgress > 0 && holdProgress < 100) ? `${Math.round(holdProgress)}%` : 'SOS'}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <style>{`
@@ -197,6 +320,7 @@ export const TouristLiveMap = () => {
                     0% { transform: scale(1); opacity: 0.6; }
                     100% { transform: scale(2.2); opacity: 0; }
                 }
+                @keyframes ping-sos { 0%, 100% { opacity: 0.4; transform: scale(1) } 50% { opacity: 1; transform: scale(1.1) } }
                 @keyframes ping { 0%, 100% { opacity: 0.5; transform: scale(1) } 50% { opacity: 1; transform: scale(1.2) } }
                 @keyframes bounce { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
                 .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }

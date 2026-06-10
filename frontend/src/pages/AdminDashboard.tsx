@@ -13,10 +13,11 @@ export const AdminDashboard = () => {
     const [ekycs, setEkycs] = useState<any[]>([]);
     const [payouts, setPayouts] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
+    const [feedbacks, setFeedbacks] = useState<any[]>([]);
 
     const [bookings, setBookings] = useState<any[]>([]);
     const [bookingStatusFilter, setBookingStatusFilter] = useState('all');
-    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips' | 'feedbacks'>('overview');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
@@ -40,6 +41,8 @@ export const AdminDashboard = () => {
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/users', cfg).then(r => setUsers(r.data.data || [])).catch(console.error);
 
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/bookings', cfg).then(r => setBookings(r.data.data || [])).catch(console.error);
+        
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/feedbacks/admin', cfg).then(r => setFeedbacks(r.data.result || [])).catch(console.error);
     };
 
     useEffect(() => { 
@@ -226,6 +229,10 @@ export const AdminDashboard = () => {
                         <button onClick={() => { setActiveTab('trips'); setSearchQuery(''); setTripsPage(1); }} style={tabBtn(activeTab === 'trips', '#f97316')}>
                             <CalendarClock size={16} /> Tours
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{bookings.length}</span>
+                        </button>
+                        <button onClick={() => { setActiveTab('feedbacks'); setSearchQuery(''); }} style={tabBtn(activeTab === 'feedbacks', '#ec4899')}>
+                            <FileText size={16} /> Feedbacks
+                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{feedbacks.length}</span>
                         </button>
                     </div>
                 </div>
@@ -633,6 +640,92 @@ export const AdminDashboard = () => {
                                     </tbody>
                                 </table>
                                 <Pagination page={tripsPage} total={filtered.length} pageSize={LIST_PAGE_SIZE} onPage={setTripsPage} />
+                            </div>
+                        );
+                    })()}
+
+                    {/* Feedbacks tab */}
+                    {activeTab === 'feedbacks' && (() => {
+                        const filtered = feedbacks.filter(f => {
+                            if (searchQuery) {
+                                const q = searchQuery.toLowerCase();
+                                const content = (f.content || '').toLowerCase();
+                                const user = (f.userId?.name || '').toLowerCase();
+                                if (!content.includes(q) && !user.includes(q)) return false;
+                            }
+                            return true;
+                        });
+
+                        return filtered.length === 0 ? (
+                            <div style={{ padding: '5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <FileText size={48} style={{ marginBottom: '1rem', opacity: 0.3, color: '#ec4899' }} />
+                                <p>Không có phản hồi nào</p>
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                    <thead>
+                                        <tr style={{ background: 'var(--color-bg-2)', borderBottom: '2px solid var(--color-border)' }}>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--color-text-muted)' }}>Người gửi</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--color-text-muted)' }}>Loại</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--color-text-muted)' }}>Nội dung</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--color-text-muted)' }}>Trạng thái</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)' }}>Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filtered.map((f, idx) => (
+                                            <tr key={f._id} style={{ borderBottom: '1px solid var(--color-border)', background: idx % 2 === 0 ? 'transparent' : 'rgba(236,72,153,0.015)' }}>
+                                                <td style={{ padding: '0.875rem 1rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <img src={f.userId?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.userId?.name || 'U')}&size=32`} style={{ width: 32, height: 32, borderRadius: '50%' }} alt=""/>
+                                                        <div>
+                                                            <div style={{ fontWeight: 600 }}>{f.userId?.name || 'Người dùng'}</div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-faint)' }}>{f.userId?.email || ''}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '0.875rem 1rem' }}>
+                                                    {f.type === 'testimonial' ? (
+                                                        <span style={badgeStyle('#f59e0b')}>⭐ Testimonial ({f.rating}/5)</span>
+                                                    ) : (
+                                                        <span style={badgeStyle('#6366f1')}>💡 Feedback</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '0.875rem 1rem', maxWidth: '300px' }}>
+                                                    <div style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{f.content}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-faint)', marginTop: '4px' }}>{new Date(f.created_at).toLocaleString('vi-VN')}</div>
+                                                </td>
+                                                <td style={{ padding: '0.875rem 1rem' }}>
+                                                    <span style={badgeStyle(f.status === 'approved' ? '#10b981' : f.status === 'rejected' ? '#ef4444' : '#f59e0b')}>
+                                                        {f.status === 'approved' ? 'Công khai' : f.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt / Ẩn danh'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                                        <button 
+                                                            onClick={async () => {
+                                                                if (window.confirm('Bạn có chắc muốn xóa phản hồi này?')) {
+                                                                    try {
+                                                                        await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/feedbacks/admin/${f._id}`, cfg);
+                                                                        setFeedbacks(feedbacks.filter(x => x._id !== f._id));
+                                                                        hotToast.success('Xóa phản hồi thành công');
+                                                                    } catch (e) {
+                                                                        hotToast.error('Xóa thất bại');
+                                                                    }
+                                                                }
+                                                            }} 
+                                                            style={actionBtn('#ef4444')} 
+                                                            title="Xóa phản hồi"
+                                                        >
+                                                            <X size={16}/>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         );
                     })()}

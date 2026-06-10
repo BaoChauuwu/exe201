@@ -67,6 +67,12 @@ export const LiveTracking = () => {
     useEffect(() => {
         if (!bookingId) return;
 
+        if (bookingId === 'general') {
+            setIsTrackingAllowed(true); // Allow them to see their own location
+            setStatus('Chế độ bản đồ tự do (không chia sẻ vị trí)');
+            return;
+        }
+
         const checkTime = async () => {
             try {
                 const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + `/bookings/${bookingId}`, {
@@ -105,7 +111,7 @@ export const LiveTracking = () => {
 
     // 1. Kết nối socket lắng nghe vị trí của đối tác (Partner) và cảnh báo SOS
     useEffect(() => {
-        if (!bookingId || !isTrackingAllowed) return;
+        if (!bookingId || !isTrackingAllowed || bookingId === 'general') return;
         
         socket.connect();
 
@@ -149,13 +155,16 @@ export const LiveTracking = () => {
                 else setBuddyLocation(newLoc);
                 
                 setStatus('Đang cập nhật trực tiếp');
-                axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', { 
-                    bookingId, 
-                    userId, 
-                    lat: coords.latitude, 
-                    lng: coords.longitude,
-                    role: myRole
-                }).catch(console.error);
+
+                if (bookingId !== 'general') {
+                    axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', { 
+                        bookingId, 
+                        userId, 
+                        lat: coords.latitude, 
+                        lng: coords.longitude,
+                        role: myRole
+                    }).catch(console.error);
+                }
             },
             err => setStatus('Lỗi: ' + err.message),
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
@@ -196,6 +205,10 @@ export const LiveTracking = () => {
 
     const executeSOS = () => {
         if (!bookingId || !userId || !isTrackingAllowed) return;
+        if (bookingId === 'general') {
+            toast.error('Chức năng SOS chỉ khả dụng khi bạn đang trong một chuyến đi.');
+            return;
+        }
         const loc = isTourist ? touristLocation : buddyLocation;
         const locationData = loc ? { lat: loc.lat, lng: loc.lng, timestamp: new Date() } : null;
 
@@ -220,7 +233,7 @@ export const LiveTracking = () => {
                         <Activity size={20} style={{ color: '#34d399' }} />
                     </div>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Chia sẻ vị trí & SOS (Buddy)</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>{bookingId === 'general' ? 'Bản đồ tự do' : 'Chia sẻ vị trí & SOS (Buddy)'}</h2>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
                             Buddy ID: <code style={{ color: '#34d399' }}>{user?._id || 'N/A'}</code>
                         </p>
@@ -229,12 +242,12 @@ export const LiveTracking = () => {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: buddyLocation ? '#10b981' : '#f59e0b', boxShadow: `0 0 8px ${buddyLocation ? '#10b981' : '#f59e0b'}`, animation: 'ping 1.5s infinite' }} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: buddyLocation ? '#34d399' : '#fbbf24' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: buddyLocation ? '#10b981' : (bookingId === 'general' ? '#3b82f6' : '#f59e0b'), boxShadow: `0 0 8px ${buddyLocation ? '#10b981' : (bookingId === 'general' ? '#3b82f6' : '#f59e0b')}`, animation: 'ping 1.5s infinite' }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: buddyLocation ? '#34d399' : (bookingId === 'general' ? '#60a5fa' : '#fbbf24') }}>
                             GPS: {status}
                         </span>
                     </div>
-                    {lastUpdated && (
+                    {lastUpdated && bookingId !== 'general' && (
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
                             Tourist cập nhật: {lastUpdated.toLocaleTimeString()}
                         </div>
