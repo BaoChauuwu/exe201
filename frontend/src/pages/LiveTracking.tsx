@@ -72,7 +72,7 @@ export const LiveTracking = () => {
                 const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + `/bookings/${bookingId}`, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
                 });
-                const b = res.data.data;
+                const b = res.data.result;
                 if (!b) throw new Error('Không tìm thấy chuyến đi');
 
                 const scheduledDate = new Date(b.scheduledDate);
