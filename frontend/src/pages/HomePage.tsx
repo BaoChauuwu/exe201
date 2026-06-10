@@ -10,6 +10,7 @@ import Footer from '../components/layout/Footer'
 import { experienceApi, type IExperience } from '../api/experience.api'
 import { Skeleton } from '../components/common/Skeleton'
 import { PageWrapper } from '../components/layout/PageWrapper'
+import axios from 'axios'
 
 const features = [
   {
@@ -59,6 +60,7 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [imageIndex, setImageIndex] = useState(0)
+  const [testimonials, setTestimonials] = useState<any[]>([])
   const ITEMS_PER_PAGE = 6
 
   const rawDisplayImages = experiences.length > 0 
@@ -98,9 +100,16 @@ export default function HomePage() {
         setExperiences(list)
       })
       .catch(err => {
-        console.error('[HomePage] Lỗi khi tải danh sách tour:', err)
-        setFetchError(err?.response?.data?.message || err?.message || 'Không thể tải danh sách tour')
+        console.error('[HomePage] Lỗi khi tải tour:', err)
+        setFetchError('Không thể tải dữ liệu tour lúc này')
       })
+
+    // 3. Tải danh sách testimonials
+    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/feedbacks/public`)
+      .then(res => {
+        setTestimonials(res.data.result || [])
+      })
+      .catch(err => console.error(err))
       .finally(() => {
         setIsLoading(false)
       })
@@ -629,6 +638,44 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ====== TESTIMONIALS ====== */}
+      {testimonials.length > 0 && (
+        <section className='section' style={{ background: '#ffffff', overflow: 'hidden' }}>
+          <div className='container'>
+            <div className='section-header'>
+              <div className='section-badge'>Đánh giá từ cộng đồng</div>
+              <h2 className='section-title'>
+                Khách hàng nói gì về <span className='gradient-text'>UniTravel?</span>
+              </h2>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
+              {testimonials.map((t, idx) => (
+                <div key={idx} style={{ 
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)', 
+                  borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                  display: 'flex', flexDirection: 'column'
+                }}>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '1rem', color: '#f59e0b' }}>
+                    {Array.from({ length: t.rating || 5 }).map((_, i) => <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />)}
+                  </div>
+                  <p style={{ fontStyle: 'italic', color: 'var(--color-text)', fontSize: '0.95rem', lineHeight: 1.6, flex: 1, marginBottom: '1.5rem' }}>
+                    "{t.content}"
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <img src={t.userId?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.userId?.name || 'U')}&size=40`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} alt="avatar"/>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text)' }}>{t.userId?.name || 'Thành viên'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{t.userId?.role === 'buddy' ? 'Local Buddy' : 'Tourist'}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ====== CTA ====== */}
       <section className='section' style={{ background: 'var(--color-bg)', textAlign: 'center' }}>

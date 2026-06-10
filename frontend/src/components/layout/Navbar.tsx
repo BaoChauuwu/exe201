@@ -52,7 +52,8 @@ export default function Navbar() {
         if (activeBooking) {
             navigate(user.role === 'buddy' ? '/live-tracking/' + activeBooking._id : '/tourist/live/' + activeBooking._id);
         } else {
-            import('react-hot-toast').then(({ default: hotToast }) => hotToast.error('Bạn không có chuyến đi nào đang diễn ra để xem Bản đồ.'));
+            // Route to general live map where they can see their own location without sharing
+            navigate(user.role === 'buddy' ? '/live-tracking/general' : '/tourist/live/general');
         }
     } catch (err) {
         import('react-hot-toast').then(({ default: hotToast }) => hotToast.error('Lỗi khi tải thông tin chuyến đi.'));
