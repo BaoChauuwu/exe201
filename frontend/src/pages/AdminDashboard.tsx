@@ -656,16 +656,6 @@ export const AdminDashboard = () => {
                             return true;
                         });
 
-                        const handleStatusChange = async (id: string, status: string) => {
-                            try {
-                                await axios.patch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/feedbacks/admin/${id}/status`, { status }, cfg);
-                                setFeedbacks(feedbacks.map(f => f._id === id ? { ...f, status } : f));
-                                hotToast.success('Cập nhật trạng thái thành công');
-                            } catch (error) {
-                                hotToast.error('Cập nhật thất bại');
-                            }
-                        };
-
                         return filtered.length === 0 ? (
                             <div style={{ padding: '5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                                 <FileText size={48} style={{ marginBottom: '1rem', opacity: 0.3, color: '#ec4899' }} />
