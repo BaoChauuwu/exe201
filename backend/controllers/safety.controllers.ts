@@ -4,14 +4,18 @@ import { ObjectId } from 'mongodb'
 import LiveTracking from '../models/LiveTracking.model'
 
 export const updateLocation = async (req: Request, res: Response) => {
-    const { bookingId, buddyId, lng, lat, role } = req.body
+    const { bookingId, buddyId, userId, lng, lat, role } = req.body
 
     try {
+        const senderId = buddyId || userId
         let tracking = null
         if (!role || role === 'buddy') {
+            if (!senderId) {
+                return res.status(400).json({ message: 'Missing buddyId or userId' })
+            }
             tracking = await LiveTracking.create({
                 bookingId: new ObjectId(bookingId as string),
-                buddyId: new ObjectId(buddyId as string),
+                buddyId: new ObjectId(senderId as string),
                 location: {
                     type: 'Point',
                     coordinates: [lng, lat]
@@ -20,7 +24,7 @@ export const updateLocation = async (req: Request, res: Response) => {
         }
 
         const io = getIO()
-        io.emit(`location_updated_${bookingId}`, { lat, lng, role: role || 'buddy', senderId: buddyId })
+        io.emit(`location_updated_${bookingId}`, { lat, lng, role: role || 'buddy', senderId })
 
         res.json({
             message: 'Location updated',
