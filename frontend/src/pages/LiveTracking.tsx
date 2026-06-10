@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { MapPin, Activity, ShieldAlert } from 'lucide-react';
@@ -49,25 +49,70 @@ const AutoFitBounds = ({ buddyLoc, touristLoc }: { buddyLoc: { lat: number, lng:
 };
 
 export const LiveTracking = () => {
-    const [status, setStatus] = useState('Đang khởi tạo...');
+    const [status, setStatus] = useState('Đang kiểm tra thời gian chuyến đi...');
     const [buddyLocation, setBuddyLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [touristLocation, setTouristLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [sosTriggered, setSosTriggered] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [isTrackingAllowed, setIsTrackingAllowed] = useState(false);
 
     const { bookingId } = useParams();
     const { user } = useAuthStore();
-    const buddyId = user?._id;
+    const userId = user?._id;
+    const isTourist = user?.role === 'tourist';
+    const myRole = isTourist ? 'tourist' : 'buddy';
+    const partnerRole = isTourist ? 'buddy' : 'tourist';
 
-    // 1. Kết nối socket lắng nghe vị trí của Tourist cập nhật
+    // 0. Lấy thông tin chuyến đi và kiểm tra giờ
     useEffect(() => {
         if (!bookingId) return;
+
+        const checkTime = async () => {
+            try {
+                const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + `/bookings/${bookingId}`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                const b = res.data.data;
+                if (!b) throw new Error('Không tìm thấy chuyến đi');
+
+                const scheduledDate = new Date(b.scheduledDate);
+                const [hoursStr, minutesStr] = b.startTime.split(':');
+                scheduledDate.setHours(parseInt(hoursStr, 10), parseInt(minutesStr, 10), 0, 0);
+
+                const trackingStartTime = new Date(scheduledDate.getTime() - 30 * 60 * 1000); // 30 mins before
+                const trackingEndTime = new Date(scheduledDate.getTime() + b.hours * 60 * 60 * 1000 + 30 * 60 * 1000); // 30 mins after
+
+                const now = new Date();
+                if (now >= trackingStartTime && now <= trackingEndTime) {
+                    setIsTrackingAllowed(true);
+                    setStatus('Đang khởi tạo...');
+                } else {
+                    setIsTrackingAllowed(false);
+                    if (now < trackingStartTime) {
+                        setStatus(`Tính năng theo dõi sẽ mở vào lúc ${trackingStartTime.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}`);
+                    } else {
+                        setStatus('Chuyến đi đã kết thúc. Theo dõi vị trí đã tắt.');
+                    }
+                }
+            } catch (err: any) {
+                console.error(err);
+                setStatus('Lỗi: ' + (err.response?.data?.message || err.message || 'Không thể xác thực thông tin chuyến đi.'));
+            }
+        };
+        
+        checkTime();
+    }, [bookingId]);
+
+    // 1. Kết nối socket lắng nghe vị trí của đối tác (Partner)
+    useEffect(() => {
+        if (!bookingId || !isTrackingAllowed) return;
         
         socket.connect();
 
         socket.on(`location_updated_${bookingId}`, (data: { lat: number, lng: number, role?: string }) => {
-            if (data.role === 'tourist') {
-                setTouristLocation({ lat: data.lat, lng: data.lng });
+            if (data.role === partnerRole) {
+                if (isTourist) setBuddyLocation({ lat: data.lat, lng: data.lng });
+                else setTouristLocation({ lat: data.lat, lng: data.lng });
                 setLastUpdated(new Date());
             }
         });
@@ -75,10 +120,12 @@ export const LiveTracking = () => {
         return () => {
             socket.off(`location_updated_${bookingId}`);
         };
-    }, [bookingId]);
+    }, [bookingId, isTrackingAllowed, partnerRole, isTourist]);
 
-    // 2. Định vị GPS của Buddy và gửi định vị lên backend
+    // 2. Định vị GPS của bản thân và gửi lên backend
     useEffect(() => {
+        if (!bookingId || !userId || !isTrackingAllowed) return;
+
         if (!navigator.geolocation) {
             setStatus('Trình duyệt không hỗ trợ định vị GPS');
             return;
@@ -87,31 +134,60 @@ export const LiveTracking = () => {
         const watchId = navigator.geolocation.watchPosition(
             ({ coords }) => {
                 const newLoc = { lat: coords.latitude, lng: coords.longitude };
-                setBuddyLocation(newLoc);
-                setStatus('Đang theo dõi');
-                if (bookingId && buddyId) {
-                    axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', { 
-                        bookingId, 
-                        buddyId, 
-                        lat: coords.latitude, 
-                        lng: coords.longitude,
-                        role: 'buddy'
-                    }).catch(console.error);
-                }
+                if (isTourist) setTouristLocation(newLoc);
+                else setBuddyLocation(newLoc);
+                
+                setStatus('Đang cập nhật trực tiếp');
+                axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', { 
+                    bookingId, 
+                    userId, 
+                    lat: coords.latitude, 
+                    lng: coords.longitude,
+                    role: myRole
+                }).catch(console.error);
             },
             err => setStatus('Lỗi: ' + err.message),
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
         );
         return () => navigator.geolocation.clearWatch(watchId);
-    }, [bookingId, buddyId]);
+    }, [bookingId, userId, isTrackingAllowed, isTourist, myRole]);
 
-    const handleSOS = () => {
-        if (!bookingId || !buddyId) return;
-        if (window.confirm('⚠️ BẠN CÓ CHẮC MUỐN KÊU CỨU KHẨN CẤP? Admin sẽ được thông báo ngay lập tức!')) {
-            axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', { bookingId, userId: buddyId, message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.' })
-                .then(() => { setSosTriggered(true); toast.success('Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
-                .catch(() => toast.error('Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
+    const [holdProgress, setHoldProgress] = useState(0);
+    const holdTimerRef = useRef<number | null>(null);
+    const holdStartTimeRef = useRef<number | null>(null);
+
+    const startHold = () => {
+        if (sosTriggered || !isTrackingAllowed) return;
+        if (!isTrackingAllowed) {
+            toast.error('Chỉ được dùng SOS trong khung giờ chuyến đi.');
+            return;
         }
+        holdStartTimeRef.current = Date.now();
+        holdTimerRef.current = window.setInterval(() => {
+            const elapsed = Date.now() - (holdStartTimeRef.current || 0);
+            const progress = Math.min((elapsed / 3000) * 100, 100);
+            setHoldProgress(progress);
+            
+            if (progress >= 100) {
+                stopHold();
+                executeSOS();
+            }
+        }, 50);
+    };
+
+    const stopHold = () => {
+        if (holdTimerRef.current) {
+            clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+        setHoldProgress(0);
+    };
+
+    const executeSOS = () => {
+        if (!bookingId || !userId || !isTrackingAllowed) return;
+        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', { bookingId, userId, message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.' })
+            .then(() => { setSosTriggered(true); toast.success('Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
+            .catch(() => toast.error('Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
     };
 
     return (
@@ -126,7 +202,9 @@ export const LiveTracking = () => {
                     </div>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Chia sẻ vị trí & SOS (Buddy)</h2>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Tour ID: <code style={{ color: '#a5b4fc' }}>{bookingId}</code></p>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                            Buddy ID: <code style={{ color: '#34d399' }}>{user?._id || 'N/A'}</code>
+                        </p>
                     </div>
                 </div>
                 
@@ -219,13 +297,13 @@ export const LiveTracking = () => {
                             <ShieldAlert size={16} style={{ color: '#ef4444' }} /> Cảnh báo SOS
                         </h4>
                         <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.3 }}>
-                            Chỉ nhấn nút này trong trường hợp khẩn cấp để gọi cứu hộ.
+                            Nhấn và giữ nút SOS 3 giây trong trường hợp khẩn cấp để gọi cứu hộ.
                         </p>
                     </div>
                     
                     <div style={{ position: 'relative' }}>
                         {/* Pulsing SOS rings */}
-                        {!sosTriggered && (
+                        {!sosTriggered && holdProgress === 0 && (
                             <>
                                 <div style={{ position: 'absolute', inset: '-8px', borderRadius: '50%', border: '2px solid rgba(239,68,68,0.4)', animation: 'ping-sos 1.5s ease-in-out infinite' }} />
                                 <div style={{ position: 'absolute', inset: '-4px', borderRadius: '50%', border: '1px solid rgba(239,68,68,0.5)', animation: 'ping-sos 1.5s ease-in-out infinite', animationDelay: '0.5s' }} />
@@ -233,26 +311,36 @@ export const LiveTracking = () => {
                         )}
                         
                         <button
-                            onClick={handleSOS}
+                            onMouseDown={startHold}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={startHold}
+                            onTouchEnd={stopHold}
                             style={{
                                 width: '64px',
                                 height: '64px',
                                 borderRadius: '50%',
-                                background: sosTriggered ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'linear-gradient(135deg, #dc2626, #991b1b)',
+                                background: sosTriggered 
+                                    ? 'linear-gradient(135deg, #16a34a, #15803d)' 
+                                    : holdProgress > 0 
+                                        ? `conic-gradient(#ef4444 ${holdProgress}%, #7f1d1d 0)` 
+                                        : 'linear-gradient(135deg, #dc2626, #991b1b)',
                                 border: `2px solid ${sosTriggered ? 'rgba(74,222,128,0.6)' : 'rgba(252,165,165,0.4)'}`,
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 boxShadow: sosTriggered ? '0 0 20px rgba(22,163,74,0.5)' : '0 0 25px rgba(220,38,38,0.6), 0 0 50px rgba(220,38,38,0.2)',
-                                transition: 'all 0.3s',
+                                transition: holdProgress > 0 ? 'none' : 'all 0.3s',
                                 color: 'white',
                                 fontWeight: 900,
                                 fontSize: '0.95rem',
-                                outline: 'none'
+                                outline: 'none',
+                                userSelect: 'none',
+                                WebkitUserSelect: 'none'
                             }}
                         >
-                            {sosTriggered ? '✓ SENT' : 'SOS'}
+                            {sosTriggered ? '✓ SENT' : (holdProgress > 0 && holdProgress < 100) ? `${Math.round(holdProgress)}%` : 'SOS'}
                         </button>
                     </div>
                 </div>

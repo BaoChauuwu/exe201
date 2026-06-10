@@ -8,6 +8,8 @@ import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 import { experienceApi, type IExperience } from '../api/experience.api'
+import { Skeleton } from '../components/common/Skeleton'
+import { PageWrapper } from '../components/layout/PageWrapper'
 
 const features = [
   {
@@ -56,7 +58,27 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [imageIndex, setImageIndex] = useState(0)
   const ITEMS_PER_PAGE = 6
+
+  const rawDisplayImages = experiences.length > 0 
+    ? experiences.filter(exp => exp.images && exp.images.length > 0).map(exp => ({ src: exp.images[0], title: exp.title }))
+    : [];
+
+  const safeImages = [...rawDisplayImages];
+  if (safeImages.length > 0) {
+    while (safeImages.length < 8) {
+      safeImages.push(...rawDisplayImages);
+    }
+  }
+
+  useEffect(() => {
+    if (safeImages.length === 0) return;
+    const timer = setInterval(() => {
+      setImageIndex(prev => (prev + 1) % safeImages.length)
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [safeImages.length])
 
   useEffect(() => {
     setIsLoading(true)
@@ -100,7 +122,7 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <PageWrapper className='page-container' style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--color-bg)' }}>
       <Navbar />
 
       {/* ====== HERO ====== */}
@@ -177,72 +199,46 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Hero Visual */}
-            <div className='hero-visual'>
-              <div className='hero-card-main'>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '50%',
-                    background: 'var(--gradient-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    <Users size={20} color='#fff' />
+            {/* Hero Visual - Travel Images Masonry */}
+            {safeImages.length > 0 ? (
+              <div className='hero-visual' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', height: '500px', position: 'relative' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', transform: 'translateY(1.5rem)' }}>
+                  <div style={{ flex: 6, borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', position: 'relative', border: '1px solid var(--color-border)' }}>
+                    {safeImages.map((img, i) => (
+                      <img key={i} src={img.src} alt={img.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 1s ease, transform 0.5s ease', opacity: i === imageIndex % safeImages.length ? 1 : 0 }} />
+                    ))}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, maxWidth: '90%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {safeImages[imageIndex % safeImages.length].title}</div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>Lan Anh (Local Buddy)</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Chuyên tour Đà Lạt ẩn mình</div>
-                  </div>
-                  <div style={{
-                    marginLeft: 'auto', background: 'rgba(16,185,129,0.15)',
-                    color: '#10b981', padding: '4px 12px', borderRadius: '999px',
-                    fontSize: '0.75rem', fontWeight: 600
-                  }}>Sẵn sàng</div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(14,165,233,0.08)', borderRadius: '12px',
-                  padding: '16px', marginBottom: '16px',
-                  border: '1px solid rgba(14,165,233,0.15)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>Lịch trống tuần này</span>
-                    <span style={{ color: 'var(--color-primary)', fontSize: '0.8rem', fontWeight: 600 }}>4/7 ngày</span>
-                  </div>
-                  <div style={{ background: 'var(--color-border)', borderRadius: '4px', height: '6px' }}>
-                    <div style={{
-                      width: '57%', height: '100%',
-                      background: 'var(--gradient-primary)', borderRadius: '4px'
-                    }} />
+                  <div style={{ flex: 4, borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', position: 'relative', border: '1px solid var(--color-border)' }}>
+                    {safeImages.map((img, i) => (
+                      <img key={i} src={img.src} alt={img.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 1s ease, transform 0.5s ease', opacity: i === (imageIndex + 2) % safeImages.length ? 1 : 0 }} />
+                    ))}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, maxWidth: '90%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {safeImages[(imageIndex + 2) % safeImages.length].title}</div>
                   </div>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div className='gradient-gold' style={{ fontSize: '1.5rem', fontWeight: 800 }}>250K</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>/ giờ</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', transform: 'translateY(-1.5rem)' }}>
+                  <div style={{ flex: 4, borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', position: 'relative', border: '1px solid var(--color-border)' }}>
+                    {safeImages.map((img, i) => (
+                      <img key={i} src={img.src} alt={img.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 1s ease, transform 0.5s ease', opacity: i === (imageIndex + 4) % safeImages.length ? 1 : 0 }} />
+                    ))}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, maxWidth: '90%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {safeImages[(imageIndex + 4) % safeImages.length].title}</div>
                   </div>
-                  <Link to='/register'>
-                    <button className='btn btn-primary btn-sm'>Đặt lịch ngay</button>
-                  </Link>
+                  <div style={{ flex: 6, borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', position: 'relative', border: '1px solid var(--color-border)' }}>
+                    {safeImages.map((img, i) => (
+                      <img key={i} src={img.src} alt={img.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 1s ease, transform 0.5s ease', opacity: i === (imageIndex + 6) % safeImages.length ? 1 : 0 }} />
+                    ))}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, maxWidth: '90%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {safeImages[(imageIndex + 6) % safeImages.length].title}</div>
+                  </div>
                 </div>
               </div>
-
-              {/* Floating cards */}
-              <div className='hero-card-float hero-card-float-1'>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Star size={16} style={{ color: '#f59e0b' }} fill='#f59e0b' />
-                  <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>4.95</span>
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>Rating</span>
+            ) : (
+              <div className='hero-visual' style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-2)', borderRadius: '24px', border: '1px solid var(--color-border)' }}>
+                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                  <Compass size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p>Đang tải hình ảnh từ các tour...</p>
                 </div>
               </div>
-
-              <div className='hero-card-float hero-card-float-2'>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Shield size={16} style={{ color: 'var(--color-primary)' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Đã xác thực eKYC</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -264,13 +260,13 @@ export default function HomePage() {
           {isLoading ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', justifyContent: 'center' }}>
               {[1, 2, 3].map(i => (
-                <div key={i} style={{ background: '#ffffff', border: '1px solid rgba(14, 165, 233, 0.12)', borderRadius: '24px', height: '360px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(14, 165, 233, 0.02)', maxWidth: '360px', width: '100%', margin: '0 auto' }}>
-                  <div style={{ height: '180px', background: '#f1f5f9' }} />
+                <div key={i} style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '24px', height: '360px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(14, 165, 233, 0.02)', maxWidth: '360px', width: '100%', margin: '0 auto' }}>
+                  <Skeleton width="100%" height="180px" borderRadius="0" />
                   <div style={{ padding: '1.5rem' }}>
-                    <div style={{ width: '30%', height: '12px', background: '#e2e8f0', borderRadius: '4px', marginBottom: '1rem' }} />
-                    <div style={{ width: '80%', height: '20px', background: '#e2e8f0', borderRadius: '6px', marginBottom: '0.75rem' }} />
-                    <div style={{ width: '50%', height: '12px', background: '#e2e8f0', borderRadius: '4px', marginBottom: '1.5rem' }} />
-                    <div style={{ width: '100%', height: '38px', background: '#f1f5f9', borderRadius: '10px' }} />
+                    <Skeleton width="30%" height="12px" style={{ marginBottom: '1rem' }} />
+                    <Skeleton width="80%" height="20px" style={{ marginBottom: '0.75rem' }} />
+                    <Skeleton width="50%" height="12px" style={{ marginBottom: '1.5rem' }} />
+                    <Skeleton width="100%" height="38px" borderRadius="10px" />
                   </div>
                 </div>
               ))}
@@ -679,6 +675,6 @@ export default function HomePage() {
       </section>
 
       <Footer />
-    </div>
+    </PageWrapper>
   )
 }

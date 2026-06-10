@@ -67,7 +67,7 @@ export const TouristLiveMap = () => {
                 // Gửi tọa độ lên để Buddy cũng có thể nhìn thấy Tourist trên bản đồ của họ
                 axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/tracking', {
                     bookingId,
-                    buddyId: user._id, // Truyền user._id làm payload
+                    userId: user._id, // Truyền user._id làm payload
                     lat: coords.latitude,
                     lng: coords.longitude,
                     role: 'tourist'
@@ -115,7 +115,9 @@ export const TouristLiveMap = () => {
                     </div>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Theo dõi hành trình (Tourist)</h2>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Tour ID: <code style={{ color: '#a5b4fc' }}>{bookingId}</code></p>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                            Tourist ID: <code style={{ color: '#34d399' }}>{user?._id || 'N/A'}</code>
+                        </p>
                     </div>
                 </div>
                 
