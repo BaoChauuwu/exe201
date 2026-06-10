@@ -61,11 +61,11 @@ export default function Footer() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', color: 'var(--color-text-muted)' }}>
                 <MapPin size={18} style={{ color: 'var(--color-primary)', flexShrink: 0, marginTop: '2px' }} />
-                <span>Khu Công Nghệ Cao, Quận 9, TP. Hồ Chí Minh</span>
+                <span>Đại Học FPT University Đà Nẵng</span>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--color-text-muted)' }}>
                 <Phone size={18} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-                <span>1900 1234</span>
+                <span>1999 9999</span>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--color-text-muted)' }}>
                 <Mail size={18} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />

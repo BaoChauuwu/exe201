@@ -171,7 +171,6 @@ export const ExperienceForm = ({
   }
 
   const onInvalid = (errors: any) => {
-    console.log('Form validation errors:', errors)
     const errorMessages = Object.values(errors).map((err: any) => err.message || err?.longitude?.message || err?.latitude?.message || 'Có lỗi').filter(Boolean)
     if (errorMessages.length > 0) {
       toast.error(`Sửa các lỗi sau: ${errorMessages[0]}`, { duration: 4000 })

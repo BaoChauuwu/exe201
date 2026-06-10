@@ -8,6 +8,7 @@ import PayoutRequest from '../models/PayoutRequest.model'
 import BuddyProfile from '../models/BuddyProfile.model'
 import ExperienceModel from '../models/Experience.model'
 import UserModel from '../models/User.model'
+import BookingModel from '../models/Booking.model'
 
 // eKYC Management
 export const getPendingEkyc = async (req: Request, res: Response) => {
@@ -158,6 +159,28 @@ export const approveExperience = async (req: Request, res: Response) => {
             await ExperienceModel.findByIdAndDelete(experienceId)
             return res.status(httpStatus.OK).json({ message: 'Đã từ chối và xóa tour thành công!' })
         }
+    } catch (error) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
+    }
+}
+
+// Booking / Trip Management for Admin
+export const getAllBookings = async (req: Request, res: Response) => {
+    try {
+        const { status } = req.query
+        const filter: Record<string, any> = {}
+        if (status && status !== 'all') {
+            filter.status = status
+        }
+
+        const bookings = await BookingModel.find(filter)
+            .sort({ created_at: -1 })
+            .populate('touristId', 'name email avatar')
+            .populate('buddyId', 'name email avatar')
+            .populate('experienceId', 'title city images')
+            .lean()
+
+        return res.status(httpStatus.OK).json({ data: bookings })
     } catch (error) {
         return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
     }

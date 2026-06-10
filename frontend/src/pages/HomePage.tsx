@@ -94,9 +94,7 @@ export default function HomePage() {
     // 2. Tải danh sách tour
     experienceApi.getAllPublic()
       .then(res => {
-        console.log('[HomePage] API response:', res.data)
         const list = res.data.result || []
-        console.log('[HomePage] Tours loaded:', list.length)
         setExperiences(list)
       })
       .catch(err => {
