@@ -33,7 +33,6 @@ export const getUserByIdController = async (req: Request, res: Response) => {
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const { user } = req
   const user_id = user._id
-  console.log(user_id)
   const result = await usersService.login(user_id.toString())
   res.status(200).json({
     message: userMessages.LOGIN_SUCCESS,

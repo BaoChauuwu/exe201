@@ -3,7 +3,8 @@ import {
   getPendingEkyc, approveEkyc,
   getPendingPayouts, approvePayout,
   getAllUsers, deleteUser,
-  getPendingExperiences, approveExperience
+  getPendingExperiences, approveExperience,
+  getAllBookings
 } from '../controllers/admin.controllers'
 import { accessTokenValidator, requireRole } from '../middlewares/users.middlewares'
 import { wrapRequestHandler } from '../utils/handlers'
@@ -29,5 +30,8 @@ adminRouter.delete('/users/:id', wrapRequestHandler(deleteUser))
 // Experience Management Routes
 adminRouter.get('/experiences/pending', wrapRequestHandler(getPendingExperiences))
 adminRouter.post('/experiences/approve', wrapRequestHandler(approveExperience))
+
+// Booking / Trip Management Routes
+adminRouter.get('/bookings', wrapRequestHandler(getAllBookings))
 
 export default adminRouter
