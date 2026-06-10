@@ -73,6 +73,22 @@
   --font-size-6xl: 3.75rem;
 }
 
+[data-theme='dark'] {
+  --color-bg: #0f172a;
+  --color-bg-2: #1e293b;
+  --color-surface: rgba(30, 41, 59, 0.9);
+  --color-surface-hover: rgba(51, 65, 85, 0.9);
+  --color-border: rgba(56, 189, 248, 0.2);
+  --color-border-focus: rgba(56, 189, 248, 0.5);
+
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-faint: #64748b;
+
+  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  --gradient-card: linear-gradient(135deg, rgba(56,189,248,0.05), rgba(2,132,199,0.05));
+}
+
 /* ===================== RESET ===================== */
 *, *::before, *::after {
   box-sizing: border-box;

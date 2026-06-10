@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug App</title>
+</head>
+<body>
+  <h1>App Debugger</h1>
+  <pre id="logs" style="background: #f4f4f4; padding: 10px; border: 1px solid #ccc; height: 300px; overflow: auto;"></pre>
+  <iframe id="app-frame" src="/" style="width: 100%; height: 500px; border: 1px solid red;"></iframe>
+  <script>
+    const logs = document.getElementById('logs');
+    function log(msg) {
+      logs.textContent += msg + '\n';
+    }
+    
+    document.getElementById('app-frame').addEventListener('load', function() {
+      try {
+        const frameWin = this.contentWindow;
+        if (!frameWin) { log('Cannot access iframe window'); return; }
+        
+        frameWin.console.error = function(...args) {
+          log('[ERROR] ' + args.join(' '));
+        };
+        
+        frameWin.addEventListener('error', function(e) {
+          log('[UNHANDLED] ' + e.message + ' at ' + e.filename + ':' + e.lineno);
+        });
+
+        frameWin.addEventListener('unhandledrejection', function(e) {
+          log('[PROMISE] ' + e.reason);
+        });
+        
+        log('Hooked into iframe successfully. Refresh the iframe if it already crashed.');
+      } catch (e) {
+        log('Error hooking: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>

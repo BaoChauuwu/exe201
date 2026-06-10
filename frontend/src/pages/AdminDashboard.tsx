@@ -2,16 +2,37 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, Map } from 'lucide-react';
+import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, Map, BarChart2 } from 'lucide-react';
 import { experienceApi } from '../api/experience.api';
+import { socket } from '../socket';
+import { toast as hotToast } from 'react-hot-toast';
+// Tạm thời bỏ Recharts do lỗi tương thích React 19: 
+// import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export const AdminDashboard = () => {
     const [ekycs, setEkycs] = useState<any[]>([]);
     const [payouts, setPayouts] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [experiences, setExperiences] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'ekyc' | 'payouts' | 'users' | 'tours'>('ekyc');
+    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'tours'>('overview');
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Mock data for charts
+    const revenueData = [
+        { month: 'Jan', revenue: 4000, users: 240 },
+        { month: 'Feb', revenue: 3000, users: 139 },
+        { month: 'Mar', revenue: 2000, users: 980 },
+        { month: 'Apr', revenue: 2780, users: 390 },
+        { month: 'May', revenue: 1890, users: 480 },
+        { month: 'Jun', revenue: 2390, users: 380 },
+        { month: 'Jul', revenue: 3490, users: 430 },
+    ];
+
+    const roleDistribution = [
+        { name: 'Tourist', value: 400 },
+        { name: 'Buddy', value: 300 },
+        { name: 'Admin', value: 10 },
+    ];
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -26,7 +47,70 @@ export const AdminDashboard = () => {
         experienceApi.getPending(cfg).then(r => setExperiences(r.data.data || [])).catch(console.error);
     };
 
-    useEffect(() => { fetchAll(); }, []);
+    useEffect(() => { 
+        fetchAll(); 
+        
+        // Connect socket for Admin SOS Alerts
+        if (!socket.connected) {
+            socket.connect();
+        }
+        socket.emit('join_admin');
+
+        const playSiren = () => {
+            try {
+                const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = 'sine'; 
+
+                const now = audioCtx.currentTime;
+                const duration = 6; 
+                
+                // Siren frequency modulation (wii-uu-wii-uu)
+                for (let i = 0; i < duration * 2; i++) {
+                    oscillator.frequency.setValueAtTime(700, now + i * 0.5); 
+                    oscillator.frequency.linearRampToValueAtTime(1000, now + i * 0.5 + 0.25);
+                    oscillator.frequency.linearRampToValueAtTime(700, now + i * 0.5 + 0.5);
+                }
+
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.5, now + 0.1);
+                gainNode.gain.setValueAtTime(0.5, now + duration - 0.5);
+                gainNode.gain.linearRampToValueAtTime(0, now + duration);
+
+                oscillator.start(now);
+                oscillator.stop(now + duration);
+            } catch (err) {
+                console.error('Audio playback failed', err);
+            }
+        };
+
+        const handleSos = (data: any) => {
+            console.log('Admin received SOS:', data);
+            playSiren(); // Play the siren sound!
+            
+            hotToast.error(
+                <div>
+                    <strong>🚨 BÁO ĐỘNG SOS 🚨</strong><br/>
+                    User: {data.name} ({data.role})<br/>
+                    ID: {data.userId}<br/>
+                    Thời gian: {new Date(data.time).toLocaleTimeString()}<br/>
+                    <em>Hãy liên hệ ngay lập tức!</em>
+                </div>, 
+                { duration: 15000, position: 'top-center' }
+            );
+        };
+
+        socket.on('receive_sos', handleSos);
+
+        return () => {
+            socket.off('receive_sos', handleSos);
+        };
+    }, []);
 
     const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -111,7 +195,10 @@ export const AdminDashboard = () => {
                     </div>
 
                     {/* Tabs */}
-                    <div style={{ display: 'flex', background: 'white', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '4px', gap: '4px', minWidth: '400px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ display: 'flex', background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '4px', gap: '4px', minWidth: '400px', boxShadow: 'var(--shadow-sm)', overflowX: 'auto' }}>
+                        <button onClick={() => setActiveTab('overview')} style={tabBtn(activeTab === 'overview', '#f59e0b')}>
+                            <BarChart2 size={16} /> Overview
+                        </button>
                         <button onClick={() => setActiveTab('ekyc')} style={tabBtn(activeTab === 'ekyc', '#6366f1')}>
                             <UserCheck size={16} /> eKYC
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{ekycs.length}</span>
@@ -135,6 +222,7 @@ export const AdminDashboard = () => {
                 <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', minHeight: '400px', boxShadow: 'var(--shadow-md)' }}>
 
                     {/* Search bar */}
+                    {activeTab !== 'overview' && (
                     <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
                             {activeTab === 'ekyc' ? 'Pending Verifications' : activeTab === 'payouts' ? 'Pending Payouts' : activeTab === 'tours' ? 'Pending Tours' : 'User Management'}
@@ -142,7 +230,7 @@ export const AdminDashboard = () => {
                         
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                             {activeTab === 'users' && (
-                                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 1rem', color: 'var(--color-text)', fontSize: '0.8rem', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
+                                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 1rem', color: 'var(--color-text)', fontSize: '0.8rem', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
                                     <option value="all">Tất cả</option>
                                     <option value="tourist">Tourist</option>
                                     <option value="buddy">Buddy</option>
@@ -151,10 +239,37 @@ export const AdminDashboard = () => {
                             )}
                             <div style={{ position: 'relative' }}>
                                 <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-faint)' }} />
-                                <input type='text' value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder='Search...' style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 0.875rem 0.5rem 2.25rem', color: 'var(--color-text)', fontSize: '0.8rem', outline: 'none', width: '200px', fontFamily: 'inherit' }} />
+                                <input type='text' value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder='Search...' style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 0.875rem 0.5rem 2.25rem', color: 'var(--color-text)', fontSize: '0.8rem', outline: 'none', width: '200px', fontFamily: 'inherit' }} />
                             </div>
                         </div>
                     </div>
+                    )}
+
+                    {/* Overview Tab */}
+                    {activeTab === 'overview' && (
+                        <div style={{ padding: '2rem' }}>
+                            <h2 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary-dark)' }}>System Analytics (Mock)</h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                                
+                                {/* Revenue Line Chart */}
+                                <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
+                                    <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'var(--color-text)' }}>Revenue vs New Users</h3>
+                                    <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', borderRadius: '12px', color: 'var(--color-text-muted)' }}>
+                                        <p>[Biểu đồ doanh thu đang bảo trì nâng cấp lên v2]</p>
+                                    </div>
+                                </div>
+
+                                {/* Role Distribution Bar Chart */}
+                                <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
+                                    <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'var(--color-text)' }}>User Role Distribution</h3>
+                                    <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', borderRadius: '12px', color: 'var(--color-text-muted)' }}>
+                                        <p>[Biểu đồ phân bổ người dùng đang bảo trì nâng cấp lên v2]</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    )}
 
                     {/* eKYC tab */}
                     {activeTab === 'ekyc' && (

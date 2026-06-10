@@ -12,6 +12,7 @@ export const Wallet = () => {
     const [walletBalance, setWalletBalance] = useState(0);
     const [amount, setAmount] = useState('');
     const [bankCode, setBankCode] = useState('VCB');
+    const [customBank, setCustomBank] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
@@ -26,7 +27,13 @@ export const Wallet = () => {
                     if (res.data.data) {
                         setWalletBalance(res.data.data.walletBalance || 0);
                         if (res.data.data.payoutMethod) {
-                            setBankCode(res.data.data.payoutMethod.bankCode || 'VCB');
+                            const bc = res.data.data.payoutMethod.bankCode || 'VCB';
+                            if (!['VCB', 'TCB', 'MB', 'MOMO'].includes(bc)) {
+                                setBankCode('OTHER');
+                                setCustomBank(bc);
+                            } else {
+                                setBankCode(bc);
+                            }
                             setAccountNumber(res.data.data.payoutMethod.accountNumber || '');
                             setAccountName(res.data.data.payoutMethod.accountName || '');
                         }
@@ -41,7 +48,13 @@ export const Wallet = () => {
                     if (res.data.result) {
                         setWalletBalance(res.data.result.walletBalance || 0);
                         if (res.data.result.refundPaymentMethod) {
-                            setBankCode(res.data.result.refundPaymentMethod.bankCode || 'VCB');
+                            const bc = res.data.result.refundPaymentMethod.bankCode || 'VCB';
+                            if (!['VCB', 'TCB', 'MB', 'MOMO'].includes(bc)) {
+                                setBankCode('OTHER');
+                                setCustomBank(bc);
+                            } else {
+                                setBankCode(bc);
+                            }
                             setAccountNumber(res.data.result.refundPaymentMethod.accountNumber || '');
                             setAccountName(res.data.result.refundPaymentMethod.accountName || '');
                         }
@@ -60,8 +73,13 @@ export const Wallet = () => {
             toast.error(withdrawAmount <= 0 ? 'Số tiền phải lớn hơn 0' : 'Số dư không đủ!');
             return;
         }
+        if (bankCode === 'OTHER' && !customBank.trim()) {
+            toast.error('Vui lòng nhập tên ngân hàng!');
+            return;
+        }
+        const finalBankCode = bankCode === 'OTHER' ? customBank : bankCode;
         setStatus('loading');
-        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/payouts/request', { buddyId, amount: withdrawAmount, bankCode, accountNumber, accountName }, {
+        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/payouts/request', { buddyId, amount: withdrawAmount, bankCode: finalBankCode, accountNumber, accountName }, {
             headers: { Authorization: `Bearer ${accessToken}` }
         })
             .then(() => {
@@ -216,8 +234,14 @@ export const Wallet = () => {
                                         <option value='TCB'>Techcombank</option>
                                         <option value='MB'>MB Bank</option>
                                         <option value='MOMO'>MoMo Wallet</option>
+                                        <option value='OTHER'>Khác...</option>
                                     </select>
                                 </div>
+                                {bankCode === 'OTHER' && (
+                                    <div style={{ marginTop: '0.875rem' }}>
+                                        <input required type='text' value={customBank} onChange={e => setCustomBank(e.target.value)} placeholder='Nhập tên ngân hàng hoặc ví...' style={inputStyle} />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Account number & name */}

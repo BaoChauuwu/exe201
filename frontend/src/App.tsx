@@ -36,6 +36,7 @@ import PaymentResultPage from './pages/PaymentResultPage'
 import { MyTrips } from './pages/MyTrips'
 
 import { Toaster } from 'react-hot-toast'
+import { GlobalSOSButton } from './components/common/GlobalSOSButton'
 
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
@@ -78,6 +79,7 @@ function App() {
           }
         }}
       />
+      <GlobalSOSButton />
       <Routes>
         {/* Public */}
         <Route path='/' element={<HomePage />} />

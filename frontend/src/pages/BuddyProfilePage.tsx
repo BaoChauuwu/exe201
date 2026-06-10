@@ -26,6 +26,7 @@ export const BuddyProfilePage = () => {
     const [languages, setLanguages] = useState('');
     const [hourlyRate, setHourlyRate] = useState<number>(0);
     const [bankCode, setBankCode] = useState('VCB');
+    const [customBank, setCustomBank] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
@@ -51,7 +52,13 @@ export const BuddyProfilePage = () => {
                 setSlots(parsedSlots);
                 setLanguages(d.languages?.join(', ') || '');
                 setHourlyRate(d.hourlyRate || 0);
-                setBankCode(d.payoutMethod?.bankCode || 'VCB');
+                const bc = d.payoutMethod?.bankCode || 'VCB';
+                if (!['VCB', 'TCB', 'MB', 'MOMO'].includes(bc)) {
+                    setBankCode('OTHER');
+                    setCustomBank(bc);
+                } else {
+                    setBankCode(bc);
+                }
                 setAccountNumber(d.payoutMethod?.accountNumber || '');
                 setAccountName(d.payoutMethod?.accountName || '');
             })
@@ -83,6 +90,12 @@ export const BuddyProfilePage = () => {
             }
         }
 
+        if (bankCode === 'OTHER' && !customBank.trim()) {
+            toast.error('Vui lòng nhập tên ngân hàng!');
+            return;
+        }
+        const finalBankCode = bankCode === 'OTHER' ? customBank : bankCode;
+
         setStatus('loading');
         try {
             const availabilityArray = slots.map(s => `${s.day} ${s.start} - ${s.end}`);
@@ -90,7 +103,7 @@ export const BuddyProfilePage = () => {
                 availability: availabilityArray,
                 languages: languages.split(',').map(s => s.trim()).filter(Boolean),
                 hourlyRate: hourlyRate,
-                bankCode, accountNumber, accountName
+                bankCode: finalBankCode, accountNumber, accountName
             }, { headers: { Authorization: `Bearer ${accessToken}` } });
             toast.success('Cập nhật thành công!');
         } catch (err: any) {
@@ -338,11 +351,17 @@ export const BuddyProfilePage = () => {
                                         <option value='TCB'>Techcombank</option>
                                         <option value='MB'>MB Bank</option>
                                         <option value='MOMO'>MoMo Wallet</option>
+                                        <option value='OTHER'>Khác...</option>
                                     </select>
                                     <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#0284c7', display: 'flex', alignItems: 'center' }}>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                     </div>
                                 </div>
+                                {bankCode === 'OTHER' && (
+                                    <div style={{ marginTop: '0.875rem' }}>
+                                        <input type='text' value={customBank} onChange={e => setCustomBank(e.target.value)} placeholder='Nhập tên ngân hàng hoặc ví...' style={{ ...inputStyle, padding: '0.875rem' }} className='buddy-input' />
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

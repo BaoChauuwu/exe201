@@ -1,18 +1,30 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Plane, User, LogOut } from 'lucide-react'
+import { Plane, User, LogOut, ChevronDown, Moon, Sun } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth.api'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light')
   const { isAuthenticated, user, logout, refreshToken } = useAuthStore()
   const navigate = useNavigate()
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
+    const handleClickOutside = () => setDropdownOpen(false)
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('click', handleClickOutside)
+    }
   }, [])
 
   const handleLogout = async () => {
@@ -167,58 +179,110 @@ export default function Navbar() {
             </li>
             {isAuthenticated && (
               <>
-                <li>
-                  <Link to='/dashboard' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/my-trips' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                    Chuyến đi của tôi
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/conversations' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                    Tin nhắn
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/wallet' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                    Ví tiền
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/calendar' style={linkStyle}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                    Lịch trình
-                  </Link>
-                </li>
-                {user?.role === 'tourist' && (
+                {user?.role === 'admin' ? (
                   <li>
-                    <Link to='/my-requests' style={linkStyle}
+                    <Link to='/admin' style={linkStyle}
                       onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                      Yêu cầu chuyến đi
+                      Admin Portal
                     </Link>
                   </li>
-                )}
-                {user?.role === 'buddy' && (
-                  <li>
-                    <Link to='/trip-requests/open' style={linkStyle}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
-                      Bảng yêu cầu
-                    </Link>
-                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <Link to='/dashboard' style={linkStyle}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#475569')}>
+                        Dashboard
+                      </Link>
+                    </li>
+                    <li style={{ position: 'relative' }}>
+                      <div 
+                        style={{ ...linkStyle, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDropdownOpen(!dropdownOpen);
+                        }}
+                      >
+                        Chức năng <ChevronDown size={14} style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                      </div>
+                      
+                      {dropdownOpen && (
+                        <ul style={{
+                          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                          background: 'white', padding: '0.5rem 0', borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)', listStyle: 'none',
+                          minWidth: '200px', display: 'flex', flexDirection: 'column',
+                          marginTop: '0.5rem', border: '1px solid rgba(14, 165, 233, 0.1)'
+                        }}>
+                          <li>
+                            <Link to='/my-trips' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem'}}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; e.currentTarget.style.color = '#0284c7'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+                              Chuyến đi của tôi
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to='/conversations' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem'}}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; e.currentTarget.style.color = '#0284c7'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+                              Tin nhắn
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to='/wallet' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem'}}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; e.currentTarget.style.color = '#0284c7'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+                              Ví tiền
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to='/calendar' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem'}}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; e.currentTarget.style.color = '#0284c7'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+                              Lịch trình
+                            </Link>
+                          </li>
+                          {user?.role === 'tourist' && (
+                            <>
+                              <li>
+                                <Link to='/my-requests' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem'}}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; e.currentTarget.style.color = '#0284c7'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+                                  Yêu cầu chuyến đi
+                                </Link>
+                              </li>
+                              <li>
+                                <Link to='/tourist/live/demo-booking-123' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem', color: '#0ea5e9'}}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                                  🗺️ Xem Bản Đồ (Live Map)
+                                </Link>
+                              </li>
+                            </>
+                          )}
+                          {user?.role === 'buddy' && (
+                            <>
+                              <li>
+                                <Link to='/trip-requests/open' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem'}}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; e.currentTarget.style.color = '#0284c7'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+                                  Bảng yêu cầu
+                                </Link>
+                              </li>
+                              <li>
+                                <Link to='/live-tracking/demo-booking-123' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem', color: '#ef4444'}}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                                  🚨 Mở Live SOS & Map
+                                </Link>
+                              </li>
+                            </>
+                          )}
+                        </ul>
+                      )}
+                    </li>
+                  </>
                 )}
               </>
             )}
@@ -226,6 +290,29 @@ export default function Navbar() {
 
           {/* Actions */}
           <div style={actionsStyle}>
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--color-text)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px',
+                borderRadius: '50%',
+                transition: 'background 0.2s',
+                marginRight: '8px'
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-hover)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              title={theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+
             {isAuthenticated ? (
               <>
                 <Link to='/profile' style={{ textDecoration: 'none' }}>
