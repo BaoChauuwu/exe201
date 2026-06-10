@@ -27,6 +27,11 @@ export interface IBooking {
     status?: string // 'pending', 'confirmed', 'ongoing', 'completed', 'cancelled'
     cancelReason?: string
     emergencyTriggeredAt?: Date
+    emergencyLocation?: {
+        lat: number
+        lng: number
+        timestamp: Date
+    }
     refundBankInfo?: {
         bankCode: string
         accountNumber: string
@@ -66,7 +71,12 @@ export const bookingSchema = new Schema<IBooking>(
         paymentMethod: { type: String, default: '' },
         status: { type: String, default: 'pending' },
         cancelReason: { type: String, default: '' },
-        emergencyTriggeredAt: { type: Date }
+        emergencyTriggeredAt: { type: Date },
+        emergencyLocation: {
+            lat: { type: Number },
+            lng: { type: Number },
+            timestamp: { type: Date }
+        }
     },
     {
         timestamps: {

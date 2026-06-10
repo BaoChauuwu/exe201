@@ -185,3 +185,68 @@ export const getAllBookings = async (req: Request, res: Response) => {
         return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
     }
 }
+
+// Tracking & SOS Management
+import LiveTrackingModel from '../models/LiveTracking.model'
+
+export const getActiveTracking = async (req: Request, res: Response) => {
+    try {
+        const startOfDay = new Date()
+        startOfDay.setHours(0, 0, 0, 0)
+        
+        const endOfDay = new Date()
+        endOfDay.setHours(23, 59, 59, 999)
+
+        const activeBookings = await BookingModel.find({
+            $or: [
+                { emergencyTriggeredAt: { $exists: true, $ne: null } },
+                { scheduledDate: { $gte: startOfDay, $lte: endOfDay } },
+                { status: { $in: ['confirmed', 'ongoing'] } }
+            ]
+        }).populate('touristId', 'name email').populate('buddyId', 'name email').populate('experienceId', 'title')
+
+        const trackingData = await Promise.all(activeBookings.map(async (booking: any) => {
+            const touristTracking = await LiveTrackingModel.findOne({ bookingId: booking._id, role: 'tourist' })
+            const buddyTracking = await LiveTrackingModel.findOne({ bookingId: booking._id, role: 'buddy' })
+
+            return {
+                bookingId: booking._id,
+                bookingCode: booking.bookingCode,
+                tourist: booking.touristId,
+                buddy: booking.buddyId,
+                experience: booking.experienceId,
+                scheduledDate: booking.scheduledDate,
+                startTime: booking.startTime,
+                hours: booking.hours,
+                status: booking.status,
+                emergencyTriggeredAt: booking.emergencyTriggeredAt,
+                emergencyLocation: booking.emergencyLocation,
+                touristLocation: touristTracking ? touristTracking.location.coordinates : null,
+                touristLastUpdated: touristTracking ? touristTracking.recordedAt : null,
+                buddyLocation: buddyTracking ? buddyTracking.location.coordinates : null,
+                buddyLastUpdated: buddyTracking ? buddyTracking.recordedAt : null,
+            }
+        }))
+
+        return res.status(httpStatus.OK).json({ data: trackingData })
+    } catch (error) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
+    }
+}
+
+export const resolveSOS = async (req: Request, res: Response) => {
+    const { bookingId } = req.body
+    try {
+        await BookingModel.findByIdAndUpdate(bookingId, {
+            $unset: { emergencyTriggeredAt: "", emergencyLocation: "" }
+        })
+        
+        const { getIO } = await import('../socket')
+        const io = getIO()
+        io.emit(`sos_resolved_${bookingId}`, { bookingId })
+
+        return res.status(httpStatus.OK).json({ message: 'Đã xử lý báo động SOS thành công!' })
+    } catch (error) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
+    }
+}

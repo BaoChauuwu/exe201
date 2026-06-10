@@ -29,3 +29,13 @@ export const getBookingReviewsController = async (req: Request, res: Response) =
     result: reviews
   })
 }
+
+export const getTargetReviewsController = async (req: Request, res: Response) => {
+  const { targetId } = req.params
+  const reviews = await reviewsService.getTargetReviews(targetId as string)
+
+  return res.status(httpStatus.OK).json({
+    message: 'Lấy danh sách đánh giá thành công.',
+    result: reviews
+  })
+}

@@ -9,27 +9,32 @@ export const BuddyPublicProfilePage = () => {
     const navigate = useNavigate();
     const [profile, setProfile] = useState<any>(null);
     const [experiences, setExperiences] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([
-            axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/buddy-profile/${id}`),
-            axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/experiences`)
-        ])
-            .then(([profileRes, expRes]) => {
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/buddy-profile/${id}`)
+            .then(profileRes => {
                 const buddyProfile = profileRes.data.data;
                 setProfile(buddyProfile);
-                
-                const allExp = expRes.data.result || [];
-                // Filter experiences belonging to this buddy
                 const buddyUserId = buddyProfile.userId?._id || buddyProfile.userId;
-                const buddyExp = allExp.filter((exp: any) => {
-                    const expBuddyId = exp.buddyId?._id || exp.buddyId;
-                    return String(expBuddyId) === String(buddyUserId);
-                });
-                setExperiences(buddyExp);
                 
-                setLoading(false);
+                Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/experiences`),
+                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/reviews/target/${buddyUserId}`)
+                ]).then(([expRes, reviewRes]) => {
+                    const allExp = expRes.data.result || [];
+                    const buddyExp = allExp.filter((exp: any) => {
+                        const expBuddyId = exp.buddyId?._id || exp.buddyId;
+                        return String(expBuddyId) === String(buddyUserId);
+                    });
+                    setExperiences(buddyExp);
+                    setReviews(reviewRes.data.result || []);
+                    setLoading(false);
+                }).catch(err => {
+                    console.error(err);
+                    setLoading(false);
+                });
             })
             .catch(err => {
                 console.error(err);
@@ -217,6 +222,45 @@ export const BuddyPublicProfilePage = () => {
                                                 </span>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                </div>
+
+                {/* Reviews Section */}
+                <div style={{ marginTop: '3rem', scrollMarginTop: '100px', marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text)' }}>
+                        Đánh giá từ Du khách ({reviews.length})
+                    </h2>
+                    
+                    {reviews.length === 0 ? (
+                        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                            Buddy này chưa có đánh giá nào từ du khách.
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            {reviews.map((rev: any) => (
+                                <div key={rev._id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '1.25rem', display: 'flex', gap: '1rem' }}>
+                                    <img src={rev.reviewerId?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(rev.reviewerId?.name || 'U')}&background=random`} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="reviewer" />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                            <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>{rev.reviewerId?.name || 'Du khách'}</div>
+                                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>{new Date(rev.created_at).toLocaleDateString('vi-VN')}</div>
+                                        </div>
+                                        <div style={{ color: '#f59e0b', fontSize: '0.8rem', display: 'flex', gap: '2px', marginBottom: '0.5rem' }}>
+                                            {Array.from({ length: rev.rating }).map((_, i) => <Star key={i} size={14} fill="#f59e0b" color="#f59e0b" />)}
+                                        </div>
+                                        <div style={{ fontSize: '0.95rem', color: 'var(--color-text)', lineHeight: 1.5 }}>
+                                            {rev.comment ? `"${rev.comment}"` : <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>(Không có nhận xét chi tiết)</span>}
+                                        </div>
+                                        {rev.experienceId && (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--color-primary)', marginTop: '0.5rem', fontWeight: 600 }}>
+                                                Tour: {rev.experienceId.title}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

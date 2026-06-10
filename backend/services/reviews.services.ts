@@ -93,6 +93,20 @@ class ReviewsService {
       })
     return reviews
   }
+
+  async getTargetReviews(targetId: string) {
+    const reviews = await ReviewModel.find({ targetId: new ObjectId(targetId) })
+      .populate({
+        path: 'reviewerId',
+        select: 'name avatar email'
+      })
+      .populate({
+        path: 'experienceId',
+        select: 'title'
+      })
+      .sort({ created_at: -1 })
+    return reviews
+  }
 }
 
 const reviewsService = new ReviewsService()

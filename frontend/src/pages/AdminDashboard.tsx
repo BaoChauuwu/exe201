@@ -90,9 +90,14 @@ export const AdminDashboard = () => {
             hotToast.error(
                 <div>
                     <strong>🚨 BÁO ĐỘNG SOS 🚨</strong><br/>
-                    User: {data.name} ({data.role})<br/>
-                    ID: {data.userId}<br/>
-                    Thời gian: {new Date(data.time).toLocaleTimeString()}<br/>
+                    User: {data.name || 'Unknown'} ({data.role || 'Unknown'})<br/>
+                    ID: {data.userId || data.bookingId}<br/>
+                    Thời gian: {data.time ? new Date(data.time).toLocaleTimeString() : new Date().toLocaleTimeString()}<br/>
+                    {data.location && (
+                        <span>
+                            Vị trí: <a href={`https://www.google.com/maps?q=${data.location.lat},${data.location.lng}`} target="_blank" style={{color: '#fff', textDecoration: 'underline'}}>{data.location.lat.toFixed(5)}, {data.location.lng.toFixed(5)}</a><br/>
+                        </span>
+                    )}
                     <em>Hãy liên hệ ngay lập tức!</em>
                 </div>, 
                 { duration: 15000, position: 'top-center' }
@@ -263,30 +268,105 @@ export const AdminDashboard = () => {
                     )}
 
                     {/* Overview Tab */}
-                    {activeTab === 'overview' && (
+                    {activeTab === 'overview' && (() => {
+                        const totalBookings = bookings.length;
+                        const completedBookings = bookings.filter(b => b.status === 'completed').length;
+                        const ongoingBookings = bookings.filter(b => ['ongoing', 'confirmed'].includes(b.status)).length;
+                        const cancelledBookings = bookings.filter(b => ['cancelled', 'rejected'].includes(b.status)).length;
+                        
+                        const totalRevenue = bookings
+                            .filter(b => ['completed', 'confirmed', 'ongoing'].includes(b.status))
+                            .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
+                        const totalUsersCount = users.length;
+                        const touristsCount = users.filter(u => u.role === 'tourist').length;
+                        const buddiesCount = users.filter(u => u.role === 'buddy').length;
+
+                        return (
                         <div style={{ padding: '2rem' }}>
-                            <h2 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary-dark)' }}>System Analytics (Mock)</h2>
+                            <h2 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary-dark)' }}>Tổng quan Hệ thống</h2>
+                            
+                            {/* Key Metrics Cards */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                                <div style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}>
+                                    <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CalendarClock size={18}/> Tổng số Tour</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalBookings}</div>
+                                </div>
+                                <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' }}>
+                                    <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Check size={18}/> Tour Hoàn thành</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>{completedBookings}</div>
+                                </div>
+                                <div style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)' }}>
+                                    <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Activity size={18}/> Đang triển khai</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>{ongoingBookings}</div>
+                                </div>
+                                <div style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)' }}>
+                                    <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><DollarSign size={18}/> Doanh thu</div>
+                                    <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{totalRevenue.toLocaleString()} ₫</div>
+                                </div>
+                            </div>
+
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
                                 
-                                {/* Revenue Line Chart */}
+                                {/* Tour Status Distribution */}
                                 <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
-                                    <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'var(--color-text)' }}>Revenue vs New Users</h3>
-                                    <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', borderRadius: '12px', color: 'var(--color-text-muted)' }}>
-                                        <p>[Biểu đồ doanh thu đang bảo trì nâng cấp lên v2]</p>
+                                    <h3 style={{ margin: '0 0 1.5rem', fontSize: '1rem', color: 'var(--color-text)' }}>Phân bổ trạng thái Tour</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+                                                <span>Hoàn thành ({completedBookings})</span>
+                                                <span style={{ fontWeight: 600 }}>{totalBookings ? Math.round(completedBookings/totalBookings*100) : 0}%</span>
+                                            </div>
+                                            <div style={{ height: '8px', background: 'var(--color-bg)', borderRadius: '999px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${totalBookings ? (completedBookings/totalBookings*100) : 0}%`, height: '100%', background: '#10b981', borderRadius: '999px', transition: 'width 1s ease' }} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+                                                <span>Đang triển khai ({ongoingBookings})</span>
+                                                <span style={{ fontWeight: 600 }}>{totalBookings ? Math.round(ongoingBookings/totalBookings*100) : 0}%</span>
+                                            </div>
+                                            <div style={{ height: '8px', background: 'var(--color-bg)', borderRadius: '999px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${totalBookings ? (ongoingBookings/totalBookings*100) : 0}%`, height: '100%', background: '#f59e0b', borderRadius: '999px', transition: 'width 1s ease' }} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+                                                <span>Đã hủy ({cancelledBookings})</span>
+                                                <span style={{ fontWeight: 600 }}>{totalBookings ? Math.round(cancelledBookings/totalBookings*100) : 0}%</span>
+                                            </div>
+                                            <div style={{ height: '8px', background: 'var(--color-bg)', borderRadius: '999px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${totalBookings ? (cancelledBookings/totalBookings*100) : 0}%`, height: '100%', background: '#ef4444', borderRadius: '999px', transition: 'width 1s ease' }} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Role Distribution Bar Chart */}
+                                {/* User Role Distribution */}
                                 <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
-                                    <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'var(--color-text)' }}>User Role Distribution</h3>
-                                    <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', borderRadius: '12px', color: 'var(--color-text-muted)' }}>
-                                        <p>[Biểu đồ phân bổ người dùng đang bảo trì nâng cấp lên v2]</p>
+                                    <h3 style={{ margin: '0 0 1.5rem', fontSize: '1rem', color: 'var(--color-text)' }}>Tỉ lệ Người dùng ({totalUsersCount} User)</h3>
+                                    <div style={{ display: 'flex', height: '24px', borderRadius: '999px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                                        <div style={{ width: `${totalUsersCount ? (touristsCount/totalUsersCount*100) : 0}%`, background: '#3b82f6', transition: 'width 1s ease' }} title={`Tourist: ${touristsCount}`} />
+                                        <div style={{ width: `${totalUsersCount ? (buddiesCount/totalUsersCount*100) : 0}%`, background: '#f97316', transition: 'width 1s ease' }} title={`Buddy: ${buddiesCount}`} />
+                                        <div style={{ flex: 1, background: '#64748b' }} title="Other (Admin)" />
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-around', fontSize: '0.875rem', color: 'var(--color-text-muted)', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#3b82f6' }} /> Tourist ({touristsCount})
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#f97316' }} /> Buddy ({buddiesCount})
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#64748b' }} /> Admin ({totalUsersCount - touristsCount - buddiesCount})
+                                        </div>
                                     </div>
                                 </div>
 
                             </div>
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {/* eKYC tab */}
                     {activeTab === 'ekyc' && (() => {

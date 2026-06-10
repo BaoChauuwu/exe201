@@ -31,7 +31,7 @@ export const BuddyProfilePage = () => {
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
 
-    const { accessToken } = useAuthStore();
+    const { accessToken, user } = useAuthStore();
 
     useEffect(() => {
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/buddy-profile/me', { headers: { Authorization: `Bearer ${accessToken}` } })
@@ -164,6 +164,9 @@ export const BuddyProfilePage = () => {
                             <div>
                                 <h1 style={{ margin: '0 0 0.35rem', fontSize: '1.5rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>Cài đặt hồ sơ Buddy</h1>
                                 <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem' }}>Cấu hình lịch làm việc, ngôn ngữ và thông tin nhận thanh toán.</p>
+                                {user && (
+                                    <a href={`/buddies/${user._id}`} style={{ display: 'inline-block', marginTop: '0.5rem', color: '#f8fafc', fontSize: '0.85rem', textDecoration: 'underline', fontWeight: 600 }}>Xem hồ sơ công khai & Đánh giá của tôi →</a>
+                                )}
                             </div>
                         </div>
                     </div>

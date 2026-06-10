@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createReviewController, getBookingReviewsController } from '~/controllers/reviews.controllers'
+import { createReviewController, getBookingReviewsController, getTargetReviewsController } from '~/controllers/reviews.controllers'
 import { createReviewValidator } from '~/middlewares/reviews.middlewares'
 import { accessTokenValidator } from '~/middlewares/users.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -20,6 +20,12 @@ reviewsRouter.post(
 reviewsRouter.get(
   '/booking/:bookingId',
   wrapRequestHandler(getBookingReviewsController)
+)
+
+// 3. Lấy danh sách đánh giá của một target (buddy hoặc tourist)
+reviewsRouter.get(
+  '/target/:targetId',
+  wrapRequestHandler(getTargetReviewsController)
 )
 
 export default reviewsRouter

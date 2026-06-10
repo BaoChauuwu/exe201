@@ -161,16 +161,22 @@ class BookingsService {
             throw new Error(`Local Buddy không làm việc vào khung giờ này (Yêu cầu thuộc khoảng thời gian rảnh trong ngày ${dayName}).`)
         }
 
-        // 2.1. Kiểm tra các Booking đã Confirm/Ongoing của Buddy trong ngày
+        // 2.1. Kiểm tra các Booking đã Confirm/Ongoing của Buddy trong ngày (và các booking pending trong 15 phút)
         const startOfDay = new Date(date)
         startOfDay.setHours(0, 0, 0, 0)
         const endOfDay = new Date(date)
         endOfDay.setHours(23, 59, 59, 999)
 
+        const fifteenMinsAgo = new Date()
+        fifteenMinsAgo.setMinutes(fifteenMinsAgo.getMinutes() - 15)
+
         const existingBookings = await BookingModel.find({
             buddyId: new ObjectId(buddyId),
             scheduledDate: { $gte: startOfDay, $lte: endOfDay },
-            status: { $in: ['confirmed', 'ongoing'] }
+            $or: [
+                { status: { $in: ['confirmed', 'ongoing'] } },
+                { status: 'pending', createdAt: { $gte: fifteenMinsAgo } }
+            ]
         })
 
         for (const booking of existingBookings) {
@@ -220,6 +226,32 @@ class BookingsService {
 
             if (booking.paymentStatus === 'paid') {
                 throw new Error('Booking này đã được thanh toán.')
+            }
+
+            // 3.0. Re-check availability exactly at payment time to prevent double-booking
+            const startOfDay = new Date(booking.scheduledDate)
+            startOfDay.setHours(0, 0, 0, 0)
+            const endOfDay = new Date(booking.scheduledDate)
+            endOfDay.setHours(23, 59, 59, 999)
+
+            const existingBookings = await BookingModel.find({
+                buddyId: booking.buddyId,
+                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+                status: { $in: ['confirmed', 'ongoing'] },
+                _id: { $ne: booking._id }
+            }).session(session || null)
+
+            const [checkStartHour, checkStartMin] = booking.startTime.split(':').map(Number)
+            const newStartMin = checkStartHour * 60 + checkStartMin
+            const newEndMin = newStartMin + booking.hours * 60
+
+            for (const b of existingBookings) {
+                const [existHour, existMin] = b.startTime.split(':').map(Number)
+                const existStartMin = existHour * 60 + existMin
+                const existEndMin = existStartMin + b.hours * 60
+                if (newStartMin < existEndMin && newEndMin > existStartMin) {
+                    throw new Error('Rất tiếc, khung giờ này vừa được người khác thanh toán. Vui lòng chọn giờ khác.')
+                }
             }
 
             // 3.1. Cập nhật booking sang Paid & Confirmed
@@ -307,6 +339,32 @@ class BookingsService {
             const currentBalance = tourist.walletBalance || 0
             if (currentBalance < booking.totalPrice) {
                 throw new Error(`Số dư ví của bạn không đủ để thanh toán (Yêu cầu: ${booking.totalPrice.toLocaleString()} ₫, Số dư: ${currentBalance.toLocaleString()} ₫).`)
+            }
+
+            // 4.0. Re-check availability exactly at payment time to prevent double-booking
+            const startOfDay = new Date(booking.scheduledDate)
+            startOfDay.setHours(0, 0, 0, 0)
+            const endOfDay = new Date(booking.scheduledDate)
+            endOfDay.setHours(23, 59, 59, 999)
+
+            const existingBookings = await BookingModel.find({
+                buddyId: booking.buddyId,
+                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+                status: { $in: ['confirmed', 'ongoing'] },
+                _id: { $ne: booking._id }
+            }).session(session || null)
+
+            const [checkStartHour, checkStartMin] = booking.startTime.split(':').map(Number)
+            const newStartMin = checkStartHour * 60 + checkStartMin
+            const newEndMin = newStartMin + booking.hours * 60
+
+            for (const b of existingBookings) {
+                const [existHour, existMin] = b.startTime.split(':').map(Number)
+                const existStartMin = existHour * 60 + existMin
+                const existEndMin = existStartMin + b.hours * 60
+                if (newStartMin < existEndMin && newEndMin > existStartMin) {
+                    throw new Error('Rất tiếc, khung giờ này vừa được người khác thanh toán. Vui lòng chọn giờ khác.')
+                }
             }
 
             // 4.1. Khấu trừ số dư ví của Tourist

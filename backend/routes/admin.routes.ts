@@ -4,7 +4,7 @@ import {
   getPendingPayouts, approvePayout,
   getAllUsers, deleteUser,
   getPendingExperiences, approveExperience,
-  getAllBookings
+  getAllBookings, getActiveTracking, resolveSOS
 } from '../controllers/admin.controllers'
 import { accessTokenValidator, requireRole } from '../middlewares/users.middlewares'
 import { wrapRequestHandler } from '../utils/handlers'
@@ -33,5 +33,9 @@ adminRouter.post('/experiences/approve', wrapRequestHandler(approveExperience))
 
 // Booking / Trip Management Routes
 adminRouter.get('/bookings', wrapRequestHandler(getAllBookings))
+
+// Tracking & SOS Routes
+adminRouter.get('/tracking', wrapRequestHandler(getActiveTracking))
+adminRouter.post('/tracking/resolve-sos', wrapRequestHandler(resolveSOS))
 
 export default adminRouter
