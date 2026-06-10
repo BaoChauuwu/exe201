@@ -103,7 +103,7 @@ export const LiveTracking = () => {
         checkTime();
     }, [bookingId]);
 
-    // 1. Kết nối socket lắng nghe vị trí của đối tác (Partner)
+    // 1. Kết nối socket lắng nghe vị trí của đối tác (Partner) và cảnh báo SOS
     useEffect(() => {
         if (!bookingId || !isTrackingAllowed) return;
         
@@ -117,8 +117,19 @@ export const LiveTracking = () => {
             }
         });
 
+        socket.on(`sos_triggered_${bookingId}`, () => {
+            setSosTriggered(true);
+        });
+
+        socket.on(`sos_resolved_${bookingId}`, () => {
+            setSosTriggered(false);
+            toast.success('Admin đã xử lý xong sự cố SOS.');
+        });
+
         return () => {
             socket.off(`location_updated_${bookingId}`);
+            socket.off(`sos_triggered_${bookingId}`);
+            socket.off(`sos_resolved_${bookingId}`);
         };
     }, [bookingId, isTrackingAllowed, partnerRole, isTourist]);
 
@@ -185,7 +196,15 @@ export const LiveTracking = () => {
 
     const executeSOS = () => {
         if (!bookingId || !userId || !isTrackingAllowed) return;
-        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', { bookingId, userId, message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.' })
+        const loc = isTourist ? touristLocation : buddyLocation;
+        const locationData = loc ? { lat: loc.lat, lng: loc.lng, timestamp: new Date() } : null;
+
+        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', { 
+            bookingId, 
+            userId, 
+            message: 'KHẨN CẤP: Người dùng nhấn SOS trong tour.',
+            location: locationData
+        })
             .then(() => { setSosTriggered(true); toast.success('Tín hiệu SOS đã được gửi! Hỗ trợ đang trên đường đến.'); })
             .catch(() => toast.error('Gửi SOS thất bại. Vui lòng gọi 113 ngay!'));
     };

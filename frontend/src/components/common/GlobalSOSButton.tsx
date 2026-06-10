@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { socket } from '../../socket';
+import axios from 'axios';
 
 export const GlobalSOSButton = () => {
   const { isAuthenticated, user } = useAuthStore();
@@ -22,24 +22,48 @@ export const GlobalSOSButton = () => {
       setProgress(p => Math.min(p + (100 / 30), 100)); // 3 seconds = 30 steps of 100ms
     }, 100);
 
-    timerRef.current = setTimeout(() => {
+    timerRef.current = setTimeout(async () => {
       cancelPress();
       
-      if (!socket.connected) {
-        socket.connect();
-      }
-      socket.emit('sos_alert', {
-        userId: user?._id,
-        role: user?.role,
-        name: user?.name || 'Unknown',
-        time: new Date().toISOString()
-      });
+      try {
+        const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/bookings/my', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+        });
+        const bookings = res.data.result || [];
+        // Only allow SOS if there is an ONGOING booking
+        let activeBooking = bookings.find((b: any) => b.status === 'ongoing');
 
-      toast.success('Đã kích hoạt SOS / Mở Live Map!', { duration: 3000 });
-      if (user?.role === 'buddy') {
-        navigate('/live-tracking/demo-booking-123');
-      } else {
-        navigate('/tourist/live/demo-booking-123');
+        if (activeBooking) {
+            // Get location if available
+            let location: any = null;
+            if (navigator.geolocation) {
+                try {
+                    const pos: GeolocationPosition = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                    });
+                    location = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        timestamp: new Date()
+                    };
+                } catch (e) {
+                    console.error("Could not get GPS location for SOS", e);
+                }
+            }
+
+            await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos', {
+                bookingId: activeBooking._id,
+                userId: user?._id,
+                message: 'KHẨN CẤP: Người dùng nhấn SOS từ nút Global.',
+                location
+            });
+            toast.success('Đã gửi SOS kèm vị trí! Mở Live Map...', { duration: 3000 });
+            navigate(user?.role === 'buddy' ? '/live-tracking/' + activeBooking._id : '/tourist/live/' + activeBooking._id);
+        } else {
+            toast.error('Chức năng SOS chỉ khả dụng khi bạn đang trong một chuyến đi (Live Tracking).');
+        }
+      } catch (err) {
+        toast.error('Lỗi khi gửi SOS! Hãy gọi 113!');
       }
     }, 3000);
   };

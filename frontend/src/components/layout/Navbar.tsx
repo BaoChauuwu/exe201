@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Plane, User, LogOut, ChevronDown, Moon, Sun } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth.api'
+import axios from 'axios'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -35,6 +36,28 @@ export default function Navbar() {
       navigate('/')
     }
   }
+
+  const navigateToLiveTracking = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+        const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/bookings/my', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+        });
+        const bookings = res.data.result || [];
+        const todayStr = new Date().toISOString().split('T')[0];
+        let activeBooking = bookings.find((b: any) => b.status === 'ongoing') || 
+                            bookings.find((b: any) => b.status === 'confirmed' && new Date(b.scheduledDate).toISOString().split('T')[0] === todayStr);
+
+        if (activeBooking) {
+            navigate(user.role === 'buddy' ? '/live-tracking/' + activeBooking._id : '/tourist/live/' + activeBooking._id);
+        } else {
+            import('react-hot-toast').then(({ default: hotToast }) => hotToast.error('Bạn không có chuyến đi nào đang diễn ra để xem Bản đồ.'));
+        }
+    } catch (err) {
+        import('react-hot-toast').then(({ default: hotToast }) => hotToast.error('Lỗi khi tải thông tin chuyến đi.'));
+    }
+  };
 
   const navStyle: React.CSSProperties = {
     position: 'fixed',
@@ -253,11 +276,11 @@ export default function Navbar() {
                                 </Link>
                               </li>
                               <li>
-                                <Link to='/tourist/live/demo-booking-123' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem', color: '#0ea5e9'}}
+                                <a href='#' onClick={navigateToLiveTracking} style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem', color: '#0ea5e9'}}
                                   onMouseEnter={e => { e.currentTarget.style.background = '#f0f9ff'; }}
                                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
                                   🗺️ Xem Bản Đồ (Live Map)
-                                </Link>
+                                </a>
                               </li>
                             </>
                           )}
@@ -271,11 +294,11 @@ export default function Navbar() {
                                 </Link>
                               </li>
                               <li>
-                                <Link to='/live-tracking/demo-booking-123' style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem', color: '#ef4444'}}
+                                <a href='#' onClick={navigateToLiveTracking} style={{...linkStyle, display: 'block', padding: '0.75rem 1.25rem', color: '#ef4444'}}
                                   onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
                                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
                                   🚨 Mở Live SOS & Map
-                                </Link>
+                                </a>
                               </li>
                             </>
                           )}
