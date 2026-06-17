@@ -138,19 +138,19 @@ export const MyBookingsPage = () => {
     }
   };
 
-  const handleShareTracking = (booking: IBooking) => {
-    const token = (booking as any).shareTrackingToken;
-    if (!token) {
-      toast.error('Chưa có token chia sẻ. Buddy cần bắt đầu chuyến đi trước.');
-      return;
-    }
-    const link = `${window.location.origin}/track/public?token=${token}`;
-    navigator.clipboard.writeText(link).then(() => {
-      toast.success('✅ Đã sao chép link chia sẻ hành trình! Gửi cho người thân theo dõi nhé.');
-    }).catch(() => {
-      toast.error('Không thể sao chép. Link: ' + link);
-    });
-  };
+  // const handleShareTracking = (booking: IBooking) => {
+  //   const token = (booking as any).shareTrackingToken;
+  //   if (!token) {
+  //     toast.error('Chưa có token chia sẻ. Buddy cần bắt đầu chuyến đi trước.');
+  //     return;
+  //   }
+  //   const link = `${window.location.origin}/track/public?token=${token}`;
+  //   navigator.clipboard.writeText(link).then(() => {
+  //     toast.success('✅ Đã sao chép link chia sẻ hành trình! Gửi cho người thân theo dõi nhé.');
+  //   }).catch(() => {
+  //     toast.error('Không thể sao chép. Link: ' + link);
+  //   });
+  // };
 
   const fetchReviewsForCompletedBookings = async (completedList: IBooking[]) => {
     const reviewsMap: Record<string, IReview[]> = {};
@@ -705,7 +705,7 @@ export const MyBookingsPage = () => {
                             )}
 
                             {/* [ALL] - Raise Dispute */}
-                            {['confirmed', 'ongoing', 'completed'].includes(booking.status) && booking.disputeStatus !== 'active' && booking.escrowStatus !== 'released' && (
+                            {['confirmed', 'ongoing', 'completed'].includes(booking.status) && booking.disputeStatus !== 'pending' && booking.escrowStatus !== 'released' && (
                               <button 
                                 onClick={() => { setDisputeBooking(booking); setIsDisputeModalOpen(true); }}
                                 style={{ padding: '0.55rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Sparkles, Compass, DollarSign, Clock, Utensils, Camera, BookOpen, 
-  MapPin, ChevronRight, ChevronLeft, Check, Loader2, ArrowRight,
-  Smile, Volume2, Flame, Brain, Heart, Bike, Coffee, Music, Info, HelpCircle
+  Sparkles, Compass, DollarSign, Clock, Utensils,
+  MapPin, ChevronRight, ChevronLeft, Check, ArrowRight,
+  Smile
 } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import { experienceApi, type IMatchResult } from '../api/experience.api';
@@ -27,7 +27,7 @@ export const SmartMatchWizard = () => {
   const [hasMotorbike, setHasMotorbike] = useState(false);
   const [english, setEnglish] = useState(false);
   
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<IMatchResult[]>([]);
   const [scanMessage, setScanMessage] = useState('Đang khởi tạo thuật toán...');
 
@@ -55,7 +55,7 @@ export const SmartMatchWizard = () => {
 
   const startMatching = async () => {
     setStep(5);
-    setIsLoading(true);
+    // setIsLoading(true);
 
     const messages = [
       '🔍 Đang phân tích ngân sách & khoảng giá...',
@@ -89,13 +89,13 @@ export const SmartMatchWizard = () => {
         clearInterval(interval);
         setResults(response.data.data || []);
         setStep(6);
-        setIsLoading(false);
+        // setIsLoading(false);
       }, 2000);
     } catch (err: any) {
       clearInterval(interval);
       toast.error('Có lỗi xảy ra khi tìm kiếm tour phù hợp.');
       setStep(4);
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 
@@ -370,7 +370,7 @@ export const SmartMatchWizard = () => {
                 ))}
               </div>
               
-              <div style={{ display: 'flex', justify: 'space-between', marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
                 <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '0.8rem 1.8rem', borderRadius: '12px' }}>
                   <ChevronLeft size={16} /> Quay lại
                 </button>
@@ -436,7 +436,7 @@ export const SmartMatchWizard = () => {
                         gap: '0.35rem'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justify: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>{item.label}</span>
                         <div style={{
                           width: '18px',
@@ -458,7 +458,7 @@ export const SmartMatchWizard = () => {
                 })}
               </div>
               
-              <div style={{ display: 'flex', justify: 'space-between', marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
                 <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '0.8rem 1.8rem', borderRadius: '12px' }}>
                   <ChevronLeft size={16} /> Quay lại
                 </button>
@@ -540,7 +540,7 @@ export const SmartMatchWizard = () => {
                 ))}
               </div>
               
-              <div style={{ display: 'flex', justify: 'space-between', marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
                 <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '0.8rem 1.8rem', borderRadius: '12px' }}>
                   <ChevronLeft size={16} /> Quay lại
                 </button>
@@ -654,7 +654,7 @@ export const SmartMatchWizard = () => {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', justify: 'space-between', marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
                 <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '0.8rem 1.8rem', borderRadius: '12px' }}>
                   <ChevronLeft size={16} /> Quay lại
                 </button>
