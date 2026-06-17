@@ -27,11 +27,15 @@ export interface IBooking {
     status?: string // 'pending', 'confirmed', 'ongoing', 'completed', 'cancelled'
     cancelReason?: string
     emergencyTriggeredAt?: Date
+    emergencyTriggeredBy?: mongoose.Types.ObjectId
+    emergencyRole?: string
     emergencyLocation?: {
         lat: number
         lng: number
         timestamp: Date
     }
+    emergencyResolvedAt?: Date
+    emergencyResolvedNote?: string
     refundBankInfo?: {
         bankCode: string
         accountNumber: string
@@ -88,11 +92,15 @@ export const bookingSchema = new Schema<IBooking>(
         status: { type: String, default: 'pending' },
         cancelReason: { type: String, default: '' },
         emergencyTriggeredAt: { type: Date },
+        emergencyTriggeredBy: { type: Schema.Types.ObjectId, ref: 'Users' },
+        emergencyRole: { type: String, enum: ['tourist', 'buddy', 'unknown'] },
         emergencyLocation: {
             lat: { type: Number },
             lng: { type: Number },
             timestamp: { type: Date }
         },
+        emergencyResolvedAt: { type: Date },
+        emergencyResolvedNote: { type: String, default: '' },
         // Dispute fields
         isDisputed: { type: Boolean, default: false },
         disputeReason: { type: String, default: '' },
