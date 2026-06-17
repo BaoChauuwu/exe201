@@ -122,6 +122,11 @@ export const sendVerifyEmail = async (toEmail: string, name: string, email_verif
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
   const verifyLink = `${clientUrl}/verify-email?token=${email_verify_token}`
 
+  console.log('====================================')
+  console.log(`BẠN ĐANG GỬI MAIL XÁC THỰC ĐẾN: ${toEmail}`)
+  console.log(`LINK XÁC THỰC EMAIL LÀ: \n${verifyLink}`)
+  console.log('====================================')
+
   await transporter.sendMail({
     from: `"UniTravel" <${process.env.SMTP_EMAIL}>`,
     to: toEmail,
@@ -133,6 +138,11 @@ export const sendVerifyEmail = async (toEmail: string, name: string, email_verif
 export const sendForgotPasswordEmail = async (toEmail: string, name: string, forgot_password_token: string) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
   const resetLink = `${clientUrl}/reset-password?token=${forgot_password_token}`
+
+  console.log('====================================')
+  console.log(`BẠN ĐANG GỬI MAIL ĐẾN: ${toEmail}`)
+  console.log(`LINK RESET PASSWORD LÀ: \n${resetLink}`)
+  console.log('====================================')
 
   await transporter.sendMail({
     from: `"UniTravel" <${process.env.SMTP_EMAIL}>`,

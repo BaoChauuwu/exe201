@@ -62,8 +62,8 @@ export const EditExperiencePage = () => {
         includedItems: experience.includedItems,
         images: experience.images, // Cloudinary URLs (string[])
         meetingPoint: {
-          longitude: experience.meetingPoint.coordinates[0],
-          latitude: experience.meetingPoint.coordinates[1],
+          longitude: experience.meetingPoint?.coordinates?.[0] ?? 108.2022,
+          latitude: experience.meetingPoint?.coordinates?.[1] ?? 16.0544,
         },
       }
     : undefined

@@ -175,11 +175,9 @@ class UsersService {
         }
       }
     )
-    // Gửi email đặt lại mật khẩu (fire-and-forget)
+    // Gửi email đặt lại mật khẩu (đợi gửi xong để bắt lỗi nếu có)
     if (user) {
-      sendForgotPasswordEmail(user.email, user.name, forgot_password_token).catch((error) => {
-        console.error('Lỗi khi gửi email đặt lại mật khẩu:', error)
-      })
+      await sendForgotPasswordEmail(user.email, user.name, forgot_password_token)
     }
     return {
       message: userMessages.CREATE_FORGOT_PASSWORD_TOKEN_SUCCESS
