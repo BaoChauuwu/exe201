@@ -136,7 +136,14 @@ export const deleteUser = async (req: Request, res: Response) => {
 // Experience Management for Admin
 export const getPendingExperiences = async (req: Request, res: Response) => {
     try {
-        const experiences = await ExperienceModel.find({ isApproved: false }).sort({ created_at: -1 })
+        const experiences = await ExperienceModel.find({
+            $or: [
+                { status: 'pending' },
+                { status: { $exists: false }, isApproved: false }
+            ]
+        })
+            .populate('buddyId', 'name email avatar')
+            .sort({ created_at: -1 })
         return res.status(httpStatus.OK).json({ data: experiences })
     } catch (error) {
         return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })
@@ -152,12 +159,15 @@ export const approveExperience = async (req: Request, res: Response) => {
 
         if (status === 'approved') {
             experience.isApproved = true
+            experience.status = 'approved'
             await experience.save()
             return res.status(httpStatus.OK).json({ message: 'Đã duyệt tour thành công!' })
         } else {
-            // rejection: xóa tour khỏi DB để dọn dẹp
-            await ExperienceModel.findByIdAndDelete(experienceId)
-            return res.status(httpStatus.OK).json({ message: 'Đã từ chối và xóa tour thành công!' })
+            // rejection: set isApproved to false and status to 'rejected'
+            experience.isApproved = false
+            experience.status = 'rejected'
+            await experience.save()
+            return res.status(httpStatus.OK).json({ message: 'Đã từ chối tour thành công!' })
         }
     } catch (error) {
         return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Server Error', error })

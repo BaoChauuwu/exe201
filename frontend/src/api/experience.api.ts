@@ -23,6 +23,7 @@ export interface IExperience {
   }
   isApproved: boolean
   isActive: boolean
+  status?: 'pending' | 'approved' | 'rejected'
   created_at: string
   updated_at: string
 }
@@ -45,39 +46,48 @@ export interface ExperienceFormValues {
     longitude: number
     latitude: number
   }
+  isActive?: boolean
 }
 
 /**
  * Chuyển đổi dữ liệu Form của React thành FormData (Multipart Form-Data) để gửi lên server.
  * Tương thích cao với Multer và các bộ xử lý dữ liệu ở Backend.
  */
-const buildFormData = (data: ExperienceFormValues): FormData => {
+const buildFormData = (data: Partial<ExperienceFormValues>): FormData => {
   const formData = new FormData()
 
-  formData.append('title', data.title)
-  formData.append('description', data.description)
-  formData.append('category', data.category)
-  formData.append('minHours', String(data.minHours))
-  formData.append('maxGroupSize', String(data.maxGroupSize))
-  formData.append('meetingPointLng', String(data.meetingPoint.longitude))
-  formData.append('meetingPointLat', String(data.meetingPoint.latitude))
+  if (data.title !== undefined) formData.append('title', data.title)
+  if (data.description !== undefined) formData.append('description', data.description)
+  if (data.category !== undefined) formData.append('category', data.category)
+  if (data.minHours !== undefined) formData.append('minHours', String(data.minHours))
+  if (data.maxGroupSize !== undefined) formData.append('maxGroupSize', String(data.maxGroupSize))
+  
+  if (data.meetingPoint !== undefined) {
+    formData.append('meetingPointLng', String(data.meetingPoint.longitude))
+    formData.append('meetingPointLat', String(data.meetingPoint.latitude))
+  }
 
-  if (data.city) formData.append('city', data.city)
-  if (data.currency) formData.append('currency', data.currency)
+  if (data.city !== undefined) formData.append('city', data.city)
+  if (data.currency !== undefined) formData.append('currency', data.currency)
+  if (data.isActive !== undefined) formData.append('isActive', String(data.isActive))
 
   // Append includedItems với duy nhất 1 key 'includedItems'
-  data.includedItems.forEach((item) => {
-    formData.append('includedItems', item)
-  })
+  if (data.includedItems !== undefined) {
+    data.includedItems.forEach((item) => {
+      formData.append('includedItems', item)
+    })
+  }
 
   // Append File ảnh mới vào 'images', URL ảnh cũ cần giữ lại vào 'keepImages'
-  data.images.forEach((img) => {
-    if (img instanceof File) {
-      formData.append('images', img)
-    } else if (typeof img === 'string') {
-      formData.append('keepImages', img)
-    }
-  })
+  if (data.images !== undefined) {
+    data.images.forEach((img) => {
+      if (img instanceof File) {
+        formData.append('images', img)
+      } else if (typeof img === 'string') {
+        formData.append('keepImages', img)
+      }
+    })
+  }
 
   return formData
 }
@@ -100,7 +110,7 @@ export const experienceApi = {
   /**
    * Cập nhật thông tin tour cũ
    */
-  update: (id: string, data: ExperienceFormValues) =>
+  update: (id: string, data: Partial<ExperienceFormValues>) =>
     axiosInstance.put<{ message: string; result: IExperience }>(
       `/experiences/${id}`,
       buildFormData(data),

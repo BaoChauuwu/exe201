@@ -304,30 +304,41 @@ export const MyExperiencesPage = () => {
                     </div>
 
                     {/* Approval Status Badge */}
-                    <div style={{
-                      background: exp.isApproved ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
-                      border: exp.isApproved ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(245,158,11,0.3)',
-                      borderRadius: '10px',
-                      padding: '6px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: exp.isApproved ? '#10b981' : '#d97706',
-                    }}>
-                      {exp.isApproved ? (
-                        <>
-                          <CheckCircle size={14} />
-                          <span>Đã duyệt</span>
-                        </>
-                      ) : (
-                        <>
-                          <Clock size={14} />
-                          <span>Chờ duyệt</span>
-                        </>
-                      )}
-                    </div>
+                    {(() => {
+                      const isApproved = exp.status === 'approved' || (!exp.status && exp.isApproved)
+                      const isRejected = exp.status === 'rejected'
+                      return (
+                        <div style={{
+                          background: isApproved ? 'rgba(16,185,129,0.08)' : isRejected ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                          border: isApproved ? '1px solid rgba(16,185,129,0.3)' : isRejected ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(245,158,11,0.3)',
+                          borderRadius: '10px',
+                          padding: '6px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          color: isApproved ? '#10b981' : isRejected ? '#ef4444' : '#d97706',
+                        }}>
+                          {isApproved ? (
+                            <>
+                              <CheckCircle size={14} />
+                              <span>Đã duyệt</span>
+                            </>
+                          ) : isRejected ? (
+                            <>
+                              <AlertCircle size={14} />
+                              <span>Bị từ chối</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock size={14} />
+                              <span>Chờ duyệt</span>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   {/* Actions buttons */}
@@ -362,6 +373,55 @@ export const MyExperiencesPage = () => {
                       }}
                     >
                       <Edit size={14} /> Chỉnh sửa
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          const newStatus = !exp.isActive
+                          await experienceApi.update(exp._id, {
+                            isActive: newStatus
+                          })
+                          fetchMyExperiences()
+                        } catch (err) {
+                          console.error(err)
+                          alert('Không thể thay đổi trạng thái hoạt động.')
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        background: exp.isActive ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                        border: exp.isActive ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)',
+                        borderRadius: '12px',
+                        padding: '0.7rem',
+                        color: exp.isActive ? '#ef4444' : '#10b981',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => {
+                        const btn = e.currentTarget as HTMLElement
+                        btn.style.background = exp.isActive ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)'
+                      }}
+                      onMouseLeave={e => {
+                        const btn = e.currentTarget as HTMLElement
+                        btn.style.background = exp.isActive ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)'
+                      }}
+                    >
+                      {exp.isActive ? (
+                        <>
+                          <EyeOff size={14} /> Ẩn hoạt động
+                        </>
+                      ) : (
+                        <>
+                          <Eye size={14} /> Hiện hoạt động
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

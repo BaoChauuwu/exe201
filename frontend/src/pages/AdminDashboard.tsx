@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, BarChart2, CalendarClock } from 'lucide-react';
+import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, BarChart2, CalendarClock, Compass } from 'lucide-react';
 
 import { socket } from '../socket';
 import { toast as hotToast } from 'react-hot-toast';
@@ -38,10 +38,11 @@ export const AdminDashboard = () => {
     const [payouts, setPayouts] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [feedbacks, setFeedbacks] = useState<any[]>([]);
+    const [experiences, setExperiences] = useState<any[]>([]);
 
     const [bookings, setBookings] = useState<any[]>([]);
     const [bookingStatusFilter, setBookingStatusFilter] = useState('all');
-    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips' | 'feedbacks'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips' | 'feedbacks' | 'experiences'>('overview');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
@@ -52,6 +53,7 @@ export const AdminDashboard = () => {
     const [ekycPage, setEkycPage] = useState(1);
     const [payoutsPage, setPayoutsPage] = useState(1);
     const [usersPage, setUsersPage] = useState(1);
+    const [experiencesPage, setExperiencesPage] = useState(1);
 
     const [tripsPage, setTripsPage] = useState(1);
     const CARD_PAGE_SIZE = 6;
@@ -68,6 +70,8 @@ export const AdminDashboard = () => {
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/bookings', cfg).then(r => setBookings(r.data.data || [])).catch(console.error);
         
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/feedbacks/admin', cfg).then(r => setFeedbacks(r.data.result || [])).catch(console.error);
+        
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/experiences/pending', cfg).then(r => setExperiences(r.data.data || [])).catch(console.error);
     };
 
     useEffect(() => { 
@@ -150,6 +154,12 @@ export const AdminDashboard = () => {
     const approvePayout = async (id: string, status: string) => {
         await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/payouts/approve', { payoutId: id, status }, cfg).catch(console.error);
         showToast(`Payout ${status} thành công!`);
+        fetchAll();
+    };
+
+    const approveExperience = async (id: string, status: string) => {
+        await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/experiences/approve', { experienceId: id, status }, cfg).catch(console.error);
+        showToast(`Tour ${status === 'approved' ? 'đã duyệt' : 'đã từ chối'} thành công!`);
         fetchAll();
     };
 
@@ -247,6 +257,10 @@ export const AdminDashboard = () => {
                             <DollarSign size={16} /> Payouts
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{payouts.length}</span>
                         </button>
+                        <button onClick={() => { setActiveTab('experiences'); setSearchQuery(''); setExperiencesPage(1); }} style={tabBtn(activeTab === 'experiences', '#8b5cf6')}>
+                            <Compass size={16} /> Duyệt Tour
+                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{experiences.length}</span>
+                        </button>
                         <button onClick={() => { setActiveTab('users'); setSearchQuery(''); setUsersPage(1); }} style={tabBtn(activeTab === 'users', '#3b82f6')}>
                             <Users size={16} /> Users
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{users.length}</span>
@@ -269,7 +283,7 @@ export const AdminDashboard = () => {
                     {activeTab !== 'overview' && (
                     <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                            {activeTab === 'ekyc' ? 'Pending Verifications' : activeTab === 'payouts' ? 'Pending Payouts' : activeTab === 'trips' ? 'Quản lý chuyến đi' : 'User Management'}
+                            {activeTab === 'ekyc' ? 'Pending Verifications' : activeTab === 'payouts' ? 'Pending Payouts' : activeTab === 'trips' ? 'Quản lý chuyến đi' : activeTab === 'experiences' ? 'Duyệt Tour Trải Nghiệm' : 'User Management'}
                         </h2>
                         
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -806,6 +820,96 @@ export const AdminDashboard = () => {
                                 </table>
                                 <Pagination page={tripsPage} total={filtered.length} pageSize={LIST_PAGE_SIZE} onPage={setTripsPage} />
                             </div>
+                        );
+                    })()}
+
+                    {/* Experiences tab */}
+                    {activeTab === 'experiences' && (() => {
+                        const filtered = experiences.filter(exp => {
+                            if (!searchQuery) return true;
+                            const q = searchQuery.toLowerCase();
+                            const titleMatch = (exp.title || '').toLowerCase().includes(q);
+                            const buddyNameMatch = (exp.buddyId?.name || '').toLowerCase().includes(q);
+                            const buddyEmailMatch = (exp.buddyId?.email || '').toLowerCase().includes(q);
+                            return titleMatch || buddyNameMatch || buddyEmailMatch;
+                        });
+                        const paged = filtered.slice((experiencesPage - 1) * CARD_PAGE_SIZE, experiencesPage * CARD_PAGE_SIZE);
+
+                        return filtered.length === 0 ? (
+                            <div style={{ padding: '5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <Compass size={48} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--color-primary)' }} />
+                                <p>Không có tour trải nghiệm nào đang chờ duyệt</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem', padding: '1.5rem' }}>
+                                    {paged.map(exp => (
+                                        <div key={exp._id} style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: '18px', padding: '1.25rem', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column' }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)'; }}
+                                        >
+                                            {/* Tour Image */}
+                                            <div style={{ height: '140px', width: '100%', borderRadius: '12px', overflow: 'hidden', background: '#f1f5f9', marginBottom: '1rem', position: 'relative' }}>
+                                                {exp.images && exp.images.length > 0 ? (
+                                                    <img src={exp.images[0]} alt={exp.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)', fontSize: '0.85rem' }}>🗺️ Chưa có ảnh</div>
+                                                )}
+                                                <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700 }}>
+                                                    {exp.category === 'food' ? '🍴 Ẩm thực' : exp.category === 'adventure' ? '🧗 Phiêu lưu' : exp.category === 'culture' ? '🏛️ Văn hóa' : exp.category === 'nightlife' ? '💃 Giải trí đêm' : '🗺️ Khác'}
+                                                </div>
+                                            </div>
+
+                                            {/* Creator Buddy details */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
+                                                <img src={exp.buddyId?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(exp.buddyId?.name || 'U')}&size=32`} style={{ width: 32, height: 32, borderRadius: '50%' }} alt=""/>
+                                                <div style={{ overflow: 'hidden' }}>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.buddyId?.name || 'Local Buddy'}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.buddyId?.email || ''}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Tour Details */}
+                                            <div style={{ flex: 1 }}>
+                                                <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.3 }}>{exp.title}</h4>
+                                                <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4 }}>{exp.description}</p>
+                                                
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                                                    <span style={{ background: '#f0f9ff', color: '#0369a1', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>📍 {exp.city || 'Đà Nẵng'}</span>
+                                                    <span style={{ background: '#f0fdf4', color: '#15803d', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>💰 {exp.price?.toLocaleString()} {exp.currency || 'VND'}/h</span>
+                                                    <span style={{ background: '#fdf2f8', color: '#9d174d', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>⏳ Tối thiểu {exp.minHours || 1}h</span>
+                                                </div>
+
+                                                {exp.includedItems && exp.includedItems.length > 0 && (
+                                                    <div style={{ marginBottom: '1.25rem' }}>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-faint)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Bao gồm:</div>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                            {exp.includedItems.map((item: string, idx: number) => (
+                                                                <span key={idx} style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '1px 6px', fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>{item}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Approve / Reject buttons */}
+                                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto' }}>
+                                                <button onClick={() => approveExperience(exp._id, 'approved')} style={{ flex: 1, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '0.6rem', color: '#059669', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.2)'; }}
+                                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.1)'; }}>
+                                                    <Check size={14} /> Duyệt tour
+                                                </button>
+                                                <button onClick={() => approveExperience(exp._id, 'rejected')} style={{ flex: 1, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)', borderRadius: '10px', padding: '0.6rem', color: '#dc2626', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.15)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.3)'; }}
+                                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.05)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.1)'; }}>
+                                                    <X size={14} /> Từ chối
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <Pagination page={experiencesPage} total={filtered.length} pageSize={CARD_PAGE_SIZE} onPage={setExperiencesPage} />
+                            </>
                         );
                     })()}
 
