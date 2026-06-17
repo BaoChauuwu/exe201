@@ -252,13 +252,18 @@ export const AdminDashboard = () => {
         }
     };
 
-    const tabBtn = (active: boolean, color: string): React.CSSProperties => ({
-        flex: 1, padding: '0.7rem 1.5rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.875rem',
-        cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+    const sidebarBtn = (active: boolean, color: string): React.CSSProperties => ({
+        width: '100%', padding: '0.875rem 1.25rem', borderRadius: '14px', fontWeight: active ? 700 : 600, fontSize: '0.95rem',
+        cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         transition: 'all 0.2s', fontFamily: 'inherit',
-        background: active ? `linear-gradient(135deg, ${color}, ${color}cc)` : 'white',
+        background: active ? `linear-gradient(135deg, ${color}, ${color}dd)` : 'transparent',
         color: active ? 'white' : 'var(--color-text-muted)',
-        boxShadow: active ? `0 4px 15px ${color}40` : 'var(--shadow-sm)',
+        boxShadow: active ? `0 4px 15px ${color}40` : 'none',
+    });
+
+    const sidebarIcon = (active: boolean, color: string): React.CSSProperties => ({
+        display: 'flex', alignItems: 'center', gap: '0.8rem',
+        color: active ? 'white' : color
     });
 
     const badgeStyle = (color: string): React.CSSProperties => ({
@@ -306,62 +311,64 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+            <div style={{ maxWidth: '100%', margin: '0 auto', padding: '2rem 2.5rem', display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-                {/* Header */}
-                <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ShieldCheck size={20} style={{ color: '#818cf8' }} />
-                            </div>
-                            <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em' }}>Admin Portal</h1>
+                {/* Left Sidebar */}
+                <div style={{ flex: '0 0 280px', minWidth: '280px', position: 'sticky', top: '6rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+                    <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}>
+                            <ShieldCheck size={24} style={{ color: 'white' }} />
                         </div>
-                        <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Quản lý xác minh danh tính và giao dịch tài chính</p>
+                        <div>
+                            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--color-text)' }}>Admin</h1>
+                            <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.85rem', fontWeight: 500 }}>System Control</p>
+                        </div>
                     </div>
 
-                    {/* Tabs */}
-                    <div style={{ display: 'flex', background: 'var(--color-bg-2)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '4px', gap: '4px', minWidth: '400px', boxShadow: 'var(--shadow-sm)', overflowX: 'auto' }}>
-                        <button onClick={() => { setActiveTab('overview'); setSearchQuery(''); }} style={tabBtn(activeTab === 'overview', '#f59e0b')}>
-                            <BarChart2 size={16} /> Overview
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <button onClick={() => { setActiveTab('overview'); setSearchQuery(''); }} style={sidebarBtn(activeTab === 'overview', '#f59e0b')}>
+                            <div style={sidebarIcon(activeTab === 'overview', '#f59e0b')}><BarChart2 size={18} /> Tổng quan</div>
                         </button>
-                        <button onClick={() => { setActiveTab('ekyc'); setSearchQuery(''); setEkycPage(1); }} style={tabBtn(activeTab === 'ekyc', '#6366f1')}>
-                            <UserCheck size={16} /> eKYC
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{ekycs.length}</span>
+                        
+                        <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Xét duyệt</div>
+                        <button onClick={() => { setActiveTab('ekyc'); setSearchQuery(''); setEkycPage(1); }} style={sidebarBtn(activeTab === 'ekyc', '#6366f1')}>
+                            <div style={sidebarIcon(activeTab === 'ekyc', '#6366f1')}><UserCheck size={18} /> eKYC Profile</div>
+                            {ekycs.length > 0 && <span style={{ background: activeTab === 'ekyc' ? 'rgba(255,255,255,0.25)' : 'rgba(99,102,241,0.1)', color: activeTab === 'ekyc' ? 'white' : '#6366f1', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>{ekycs.length}</span>}
                         </button>
-                        <button onClick={() => { setActiveTab('payouts'); setSearchQuery(''); setPayoutsPage(1); }} style={tabBtn(activeTab === 'payouts', '#10b981')}>
-                            <DollarSign size={16} /> Payouts
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{payouts.length}</span>
+                        <button onClick={() => { setActiveTab('experiences'); setSearchQuery(''); setExperiencesPage(1); }} style={sidebarBtn(activeTab === 'experiences', '#8b5cf6')}>
+                            <div style={sidebarIcon(activeTab === 'experiences', '#8b5cf6')}><Compass size={18} /> Duyệt Tour</div>
+                            {experiences.length > 0 && <span style={{ background: activeTab === 'experiences' ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.1)', color: activeTab === 'experiences' ? 'white' : '#8b5cf6', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>{experiences.length}</span>}
                         </button>
-                        <button onClick={() => { setActiveTab('experiences'); setSearchQuery(''); setExperiencesPage(1); }} style={tabBtn(activeTab === 'experiences', '#8b5cf6')}>
-                            <Compass size={16} /> Duyệt Tour
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{experiences.length}</span>
+                        <button onClick={() => { setActiveTab('payouts'); setSearchQuery(''); setPayoutsPage(1); }} style={sidebarBtn(activeTab === 'payouts', '#10b981')}>
+                            <div style={sidebarIcon(activeTab === 'payouts', '#10b981')}><DollarSign size={18} /> Rút tiền (Payout)</div>
+                            {payouts.length > 0 && <span style={{ background: activeTab === 'payouts' ? 'rgba(255,255,255,0.25)' : 'rgba(16,185,129,0.1)', color: activeTab === 'payouts' ? 'white' : '#10b981', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>{payouts.length}</span>}
                         </button>
-                        <button onClick={() => { setActiveTab('users'); setSearchQuery(''); setUsersPage(1); }} style={tabBtn(activeTab === 'users', '#3b82f6')}>
-                            <Users size={16} /> Users
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{users.length}</span>
+
+                        <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>An toàn & Sự cố</div>
+                        <button onClick={() => { setActiveTab('sos'); setSearchQuery(''); }} style={{ ...sidebarBtn(activeTab === 'sos', '#dc2626'), animation: activeSOS.length > 0 ? 'pulse 2s infinite' : 'none' }}>
+                            <div style={sidebarIcon(activeTab === 'sos', '#dc2626')}><ShieldAlert size={18} /> Báo động SOS</div>
+                            {activeSOS.length > 0 && <span style={{ background: activeTab === 'sos' ? 'rgba(255,255,255,0.25)' : 'rgba(220,38,38,0.1)', color: activeTab === 'sos' ? 'white' : '#dc2626', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>{activeSOS.length}</span>}
                         </button>
-                        <button onClick={() => { setActiveTab('trips'); setSearchQuery(''); setTripsPage(1); }} style={tabBtn(activeTab === 'trips', '#f97316')}>
-                            <CalendarClock size={16} /> Tours
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{bookings.length}</span>
+                        <button onClick={() => { setActiveTab('disputes'); setSearchQuery(''); }} style={sidebarBtn(activeTab === 'disputes', '#ef4444')}>
+                            <div style={sidebarIcon(activeTab === 'disputes', '#ef4444')}><AlertTriangle size={18} /> Khiếu nại</div>
+                            {disputes.filter(d => d.disputeStatus === 'pending').length > 0 && <span style={{ background: activeTab === 'disputes' ? 'rgba(255,255,255,0.25)' : 'rgba(239,68,68,0.1)', color: activeTab === 'disputes' ? 'white' : '#ef4444', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>{disputes.filter(d => d.disputeStatus === 'pending').length}</span>}
                         </button>
-                        <button onClick={() => { setActiveTab('feedbacks'); setSearchQuery(''); }} style={tabBtn(activeTab === 'feedbacks', '#ec4899')}>
-                            <FileText size={16} /> Feedbacks
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{feedbacks.length}</span>
+
+                        <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Quản lý chung</div>
+                        <button onClick={() => { setActiveTab('trips'); setSearchQuery(''); setTripsPage(1); }} style={sidebarBtn(activeTab === 'trips', '#f97316')}>
+                            <div style={sidebarIcon(activeTab === 'trips', '#f97316')}><CalendarClock size={18} /> Lịch trình Tours</div>
                         </button>
-                        <button onClick={() => { setActiveTab('disputes'); setSearchQuery(''); }} style={tabBtn(activeTab === 'disputes', '#ef4444')}>
-                            <AlertTriangle size={16} /> Khiếu nại
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{disputes.filter(d => d.disputeStatus === 'pending').length}</span>
+                        <button onClick={() => { setActiveTab('users'); setSearchQuery(''); setUsersPage(1); }} style={sidebarBtn(activeTab === 'users', '#3b82f6')}>
+                            <div style={sidebarIcon(activeTab === 'users', '#3b82f6')}><Users size={18} /> Người dùng</div>
                         </button>
-                        <button onClick={() => { setActiveTab('sos'); setSearchQuery(''); }} style={{ ...tabBtn(activeTab === 'sos', '#dc2626'), animation: activeSOS.length > 0 ? 'pulse 2s infinite' : 'none' }}>
-                            <ShieldAlert size={16} /> SOS
-                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem', border: activeSOS.length > 0 ? '1px solid white' : 'none' }}>{activeSOS.length}</span>
+                        <button onClick={() => { setActiveTab('feedbacks'); setSearchQuery(''); }} style={sidebarBtn(activeTab === 'feedbacks', '#ec4899')}>
+                            <div style={sidebarIcon(activeTab === 'feedbacks', '#ec4899')}><FileText size={18} /> Đánh giá (Feedbacks)</div>
                         </button>
                     </div>
                 </div>
 
-                {/* Content card */}
-                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', minHeight: '400px', boxShadow: 'var(--shadow-md)' }}>
+                {/* Right Content card */}
+                <div style={{ flex: '3 1 700px', minWidth: 0, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', minHeight: '600px', boxShadow: 'var(--shadow-md)' }}>
 
                     {/* Search bar */}
                     {activeTab !== 'overview' && (
