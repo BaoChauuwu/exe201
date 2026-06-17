@@ -6,8 +6,32 @@ import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activit
 
 import { socket } from '../socket';
 import { toast as hotToast } from 'react-hot-toast';
-// Tạm thời bỏ Recharts do lỗi tương thích React 19: 
-// import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  ChartTooltip,
+  Legend,
+  Filler
+);
 
 export const AdminDashboard = () => {
     const [ekycs, setEkycs] = useState<any[]>([]);
@@ -22,6 +46,7 @@ export const AdminDashboard = () => {
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
     // Pagination state per tab
     const [ekycPage, setEkycPage] = useState(1);
@@ -289,9 +314,84 @@ export const AdminDashboard = () => {
                         const touristsCount = users.filter(u => u.role === 'tourist').length;
                         const buddiesCount = users.filter(u => u.role === 'buddy').length;
 
+                        // Process chart data (12 months of selectedYear)
+                        const months = Array.from({ length: 12 }).map((_, i) => {
+                            return {
+                                label: `T${i + 1}`,
+                                month: i,
+                                year: selectedYear,
+                                deployed: 0,
+                                completed: 0,
+                                revenue: 0,
+                                newTourists: 0,
+                                newBuddies: 0,
+                                newTotal: 0
+                            };
+                        });
+
+                        bookings.forEach(b => {
+                            let d: Date;
+                            if (b.created_at) {
+                                d = new Date(b.created_at);
+                            } else if (b._id) {
+                                d = new Date(parseInt(b._id.substring(0, 8), 16) * 1000);
+                            } else {
+                                return;
+                            }
+                            
+                            const m = months.find(x => x.month === d.getMonth() && x.year === d.getFullYear());
+                            if (m) {
+                                if (['confirmed', 'ongoing', 'completed'].includes(b.status)) {
+                                    m.deployed += 1;
+                                }
+                                if (b.status === 'completed') {
+                                    m.completed += 1;
+                                    m.revenue += (b.totalPrice || 0);
+                                }
+                            }
+                        });
+
+                        users.forEach(u => {
+                            let d: Date;
+                            if (u.created_at) {
+                                d = new Date(u.created_at);
+                            } else if (u._id) {
+                                d = new Date(parseInt(u._id.substring(0, 8), 16) * 1000);
+                            } else {
+                                return;
+                            }
+                            
+                            const m = months.find(x => x.month === d.getMonth() && x.year === d.getFullYear());
+                            if (m) {
+                                m.newTotal += 1;
+                                if (u.role === 'tourist') m.newTourists += 1;
+                                if (u.role === 'buddy') m.newBuddies += 1;
+                            }
+                        });
+
+                        const availableYears = [2024, 2025, 2026, 2027];
+
                         return (
                         <div style={{ padding: '2rem' }}>
-                            <h2 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary-dark)' }}>Tổng quan Hệ thống</h2>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary-dark)' }}>Tổng quan Hệ thống</h2>
+                                <select 
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-bg)',
+                                        color: 'var(--color-text)',
+                                        outline: 'none',
+                                        cursor: 'pointer',
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    {availableYears.map(y => <option key={y} value={y}>Năm {y}</option>)}
+                                </select>
+                            </div>
                             
                             {/* Key Metrics Cards */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -368,6 +468,71 @@ export const AdminDashboard = () => {
                                             <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#64748b' }} /> Admin ({totalUsersCount - touristsCount - buddiesCount})
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Charts Section */}
+                                <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                                        {/* Bookings Chart */}
+                                        <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
+                                            <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.1rem', color: 'var(--color-text)' }}>Thống kê Tour (Năm {selectedYear})</h3>
+                                            <div style={{ height: 300, width: '100%' }}>
+                                                <Bar data={{
+                                                    labels: months.map(m => m.label),
+                                                    datasets: [
+                                                        { label: 'Tour triển khai', data: months.map(m => m.deployed), backgroundColor: '#3b82f6', borderRadius: 4 },
+                                                        { label: 'Tour hoàn thành', data: months.map(m => m.completed), backgroundColor: '#10b981', borderRadius: 4 }
+                                                    ]
+                                                }} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }} />
+                                            </div>
+                                        </div>
+
+                                        {/* Revenue Chart */}
+                                        <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
+                                            <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.1rem', color: 'var(--color-text)' }}>Tăng trưởng Doanh thu</h3>
+                                            <div style={{ height: 300, width: '100%' }}>
+                                                <Line data={{
+                                                    labels: months.map(m => m.label),
+                                                    datasets: [
+                                                        { label: 'Doanh thu', data: months.map(m => m.revenue), borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.5)', borderWidth: 3, tension: 0.3, pointRadius: 4 }
+                                                    ]
+                                                }} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }, plugins: { tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y); } return label; } } } } }} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Users Chart */}
+                                    <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
+                                        <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.1rem', color: 'var(--color-text)' }}>Người dùng đăng ký mới</h3>
+                                        <div style={{ height: 300, width: '100%' }}>
+                                            <Line data={{
+                                                labels: months.map(m => m.label),
+                                                datasets: [
+                                                    { fill: true, label: 'Tourist mới', data: months.map(m => m.newTourists), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.3)', tension: 0.3, pointRadius: 0 },
+                                                    { fill: true, label: 'Buddy mới', data: months.map(m => m.newBuddies), borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.3)', tension: 0.3, pointRadius: 0 }
+                                                ]
+                                            }} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Google Analytics Embed */}
+                                    <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--color-text)' }}>Lưu lượng truy cập (Google Analytics)</h3>
+                                        <div style={{ height: 600, width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)', background: 'var(--color-bg)' }}>
+                                            <iframe
+                                                width="100%"
+                                                height="100%"
+                                                src="https://datastudio.google.com/embed/reporting/ba610749-4e1d-4bf8-9e4b-d4bc322925f1/page/GlV1F"
+                                                frameBorder="0"
+                                                style={{ border: 0 }}
+                                                allowFullScreen
+                                                sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                                                title="Google Analytics Dashboard"
+                                            ></iframe>
+                                        </div>
+                                    </div>
+
                                 </div>
 
                             </div>

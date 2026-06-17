@@ -9,6 +9,23 @@
     <meta property="og:title" content="UniTravel - Du lịch thông minh cho sinh viên" />
     <meta property="og:description" content="Khám phá thế giới cùng cộng đồng sinh viên UniTravel" />
     <title>UniTravel - Du lịch thông minh cho sinh viên</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6QDGRXBZND"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Let React Router handle the pageviews
+      gtag('config', 'G-6QDGRXBZND', {
+        send_page_view: false
+      });
+    </script>
+    <script>
+      window.addEventListener('error', function(e) {
+        document.body.innerHTML += '<div style="color:red; background:#fff; padding:20px; z-index:9999; position:absolute; top:0; left:0; width:100%;">' + e.message + '<br/><pre>' + e.error?.stack + '</pre></div>';
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
