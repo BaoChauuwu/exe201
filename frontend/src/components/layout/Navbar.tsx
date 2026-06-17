@@ -201,6 +201,13 @@ export default function Navbar() {
                 Tìm Buddy
               </Link>
             </li>
+            <li>
+              <Link to='/smart-match' style={{ ...linkStyle, color: '#0ea5e9', display: 'flex', alignItems: 'center', gap: '3px' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#0ea5e9')}>
+                ✨ Ghép Cặp Tour
+              </Link>
+            </li>
             {isAuthenticated && (
               <>
                 {user?.role === 'admin' ? (

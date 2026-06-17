@@ -22,6 +22,8 @@ export interface IExperience {
     totalBookings?: number
     isActive?: boolean
     isApproved?: boolean
+    status?: 'pending' | 'approved' | 'rejected'
+    tags?: string[]
     created_at?: Date
     updated_at?: Date
 }
@@ -46,7 +48,9 @@ export const experienceSchema = new Schema<IExperience>(
         avgRating: { type: Number, default: 0 },
         totalBookings: { type: Number, default: 0 },
         isActive: { type: Boolean, default: true },
-        isApproved: { type: Boolean, default: false }
+        isApproved: { type: Boolean, default: false },
+        status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+        tags: { type: [String], default: [] }
     },
     {
         timestamps: {

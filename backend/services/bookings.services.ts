@@ -464,17 +464,27 @@ class BookingsService {
             // 5.1. Cập nhật booking
             booking.status = 'completed'
             booking.actualEndTime = new Date()
+            booking.insuranceStatus = 'expired'
+            // Đặt thời điểm giải ngân Escrow: 24 giờ sau khi kết thúc tour
+            booking.payoutReleasedAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
             await booking.save()
 
-            // 5.2. Giải ngân tiền sang ví khả dụng của Buddy
+            // 5.2. Cập nhật độ uy tín của Buddy (không giải ngân người dùng tiền ngay)
             const buddyProfile = await BuddyProfileModel.findOne({ userId: booking.buddyId })
             if (buddyProfile) {
-                // Trừ tiền khỏi pendingBalance
-                buddyProfile.pendingBalance = Math.max(0, (buddyProfile.pendingBalance || 0) - booking.buddyEarning)
-                // Cộng tiền vào walletBalance
-                buddyProfile.walletBalance = (buddyProfile.walletBalance || 0) + booking.buddyEarning
+                const totalBookings = (buddyProfile.totalBookingsCount || 0) + 1
+                const completedBookings = (buddyProfile.completedBookingsCount || 0) + 1
+                buddyProfile.totalBookingsCount = totalBookings
+                buddyProfile.completedBookingsCount = completedBookings
+                buddyProfile.totalCompletedTours = completedBookings
+                // Tính lại tỷ lệ hoàn thành
+                buddyProfile.reliabilityRate = Math.round((completedBookings / totalBookings) * 100)
                 await buddyProfile.save()
             }
+
+            // NOTE: Tiền trong pendingBalance của Buddy sẽ được giải ngân tự động sau 24 giờ
+            // thông qua cron job hoặc khi Tourist không khiếu nại trong 24h
+            // Xem: releaseEscrowPayouts() có thể chạy theo lịch hoặc gọi thủ công từ Admin
 
             if (session) {
                 await session.commitTransaction()
@@ -687,7 +697,22 @@ class BookingsService {
                             isPublic: true
                         }])
                     }
+
+                    // F. Cập nhật tỷ lệ hoàn thành (Reliability Rate) của Buddy sau khi hủy
+                    if (buddyProfile) {
+                        const totalBookings = (buddyProfile.totalBookingsCount || 0) + 1
+                        // completedBookingsCount không tăng vì tour bị hủy
+                        const completedBookings = buddyProfile.completedBookingsCount || 0
+                        buddyProfile.totalBookingsCount = totalBookings
+                        buddyProfile.reliabilityRate = Math.round((completedBookings / totalBookings) * 100)
+                        if (session) {
+                            await buddyProfile.save({ session })
+                        } else {
+                            await buddyProfile.save()
+                        }
+                    }
                 } else if (isAdmin) {
+
                     // LUỒNG ADMIN HỦY (Hoàn tiền 100% cho Tourist, trừ Pending của Buddy)
                     if (buddyProfile) {
                         buddyProfile.pendingBalance = Math.max(0, (buddyProfile.pendingBalance || 0) - booking.buddyEarning)
@@ -820,7 +845,7 @@ class BookingsService {
         return bookings
     }
 
-    // 11. Bắt đầu chuyến đi (Check-in sang 'ongoing')
+    // 11. Bắt đầu chuyến đi (Check-in sang 'ongoing' + Kích hoạt Bảo hiểm + Tạo Token chia sẻ)
     async startBooking(bookingId: string) {
         const booking = await BookingModel.findById(bookingId)
         if (!booking) {
@@ -829,13 +854,30 @@ class BookingsService {
 
         booking.status = 'ongoing'
         booking.actualStartTime = new Date()
+
+        // Kích hoạt Bảo hiểm UniTravel Care
+        const policyCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+        booking.insurancePolicyNumber = `UT-CARE-${policyCode}`
+        booking.insuranceStatus = 'active'
+
+        // Tạo token chia sẻ hành trình bí mật (dùng như UUID)
+        const tokenPart1 = Math.random().toString(36).substring(2, 10)
+        const tokenPart2 = Math.random().toString(36).substring(2, 10)
+        const tokenPart3 = Math.random().toString(36).substring(2, 10)
+        booking.shareTrackingToken = `${tokenPart1}-${tokenPart2}-${tokenPart3}`
+
         await booking.save()
 
         // Phát socket thông báo cho hai bên cùng biết thời gian thực
         try {
             const { getIO } = require('../socket')
             const io = getIO()
-            io.emit(`booking_status_updated_${bookingId}`, { status: 'ongoing', actualStartTime: booking.actualStartTime })
+            io.emit(`booking_status_updated_${bookingId}`, {
+                status: 'ongoing',
+                actualStartTime: booking.actualStartTime,
+                insurancePolicyNumber: booking.insurancePolicyNumber,
+                shareTrackingToken: booking.shareTrackingToken
+            })
         } catch (socketErr) {
             console.error('[BookingsService] Socket.io emit error:', socketErr)
         }
@@ -859,6 +901,9 @@ class BookingsService {
 
             booking.status = 'completed'
             booking.actualEndTime = new Date()
+            booking.insuranceStatus = 'expired'
+            // Đặt thời điểm giải ngân Escrow 24h
+            booking.payoutReleasedAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
             
             if (session) {
                 await booking.save({ session })
@@ -866,16 +911,18 @@ class BookingsService {
                 await booking.save()
             }
 
-            // Giải ngân tiền sang ví khả dụng của Buddy
+            // Cập nhật độ uy tín Buddy (không giải ngân người dùng tiền người dùng người dùng ngay)
             const buddyProfile = session 
                 ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
                 : await BuddyProfileModel.findOne({ userId: booking.buddyId })
             
             if (buddyProfile) {
-                // Trừ tiền khỏi pendingBalance
-                buddyProfile.pendingBalance = Math.max(0, (buddyProfile.pendingBalance || 0) - booking.buddyEarning)
-                // Cộng tiền vào walletBalance
-                buddyProfile.walletBalance = (buddyProfile.walletBalance || 0) + booking.buddyEarning
+                const totalBookings = (buddyProfile.totalBookingsCount || 0) + 1
+                const completedBookings = (buddyProfile.completedBookingsCount || 0) + 1
+                buddyProfile.totalBookingsCount = totalBookings
+                buddyProfile.completedBookingsCount = completedBookings
+                buddyProfile.totalCompletedTours = completedBookings
+                buddyProfile.reliabilityRate = Math.round((completedBookings / totalBookings) * 100)
                 
                 if (session) {
                     await buddyProfile.save({ session })
@@ -883,6 +930,8 @@ class BookingsService {
                     await buddyProfile.save()
                 }
             }
+
+            // NOTE: Tiền pending chỉ giải ngân sau 24h nếu không có khiếu nại
 
             if (session) {
                 await session.commitTransaction()
@@ -906,6 +955,228 @@ class BookingsService {
             }
             throw error
         }
+    }
+
+    // 13. Tourist gửi khiếu nại (Dispute) - Đóng băng Escrow
+    async raiseDispute(bookingId: string, touristId: string, disputeReason: string) {
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) {
+            throw new Error('Không tìm thấy thông tin đặt tour này.')
+        }
+
+        if (booking.touristId.toString() !== touristId) {
+            throw new Error('Bạn không có quyền khiếu nại chuyến đi này.')
+        }
+
+        if (!['confirmed', 'ongoing', 'completed'].includes(booking.status)) {
+            throw new Error('Chỉ có thể khiếu nại khi chuyến đi đã được xác nhận, đang diễn ra hoặc vừa kết thúc.')
+        }
+
+        if (booking.isDisputed) {
+            throw new Error('Chuyến đi này đã được gửi khiếu nại trước đó.')
+        }
+
+        // Kiểm tra thời hạn khiếu nại: chỉ cho phép trong vòng 24h sau khi tour kết thúc
+        if (booking.payoutReleasedAt) {
+            const now = new Date()
+            if (now > booking.payoutReleasedAt) {
+                throw new Error('Đã quá thời hạn 24 giờ để gửi khiếu nại sau khi tour kết thúc.')
+            }
+        }
+
+        // Đánh dấu booking bị khiếu nại - Đóng băng escrow
+        booking.isDisputed = true
+        booking.disputeReason = disputeReason
+        booking.disputeCreatedAt = new Date()
+        booking.disputeStatus = 'pending'
+        // Hủy lịch giải ngân tự động
+        booking.payoutReleasedAt = undefined
+        await booking.save()
+
+        return booking
+    }
+
+    // 13.5. Buddy gửi giải trình khiếu nại (Defense)
+    async submitBuddyDefense(bookingId: string, buddyId: string, defenseReason: string) {
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) {
+            throw new Error('Không tìm thấy thông tin đặt tour này.')
+        }
+
+        if (booking.buddyId.toString() !== buddyId) {
+            throw new Error('Bạn không có quyền thực hiện thao tác này.')
+        }
+
+        if (!booking.isDisputed || booking.disputeStatus !== 'pending') {
+            throw new Error('Chuyến đi này không trong trạng thái chờ xử lý khiếu nại.')
+        }
+
+        if (booking.buddyDefenseReason) {
+            throw new Error('Bạn đã gửi giải trình cho khiếu nại này rồi.')
+        }
+
+        if (!defenseReason || defenseReason.trim().length < 10) {
+            throw new Error('Lời giải trình phải có ít nhất 10 ký tự.')
+        }
+
+        booking.buddyDefenseReason = defenseReason
+        booking.buddyDefenseSubmittedAt = new Date()
+        await booking.save()
+
+        return booking
+    }
+
+    // 14. Admin giải quyết khiếu nại
+    async resolveDispute(bookingId: string, refundPercentage: number, resolutionNote: string) {
+        const session = await mongoose.startSession().catch(() => null)
+        if (session) session.startTransaction()
+
+        try {
+            const booking = session
+                ? await BookingModel.findById(bookingId).session(session)
+                : await BookingModel.findById(bookingId)
+
+            if (!booking) {
+                throw new Error('Không tìm thấy thông tin đặt tour này.')
+            }
+
+            if (!booking.isDisputed || booking.disputeStatus !== 'pending') {
+                throw new Error('Chuyến đi này không đang chờ xử lý khiếu nại.')
+            }
+
+            if (refundPercentage < 0 || refundPercentage > 100) {
+                throw new Error('Tỷ lệ hoàn tiền không hợp lệ (0 - 100).')
+            }
+
+            const buddyProfile = session
+                ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
+                : await BuddyProfileModel.findOne({ userId: booking.buddyId })
+
+            const touristUser = session
+                ? await UserModel.findById(booking.touristId).session(session)
+                : await UserModel.findById(booking.touristId)
+
+            const refundAmount = booking.totalPrice * (refundPercentage / 100)
+            const buddyPayoutAmount = booking.buddyEarning * (1 - refundPercentage / 100)
+
+            booking.disputeStatus = refundPercentage === 100 ? 'resolved_refunded' 
+                                  : refundPercentage === 0 ? 'resolved_paid' 
+                                  : 'resolved_partial'
+            booking.disputeRefundPercentage = refundPercentage
+            booking.disputeResolutionNote = resolutionNote
+
+            if (buddyProfile) {
+                // Trừ toàn bộ tiền chờ (vì tour đã giải quyết xong)
+                buddyProfile.pendingBalance = Math.max(0, (buddyProfile.pendingBalance || 0) - booking.buddyEarning)
+                // Chỉ cộng vào số dư số tiền được chia
+                if (buddyPayoutAmount > 0) {
+                    buddyProfile.walletBalance = (buddyProfile.walletBalance || 0) + buddyPayoutAmount
+                }
+                if (session) await buddyProfile.save({ session })
+                else await buddyProfile.save()
+            }
+
+            if (touristUser && refundAmount > 0) {
+                touristUser.walletBalance = (touristUser.walletBalance || 0) + refundAmount
+                if (session) await touristUser.save({ session })
+                else await touristUser.save()
+            }
+
+            // Giao dịch hoàn tiền
+            if (refundAmount > 0) {
+                const refundTx = new TransactionModel({
+                    bookingId: booking._id,
+                    payerId: booking.touristId,
+                    type: 'refund',
+                    amount: refundAmount,
+                    paymentMethod: booking.paymentMethod || 'Ví UniTravel',
+                    gatewayTransactionId: 'DISPUTE-REFUND-' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+                    status: 'success'
+                })
+                if (session) await refundTx.save({ session })
+                else await refundTx.save()
+            }
+
+            // Giao dịch giải ngân
+            if (buddyPayoutAmount > 0) {
+                const payoutTx = new TransactionModel({
+                    bookingId: booking._id,
+                    payerId: booking.buddyId,
+                    type: 'payout',
+                    amount: buddyPayoutAmount,
+                    paymentMethod: 'Ví UniTravel',
+                    gatewayTransactionId: 'DISPUTE-PAYOUT-' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+                    status: 'success'
+                })
+                if (session) await payoutTx.save({ session })
+                else await payoutTx.save()
+            }
+
+            if (session) await booking.save({ session })
+            else await booking.save()
+
+            if (session) {
+                await session.commitTransaction()
+                session.endSession()
+            }
+
+            return booking
+        } catch (error) {
+            if (session) {
+                await session.abortTransaction()
+                session.endSession()
+            }
+            throw error
+        }
+    }
+
+    // 15. Lấy danh sách khiếu nại (Admin)
+    async getDisputes(status?: string) {
+        const query: any = { isDisputed: true }
+        if (status) query.disputeStatus = status
+
+        const bookings = await BookingModel.find(query)
+            .populate('experienceId')
+            .populate({ path: 'buddyId', select: 'name avatar email phone' })
+            .populate({ path: 'touristId', select: 'name avatar email phone' })
+            .sort({ disputeCreatedAt: -1 })
+
+        return bookings
+    }
+
+    // 16. Giải ngân Escrow tự động sau 24h (Admin chạy thủ công hoặc cron job)
+    async releaseEscrowPayouts() {
+        const now = new Date()
+        const dueBookings = await BookingModel.find({
+            status: 'completed',
+            isDisputed: false,
+            payoutReleasedAt: { $lte: now },
+            // Chỉ xử lý bookings có pending payout (chưa giải ngân)
+            $expr: { $gt: ['$buddyEarning', 0] }
+        })
+
+        let releasedCount = 0
+        for (const booking of dueBookings) {
+            try {
+                const buddyProfile = await BuddyProfileModel.findOne({ userId: booking.buddyId })
+                if (buddyProfile && (buddyProfile.pendingBalance || 0) >= booking.buddyEarning) {
+                    buddyProfile.pendingBalance = Math.max(0, (buddyProfile.pendingBalance || 0) - booking.buddyEarning)
+                    buddyProfile.walletBalance = (buddyProfile.walletBalance || 0) + booking.buddyEarning
+                    await buddyProfile.save()
+
+                    // Đánh dấu booking đã giải ngân (payoutReleasedAt = quá khứ là dấu hiệu đã xử lý)
+                    // Để tránh xử lý trùng, xóa payoutReleasedAt
+                    booking.payoutReleasedAt = undefined
+                    await booking.save()
+
+                    releasedCount++
+                }
+            } catch (err) {
+                console.error(`[Escrow] Failed to release payout for booking ${booking._id}:`, err)
+            }
+        }
+
+        return { releasedCount, totalPending: dueBookings.length }
     }
 }
 

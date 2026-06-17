@@ -48,7 +48,8 @@ class ExperiencesService {
         type: 'Point',
         coordinates: [body.meetingPointLng, body.meetingPointLat]
       },
-      isApproved: true // Auto-approve for testing purposes
+      isApproved: false,
+      status: 'pending'
     })
 
     return experience
@@ -73,32 +74,42 @@ class ExperiencesService {
       })
     }
 
-    // 1. Phân tích ảnh cũ được giữ lại từ request body
-    const keepImagesRaw = (body as any).keepImages ?? (body as any)['keepImages[]'] ?? []
-    const keepImages = Array.isArray(keepImagesRaw)
-      ? keepImagesRaw
-      : typeof keepImagesRaw === 'string'
-        ? [keepImagesRaw]
-        : []
-
-    // 2. Tìm những ảnh cũ bị loại bỏ khỏi danh sách giữ lại để xóa trên Cloudinary
     const currentImages = experience.images ?? []
-    const imagesToDelete = currentImages.filter((img) => !keepImages.includes(img))
-    for (const oldUrl of imagesToDelete) {
-      const publicId = extractCloudinaryPublicId(oldUrl)
-      await deleteFromCloudinary(publicId).catch(() => null) // Bỏ qua lỗi xóa ảnh cũ
-    }
+    const hasImagesUpdate = (body as any).keepImages !== undefined || (body as any)['keepImages[]'] !== undefined || files.length > 0
+    let imagesChanged = false
 
-    // 3. Upload các file mới lên Cloudinary (nếu có)
-    const newImageUrls: string[] = []
-    for (const file of files) {
-      const { url } = await uploadToCloudinary(file.buffer, `experiences/${buddyId}`)
-      newImageUrls.push(url)
-    }
+    if (hasImagesUpdate) {
+      // 1. Phân tích ảnh cũ được giữ lại từ request body
+      const keepImagesRaw = (body as any).keepImages ?? (body as any)['keepImages[]'] ?? []
+      const keepImages = Array.isArray(keepImagesRaw)
+        ? keepImagesRaw
+        : typeof keepImagesRaw === 'string'
+          ? [keepImagesRaw]
+          : []
 
-    // 4. Gán lại mảng ảnh cuối cùng (gồm các ảnh cũ giữ lại và ảnh mới tải lên)
-    experience.images = [...keepImages, ...newImageUrls]
-    experience.markModified('images')
+      // 2. Tìm những ảnh cũ bị loại bỏ khỏi danh sách giữ lại để xóa trên Cloudinary
+      const imagesToDelete = currentImages.filter((img) => !keepImages.includes(img))
+      for (const oldUrl of imagesToDelete) {
+        const publicId = extractCloudinaryPublicId(oldUrl)
+        await deleteFromCloudinary(publicId).catch(() => null) // Bỏ qua lỗi xóa ảnh cũ
+      }
+
+      // 3. Upload các file mới lên Cloudinary (nếu có)
+      const newImageUrls: string[] = []
+      for (const file of files) {
+        const { url } = await uploadToCloudinary(file.buffer, `experiences/${buddyId}`)
+        newImageUrls.push(url)
+      }
+
+      // 4. Gán lại mảng ảnh cuối cùng (gồm các ảnh cũ giữ lại và ảnh mới tải lên)
+      experience.images = [...keepImages, ...newImageUrls]
+      experience.markModified('images')
+
+      const finalImages = experience.images ?? []
+      imagesChanged =
+        currentImages.length !== finalImages.length ||
+        currentImages.some((img, idx) => img !== finalImages[idx])
+    }
 
     const BuddyProfile = require('~/models/BuddyProfile.model').default
     const profile = await BuddyProfile.findOne({ userId: new ObjectId(buddyId) })
@@ -135,6 +146,23 @@ class ExperiencesService {
       }
     }
 
+    const isCriticalUpdate =
+      body.title !== undefined ||
+      body.description !== undefined ||
+      body.category !== undefined ||
+      body.city !== undefined ||
+      body.currency !== undefined ||
+      body.minHours !== undefined ||
+      body.maxGroupSize !== undefined ||
+      includedItemsRaw !== undefined ||
+      (body.meetingPointLng !== undefined && body.meetingPointLat !== undefined) ||
+      imagesChanged
+
+    if (isCriticalUpdate) {
+      experience.status = 'pending'
+      experience.isApproved = false
+    }
+
     await experience.save()
     return experience
   }
@@ -154,7 +182,13 @@ class ExperiencesService {
   }
 
   async getAllExperiences() {
-    return ExperienceModel.find({ isApproved: true, isActive: true }).sort({ created_at: -1 })
+    return ExperienceModel.find({
+      $or: [
+        { status: 'approved' },
+        { isApproved: true }
+      ],
+      isActive: true
+    }).sort({ created_at: -1 })
   }
 }
 

@@ -25,6 +25,7 @@ export const BuddyProfilePage = () => {
     const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
     const [languages, setLanguages] = useState('');
     const [hourlyRate, setHourlyRate] = useState<number>(0);
+    const [personalityTags, setPersonalityTags] = useState<string[]>([]);
     const [bankCode, setBankCode] = useState('VCB');
     const [customBank, setCustomBank] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
@@ -52,6 +53,7 @@ export const BuddyProfilePage = () => {
                 setSlots(parsedSlots);
                 setLanguages(d.languages?.join(', ') || '');
                 setHourlyRate(d.hourlyRate || 0);
+                setPersonalityTags(d.personalityTags || []);
                 const bc = d.payoutMethod?.bankCode || 'VCB';
                 if (!['VCB', 'TCB', 'MB', 'MOMO'].includes(bc)) {
                     setBankCode('OTHER');
@@ -103,6 +105,7 @@ export const BuddyProfilePage = () => {
                 availability: availabilityArray,
                 languages: languages.split(',').map(s => s.trim()).filter(Boolean),
                 hourlyRate: hourlyRate,
+                personalityTags: personalityTags,
                 bankCode: finalBankCode, accountNumber, accountName
             }, { headers: { Authorization: `Bearer ${accessToken}` } });
             toast.success('Cập nhật thành công!');
@@ -329,6 +332,48 @@ export const BuddyProfilePage = () => {
                                         <input type='text' value={hourlyRate === 0 ? '' : hourlyRate.toLocaleString('en-US')} onChange={e => setHourlyRate(e.target.value.replace(/\D/g, '') === '' ? 0 : Number(e.target.value.replace(/\D/g, '')))}
                                             placeholder='150,000' style={{ ...inputStyle, paddingLeft: '2.5rem' }} className='buddy-input' />
                                     </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: '1.25rem' }}>
+                                <label style={labelStyle}>Tính cách nổi bật của bạn</label>
+                                <p style={{ margin: '0 0 0.75rem', fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
+                                    Lựa chọn tính cách phản ánh đúng nhất phong cách của bạn để hệ thống kết nối bạn với các du khách phù hợp (chọn nhiều).
+                                </p>
+                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                    {[
+                                        { value: 'nang_dong', label: '🔥 Năng động, Vui vẻ' },
+                                        { value: 'sau_sac', label: '🧠 Điềm đạm, Sâu sắc' },
+                                        { value: 'am_ap', label: '🌱 Ấm áp, Chu đáo' }
+                                    ].map(item => {
+                                        const isSelected = personalityTags.includes(item.value);
+                                        return (
+                                            <button
+                                                key={item.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setPersonalityTags(personalityTags.filter(t => t !== item.value));
+                                                    } else {
+                                                        setPersonalityTags([...personalityTags, item.value]);
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: '0.6rem 1rem',
+                                                    borderRadius: '10px',
+                                                    border: isSelected ? '1px solid #0284c7' : '1px solid rgba(14, 165, 233, 0.18)',
+                                                    background: isSelected ? 'rgba(2, 132, 199, 0.08)' : '#f8fafc',
+                                                    color: isSelected ? '#0284c7' : '#475569',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: isSelected ? 600 : 500,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

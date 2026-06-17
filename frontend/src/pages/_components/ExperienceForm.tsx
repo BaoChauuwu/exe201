@@ -37,9 +37,21 @@ const experienceSchema = z.object({
       .min(8.0, 'Vĩ độ phải trong khu vực Việt Nam (8.0–24.0)')
       .max(24.0, 'Vĩ độ phải trong khu vực Việt Nam (8.0–24.0)'),
   }),
+  tags: z.array(z.string()).optional(),
 })
 
 type FormSchema = z.infer<typeof experienceSchema>
+
+const AVAILABLE_TAGS = [
+  { value: 'am_thuc', label: '🍴 Ẩm thực càn quét' },
+  { value: 'chup_anh', label: '📸 Sống ảo check-in' },
+  { value: 'van_hoa', label: '🏛️ Lịch sử văn hóa' },
+  { value: 'phuot', label: '🧗 Phượt xe máy mạo hiểm' },
+  { value: 'chill', label: '☕ Cafe chill nhẹ nhàng' },
+  { value: 'nightlife', label: '💃 Bar/Pub náo nhiệt' },
+  { value: 'xe_may', label: '🛵 Có xe máy đưa đón' },
+  { value: 'tieng_anh', label: '🗣️ Nói tiếng Anh' }
+]
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -163,6 +175,7 @@ export const ExperienceForm = ({
       includedItems: defaultValues?.includedItems ?? [],
       images: defaultValues?.images ?? [],
       meetingPoint: defaultValues?.meetingPoint ?? { longitude: 108.2022, latitude: 16.0544 },
+      tags: defaultValues?.tags ?? [],
     },
   })
 
@@ -413,6 +426,50 @@ export const ExperienceForm = ({
           <p style={{ color: 'rgba(251,191,36,0.8)', fontSize: '0.75rem', margin: 0 }}>
             📍 Toạ độ phải nằm trong khu vực Việt Nam: Kinh độ 102.0–110.0 · Vĩ độ 8.0–24.0
           </p>
+        </div>
+      </div>
+
+      {/* ── ĐẶC TRƯNG TOUR (TAGS) ── */}
+      <div style={sectionStyle}>
+        <div style={sectionHeaderStyle}>
+          <div style={sectionIconStyle('139,92,246')}>
+            <Tag size={17} style={{ color: '#a78bfa' }} />
+          </div>
+          <h2 style={sectionTitleStyle}>Đặc trưng nổi bật của Tour (Tags)</h2>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem' }}>
+          {AVAILABLE_TAGS.map((tag) => {
+            const currentTags = watch('tags') || []
+            const isSelected = currentTags.includes(tag.value)
+            return (
+              <button
+                key={tag.value}
+                type='button'
+                onClick={() => {
+                  const newTags = isSelected
+                    ? currentTags.filter((t: string) => t !== tag.value)
+                    : [...currentTags, tag.value]
+                  setValue('tags', newTags, { shouldValidate: true })
+                }}
+                style={{
+                  background: isSelected ? 'rgba(139,92,246,0.1)' : '#f8fafc',
+                  border: isSelected ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(14, 165, 233, 0.2)',
+                  borderRadius: '10px',
+                  padding: '0.55rem 1rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  color: isSelected ? '#8b5cf6' : '#64748b',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                }}
+              >
+                {tag.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
