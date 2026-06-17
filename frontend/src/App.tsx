@@ -38,6 +38,18 @@ import { MyTrips } from './pages/MyTrips'
 import { Toaster } from 'react-hot-toast'
 import { FeedbackModal } from './components/common/FeedbackModal'
 import { MessageSquarePlus } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { trackPageView } from './utils/analytics'
+
+function RouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+
+  return null;
+}
 
 function App() {
   const { isAuthenticated, user, fetchMe } = useAuthStore()
@@ -67,6 +79,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <RouteTracker />
       {isAuthenticated && user?.role !== 'admin' && (
         <button
           onClick={() => setIsFeedbackOpen(true)}
