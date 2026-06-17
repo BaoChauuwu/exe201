@@ -1,1 +1,0 @@
-const fs = require('fs'); const content = fs.readFileSync('index.js', 'utf8'); const idx = content.indexOf('upload_preset'); const str = content.substring(idx - 20, idx + 40); console.log(str); console.log(Buffer.from(str).toString('hex'));
