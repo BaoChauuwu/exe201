@@ -46,6 +46,15 @@ export interface IBooking {
         accountNumber: string
         accountName: string
     }
+    isDisputed?: boolean
+    disputeReason?: string
+    disputeCreatedAt?: string
+    disputeStatus?: 'pending' | 'resolved_refunded' | 'resolved_paid' | 'resolved_partial' | ''
+    buddyDefenseReason?: string
+    buddyDefenseSubmittedAt?: string
+    disputeResolutionNote?: string
+    disputeRefundPercentage?: number
+    escrowStatus?: string
     created_at: string
     updated_at: string
 }
@@ -128,5 +137,17 @@ export const bookingApi = {
      * Tourist xác nhận hoàn thành chuyến đi để giải ngân tiền
      */
     touristCompleteTour: (id: string) =>
-        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/tourist-complete`)
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/tourist-complete`),
+
+    /**
+     * Buddy nộp đơn giải trình khiếu nại
+     */
+    submitBuddyDefense: (id: string, defenseReason: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/dispute/defense`, { defenseReason }),
+        
+    /**
+     * Admin giải quyết khiếu nại (có partial refund)
+     */
+    resolveDispute: (id: string, refundPercentage: number, resolutionNote: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/resolve-dispute`, { refundPercentage, resolutionNote })
 }

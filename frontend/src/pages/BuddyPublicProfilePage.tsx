@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
-import { MapPin, Star, Globe2, Clock, CheckCircle2, UserCheck, Calendar, ArrowLeft } from 'lucide-react';
+import { MapPin, Star, Globe2, Clock, CheckCircle2, UserCheck, Calendar, ArrowLeft, Shield, TrendingUp } from 'lucide-react';
 
 export const BuddyPublicProfilePage = () => {
     const { id } = useParams();
@@ -164,10 +164,45 @@ export const BuddyPublicProfilePage = () => {
                                     <Star size={16} fill="currentColor" /> {profile.rating > 0 ? profile.rating.toFixed(1) : 'Mới'}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Chuyến đi</span>
                                 <span style={{ color: 'var(--color-text)', fontWeight: 800, fontSize: '1.2rem' }}>{profile.totalCompletedTours || 0}</span>
                             </div>
+                            {/* Reliability Rate Badge - Tỷ lệ Hoàn thành Chuyến đi */}
+                            {(() => {
+                                const rate = profile.reliabilityRate ?? 100
+                                const total = profile.totalBookingsCount || 0
+                                const color = rate >= 90 ? '#10b981' : rate >= 70 ? '#f59e0b' : '#ef4444'
+                                const bgColor = rate >= 90 ? 'rgba(16,185,129,0.1)' : rate >= 70 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'
+                                const borderColor = rate >= 90 ? 'rgba(16,185,129,0.25)' : rate >= 70 ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)'
+                                const label = rate >= 90 ? 'Xuất sắc' : rate >= 70 ? 'Trung bình' : 'Cần cải thiện'
+                                return total > 0 ? (
+                                    <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                <Shield size={14} /> Tỷ lệ Hoàn thành
+                                            </div>
+                                            <span style={{ background: bgColor, color, border: `1px solid ${borderColor}`, padding: '2px 10px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 800 }}>
+                                                {label}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ flex: 1, height: '8px', background: 'var(--color-border)', borderRadius: '999px', overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${rate}%`, background: color, borderRadius: '999px', transition: 'width 0.8s ease' }} />
+                                            </div>
+                                            <span style={{ color, fontWeight: 900, fontSize: '1.1rem', minWidth: '48px', textAlign: 'right' }}>{rate}%</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
+                                            <TrendingUp size={12} />
+                                            Dựa trên {total} booking đã nhận
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+                                        <Shield size={13} /> Chưa có dữ liệu hoàn thành chuyến
+                                    </div>
+                                )
+                            })()}
                         </div>
 
                         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>

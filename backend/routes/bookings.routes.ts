@@ -10,7 +10,12 @@ import {
     getTouristBookingsController,
     getBuddyBookingsController,
     startBookingController,
-    touristCompleteBookingController
+    touristCompleteBookingController,
+    raiseDisputeController,
+    submitBuddyDefenseController,
+    resolveDisputeController,
+    getDisputesController,
+    releaseEscrowController
 } from '../controllers/bookings.controllers'
 import { accessTokenValidator } from '../middlewares/users.middlewares'
 import { 
@@ -94,6 +99,38 @@ bookingsRouter.get(
     '/buddy/:buddyId',
     getBuddyBookingsValidator,
     wrapRequestHandler(getBuddyBookingsController)
+)
+
+// 9. Tourist gửi khiếu nại (Dispute) - Đóng băng Escrow
+bookingsRouter.post(
+    '/:id/dispute',
+    accessTokenValidator,
+    wrapRequestHandler(raiseDisputeController)
+)
+
+// 9.5 Buddy gửi giải trình khiếu nại
+bookingsRouter.post(
+    '/:id/dispute/defense',
+    accessTokenValidator,
+    wrapRequestHandler(submitBuddyDefenseController)
+)
+
+// 10. Admin giải quyết khiếu nại
+bookingsRouter.post(
+    '/:id/resolve-dispute',
+    wrapRequestHandler(resolveDisputeController)
+)
+
+// 11. Admin xem danh sách khiếu nại
+bookingsRouter.get(
+    '/admin/disputes',
+    wrapRequestHandler(getDisputesController)
+)
+
+// 12. Admin giải ngân Escrow thủ công
+bookingsRouter.post(
+    '/admin/release-escrow',
+    wrapRequestHandler(releaseEscrowController)
 )
 
 export default bookingsRouter

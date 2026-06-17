@@ -206,7 +206,127 @@ export const touristCompleteBookingController = async (req: Request, res: Respon
     const { id } = req.params
     const booking = await bookingsService.touristCompleteBooking(id as string)
     return res.status(httpStatus.OK).json({
-        message: 'Xác nhận hoàn thành chuyến đi thành công! Thu nhập đã được giải ngân cho Buddy.',
+        message: 'Xác nhận hoàn thành chuyến đi thành công! Thu nhập sẽ được giải ngân cho Buddy sau 24 giờ.',
         result: booking
     })
+}
+
+// 11. Tourist gửi khiếu nại (Dispute)
+export const raiseDisputeController = async (req: Request, res: Response) => {
+    try {
+        const { user_id } = req.decoded_authorization as TokenPayload
+        const { id } = req.params
+        const { disputeReason } = req.body
+
+        if (!disputeReason || disputeReason.trim().length < 10) {
+            return res.status(httpStatus.BAD_REQUEST).json({
+                message: 'Vui lòng mô tả lý do khiếu nại chi tiết hơn (ít nhất 10 ký tự).'
+            })
+        }
+
+        const booking = await bookingsService.raiseDispute(id as string, user_id, disputeReason)
+
+        return res.status(httpStatus.OK).json({
+            message: 'Khiếu nại đã được ghi nhận. Admin sẽ xem xét và phản hồi trong vòng 24 giờ.',
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message || 'Không thể gửi khiếu nại.'
+        })
+    }
+}
+
+// 11.5 Buddy gửi giải trình
+export const submitBuddyDefenseController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const user_id = req.decoded_authorization?.user_id as string
+        const { defenseReason } = req.body
+
+        if (!defenseReason || defenseReason.trim().length < 10) {
+            return res.status(httpStatus.BAD_REQUEST).json({
+                message: 'Lời giải trình phải có ít nhất 10 ký tự.'
+            })
+        }
+
+        const booking = await bookingsService.submitBuddyDefense(id as string, user_id, defenseReason)
+        
+        return res.status(httpStatus.OK).json({
+            message: 'Đã gửi lời giải trình thành công.',
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+
+// 12. Admin giải quyết khiếu nại
+export const resolveDisputeController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const { refundPercentage, resolutionNote } = req.body
+
+        if (typeof refundPercentage !== 'number' || refundPercentage < 0 || refundPercentage > 100) {
+            return res.status(httpStatus.BAD_REQUEST).json({
+                message: 'Tỷ lệ hoàn tiền không hợp lệ (0-100).'
+            })
+        }
+
+        if (!resolutionNote || resolutionNote.trim().length < 10) {
+            return res.status(httpStatus.BAD_REQUEST).json({
+                message: 'Vui lòng nhập ghi chú phán quyết (tối thiểu 10 ký tự).'
+            })
+        }
+
+        const booking = await bookingsService.resolveDispute(id as string, refundPercentage, resolutionNote)
+
+        const message = refundPercentage === 100 
+            ? 'Đã hoàn tiền 100% cho Tourist.'
+            : refundPercentage === 0
+            ? 'Đã giải ngân 100% cho Buddy.'
+            : `Đã hoàn tiền ${refundPercentage}% cho Tourist và giải ngân ${100 - refundPercentage}% cho Buddy.`
+
+        return res.status(httpStatus.OK).json({
+            message: message + ' Phán quyết đã được gửi đến cả 2 bên.',
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+
+// 13. Admin lấy danh sách khiếu nại
+export const getDisputesController = async (req: Request, res: Response) => {
+    try {
+        const { status } = req.query
+        const disputes = await bookingsService.getDisputes(status as string | undefined)
+        return res.status(httpStatus.OK).json({
+            message: 'Lấy danh sách khiếu nại thành công.',
+            result: disputes
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            message: error.message || 'Không thể lấy danh sách khiếu nại.'
+        })
+    }
+}
+
+// 14. Admin kích hoạt giải ngân Escrow thủ công
+export const releaseEscrowController = async (req: Request, res: Response) => {
+    try {
+        const result = await bookingsService.releaseEscrowPayouts()
+        return res.status(httpStatus.OK).json({
+            message: `Giải ngân Escrow hoàn tất: ${result.releasedCount}/${result.totalPending} booking được xử lý.`,
+            result
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            message: error.message || 'Không thể thực hiện giải ngân Escrow.'
+        })
+    }
 }

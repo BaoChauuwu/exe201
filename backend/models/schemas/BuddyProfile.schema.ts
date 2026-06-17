@@ -14,6 +14,9 @@ export interface IBuddyProfile {
     rating?: number
     totalReviews?: number
     totalCompletedTours?: number
+    reliabilityRate?: number
+    totalBookingsCount?: number
+    completedBookingsCount?: number
     payoutMethod?: {
         bankCode: string
         accountNumber: string
@@ -43,6 +46,9 @@ export const buddyProfileSchema = new Schema<IBuddyProfile>(
         rating: { type: Number, default: 0 },
         totalReviews: { type: Number, default: 0 },
         totalCompletedTours: { type: Number, default: 0 },
+        reliabilityRate: { type: Number, default: 100 },
+        totalBookingsCount: { type: Number, default: 0 },
+        completedBookingsCount: { type: Number, default: 0 },
         payoutMethod: {
             bankCode: { type: String },
             accountNumber: { type: String },

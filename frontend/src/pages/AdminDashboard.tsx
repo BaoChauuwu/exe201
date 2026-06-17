@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, BarChart2, CalendarClock, Compass } from 'lucide-react';
+import { ShieldCheck, DollarSign, UserCheck, Search, Check, X, FileText, Activity, Users, Trash2, BarChart2, CalendarClock, Compass, AlertTriangle, ShieldAlert, MapPin } from 'lucide-react';
 
 import { socket } from '../socket';
 import { toast as hotToast } from 'react-hot-toast';
@@ -41,11 +41,22 @@ export const AdminDashboard = () => {
     const [experiences, setExperiences] = useState<any[]>([]);
 
     const [bookings, setBookings] = useState<any[]>([]);
+    const [disputes, setDisputes] = useState<any[]>([]);
+    const [activeSOS, setActiveSOS] = useState<any[]>([]);
+    const [resolvedSOS, setResolvedSOS] = useState<any[]>([]);
     const [bookingStatusFilter, setBookingStatusFilter] = useState('all');
-    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips' | 'feedbacks' | 'experiences'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'ekyc' | 'payouts' | 'users' | 'trips' | 'feedbacks' | 'experiences' | 'disputes' | 'sos'>('overview');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [toast, setToast] = useState('');
+    
+    // States for Dispute Resolution
+    const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
+    const [resolveBooking, setResolveBooking] = useState<any>(null);
+    const [resolveRefundPercentage, setResolveRefundPercentage] = useState<number>(100);
+    const [resolveNote, setResolveNote] = useState('');
+    const [isResolving, setIsResolving] = useState(false);
+
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
@@ -68,10 +79,17 @@ export const AdminDashboard = () => {
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/users', cfg).then(r => setUsers(r.data.data || [])).catch(console.error);
 
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/bookings', cfg).then(r => setBookings(r.data.data || [])).catch(console.error);
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/bookings/admin/disputes', cfg).then(r => setDisputes(r.data.result || [])).catch(console.error);
         
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/feedbacks/admin', cfg).then(r => setFeedbacks(r.data.result || [])).catch(console.error);
         
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/experiences/pending', cfg).then(r => setExperiences(r.data.data || [])).catch(console.error);
+
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/safety/sos/admin', cfg)
+            .then(r => {
+                setActiveSOS(r.data.activeSOS || []);
+                setResolvedSOS(r.data.resolvedSOS || []);
+            }).catch(console.error);
     };
 
     useEffect(() => { 
@@ -137,9 +155,16 @@ export const AdminDashboard = () => {
         };
 
         socket.on('receive_sos', handleSos);
+        socket.on('sos_alert', (data) => {
+            handleSos(data);
+            fetchAll(); // Refresh SOS list
+        });
+        socket.on('sos_resolved_notification', fetchAll); // Refresh SOS list when another admin resolves
 
         return () => {
             socket.off('receive_sos', handleSos);
+            socket.off('sos_alert');
+            socket.off('sos_resolved_notification');
         };
     }, []);
 
@@ -161,6 +186,57 @@ export const AdminDashboard = () => {
         await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/experiences/approve', { experienceId: id, status }, cfg).catch(console.error);
         showToast(`Tour ${status === 'approved' ? 'đã duyệt' : 'đã từ chối'} thành công!`);
         fetchAll();
+    };
+
+    const handleOpenResolveModal = (dispute: any) => {
+        setResolveBooking(dispute);
+        setResolveRefundPercentage(100);
+        setResolveNote('');
+        setIsResolveModalOpen(true);
+    };
+
+    const submitResolveDispute = async () => {
+        if (!resolveBooking) return;
+        if (resolveRefundPercentage < 0 || resolveRefundPercentage > 100) {
+            showToast('Lỗi: Tỷ lệ hoàn tiền phải từ 0-100%');
+            return;
+        }
+        if (!resolveNote.trim() || resolveNote.trim().length < 10) {
+            showToast('Lỗi: Ghi chú phán quyết phải có ít nhất 10 ký tự');
+            return;
+        }
+
+        const msg = `Bạn chuẩn bị ra phán quyết:\n- Hoàn ${resolveRefundPercentage}% cho Tourist\n- Giải ngân ${100 - resolveRefundPercentage}% cho Buddy\n\nHành động này không thể hoàn tác. Tiếp tục?`;
+        if (!window.confirm(msg)) return;
+
+        setIsResolving(true);
+        try {
+            await axios.post(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/bookings/${resolveBooking._id}/resolve-dispute`,
+                { refundPercentage: resolveRefundPercentage, resolutionNote: resolveNote },
+                cfg
+            );
+            showToast('✅ Đã giải quyết khiếu nại thành công!');
+            setIsResolveModalOpen(false);
+            setResolveBooking(null);
+            fetchAll();
+        } catch (err: any) {
+            showToast('Lỗi: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setIsResolving(false);
+        }
+    };
+
+    const resolveSOSAlert = async (bookingId: string) => {
+        const note = window.prompt('Nhập ghi chú xử lý (tùy chọn):', 'Đã xử lý an toàn');
+        if (note === null) return;
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/safety/sos/${bookingId}/resolve`, { note }, cfg);
+            showToast('✅ Đã xử lý SOS thành công!');
+            fetchAll();
+        } catch (err: any) {
+            showToast('Lỗi: ' + (err.response?.data?.message || err.message));
+        }
     };
 
 
@@ -272,6 +348,14 @@ export const AdminDashboard = () => {
                         <button onClick={() => { setActiveTab('feedbacks'); setSearchQuery(''); }} style={tabBtn(activeTab === 'feedbacks', '#ec4899')}>
                             <FileText size={16} /> Feedbacks
                             <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{feedbacks.length}</span>
+                        </button>
+                        <button onClick={() => { setActiveTab('disputes'); setSearchQuery(''); }} style={tabBtn(activeTab === 'disputes', '#ef4444')}>
+                            <AlertTriangle size={16} /> Khiếu nại
+                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem' }}>{disputes.filter(d => d.disputeStatus === 'pending').length}</span>
+                        </button>
+                        <button onClick={() => { setActiveTab('sos'); setSearchQuery(''); }} style={{ ...tabBtn(activeTab === 'sos', '#dc2626'), animation: activeSOS.length > 0 ? 'pulse 2s infinite' : 'none' }}>
+                            <ShieldAlert size={16} /> SOS
+                            <span style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem', border: activeSOS.length > 0 ? '1px solid white' : 'none' }}>{activeSOS.length}</span>
                         </button>
                     </div>
                 </div>
@@ -998,6 +1082,195 @@ export const AdminDashboard = () => {
                             </div>
                         );
                     })()}
+
+                    {/* ── TAB: DISPUTES ── */}
+                    {activeTab === 'disputes' && (
+                        <div style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <AlertTriangle size={18} style={{ color: '#ef4444' }} /> Quản lý Khiếu Nại ({disputes.length})
+                                    </h3>
+                                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                        {disputes.filter(d => d.disputeStatus === 'pending').length} khiếu nại đang chờ xử lý
+                                    </p>
+                                </div>
+                            </div>
+
+                            {disputes.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--color-text-muted)' }}>
+                                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+                                    <p>Không có khiếu nại nào. Nền tảng đang hoạt động tốt!</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {disputes.map((dispute: any) => {
+                                        const isPending = dispute.disputeStatus === 'pending';
+                                        const statusColor = isPending ? '#f59e0b' : dispute.disputeStatus === 'resolved_refunded' ? '#10b981' : '#6366f1';
+                                        const statusLabel = isPending ? 'Đang chờ xử lý' : dispute.disputeStatus === 'resolved_refunded' ? 'Đã hoàn tiền Tourist' : 'Đã giải ngân Buddy';
+                                        const tourist = dispute.touristId;
+                                        const buddy = dispute.buddyId;
+                                        const exp = dispute.experienceId;
+                                        return (
+                                            <div key={dispute._id} style={{ background: 'var(--color-surface)', border: `1px solid ${isPending ? 'rgba(239,68,68,0.3)' : 'var(--color-border)'}`, borderRadius: '16px', padding: '1.25rem', boxShadow: isPending ? '0 0 0 2px rgba(239,68,68,0.08)' : 'none' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                                    <div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>{dispute.bookingCode}</span>
+                                                            <span style={{ ...badgeStyle(statusColor) }}>{statusLabel}</span>
+                                                        </div>
+                                                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{exp?.title || 'Tour'}</div>
+                                                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                                            Tourist: <strong>{tourist?.name}</strong> → Buddy: <strong>{buddy?.name}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                                                        <div>Tổng tiền: <strong style={{ color: 'var(--color-primary)' }}>{(dispute.totalPrice || 0).toLocaleString()} ₫</strong></div>
+                                                        <div>Gửi lúc: {dispute.disputeCreatedAt ? new Date(dispute.disputeCreatedAt).toLocaleString('vi-VN') : 'N/A'}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '0.75rem', fontSize: '0.82rem', lineHeight: 1.6 }}>
+                                                        <div style={{ fontWeight: 700, color: '#b91c1c', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <AlertTriangle size={13} /> Lời khai của Tourist:
+                                                        </div>
+                                                        <div style={{ color: '#7f1d1d' }}>{dispute.disputeReason || 'Không có chi tiết'}</div>
+                                                    </div>
+
+                                                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '0.75rem', fontSize: '0.82rem', lineHeight: 1.6 }}>
+                                                        <div style={{ fontWeight: 700, color: '#15803d', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <ShieldCheck size={13} /> Lời bào chữa của Buddy:
+                                                        </div>
+                                                        <div style={{ color: '#166534' }}>
+                                                            {dispute.buddyDefenseReason 
+                                                                ? dispute.buddyDefenseReason 
+                                                                : <span style={{ fontStyle: 'italic', color: '#15803d80' }}>Buddy chưa gửi giải trình.</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {isPending && (
+                                                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            onClick={() => handleOpenResolveModal(dispute)}
+                                                            style={{ padding: '0.65rem 1.5rem', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}
+                                                        >
+                                                            ⚖️ Đưa ra phán quyết
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {!isPending && (
+                                                    <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '10px', padding: '0.85rem', marginTop: '0.5rem' }}>
+                                                        <div style={{ fontSize: '0.8rem', color: statusColor, fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            ✅ Quyết định của Admin ({dispute.disputeRefundPercentage}% Hoàn Tourist / {100 - (dispute.disputeRefundPercentage || 0)}% Giải ngân Buddy):
+                                                        </div>
+                                                        <div style={{ fontSize: '0.82rem', color: '#334155', fontStyle: 'italic' }}>
+                                                            "{dispute.disputeResolutionNote || 'Không có ghi chú'}"
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── TAB: SOS ALERTS ── */}
+                    {activeTab === 'sos' && (
+                        <div style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#dc2626' }}>
+                                        <ShieldAlert size={18} /> Cảnh báo Khẩn cấp SOS ({activeSOS.length})
+                                    </h3>
+                                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                        Các cuộc gọi khẩn cấp đang cần xử lý ngay lập tức
+                                    </p>
+                                </div>
+                            </div>
+
+                            {activeSOS.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--color-text-muted)' }}>
+                                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛡️</div>
+                                    <p>Không có cuộc gọi khẩn cấp nào. Mọi thứ đang an toàn!</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                                    <h4 style={{ margin: 0, color: '#dc2626', fontSize: '0.9rem' }}>ĐANG CHỜ XỬ LÝ:</h4>
+                                    {activeSOS.map((sos: any) => (
+                                        <div key={sos._id} style={{ background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: '16px', padding: '1.25rem', boxShadow: '0 0 15px rgba(220,38,38,0.2)', position: 'relative', overflow: 'hidden' }}>
+                                            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '4px', background: '#dc2626' }} />
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                                <div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                        <span style={{ background: '#dc2626', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, animation: 'pulse 1.5s infinite' }}>
+                                                            SOS KHẨN CẤP
+                                                        </span>
+                                                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 700 }}>{sos.bookingCode}</span>
+                                                    </div>
+                                                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#991b1b', marginBottom: '0.25rem' }}>
+                                                        Người gửi: {sos.emergencyRole === 'tourist' ? 'Khách du lịch' : sos.emergencyRole === 'buddy' ? 'Buddy' : 'Không rõ'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#7f1d1d' }}>
+                                                        <div><strong>Tourist:</strong> {sos.touristId?.name} ({sos.touristId?.phone})</div>
+                                                        <div><strong>Buddy:</strong> {sos.buddyId?.name} ({sos.buddyId?.phone})</div>
+                                                    </div>
+                                                </div>
+                                                <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#991b1b' }}>
+                                                    <div>Gửi lúc: <strong style={{ color: '#dc2626' }}>{new Date(sos.emergencyTriggeredAt).toLocaleString('vi-VN')}</strong></div>
+                                                    {sos.emergencyLocation && (
+                                                        <a href={`https://www.google.com/maps?q=${sos.emergencyLocation.lat},${sos.emergencyLocation.lng}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', fontWeight: 700, marginTop: '0.5rem', textDecoration: 'none' }}>
+                                                            <MapPin size={14} /> Xem trên Google Maps
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => resolveSOSAlert(sos._id)}
+                                                    style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #16a34a, #15803d)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}
+                                                >
+                                                    <Check size={16} /> Đã Xử Lý An Toàn
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {resolvedSOS.length > 0 && (
+                                <div>
+                                    <h4 style={{ margin: '0 0 1rem', color: '#059669', fontSize: '0.9rem', borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem' }}>LỊCH SỬ ĐÃ XỬ LÝ (GẦN ĐÂY):</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {resolvedSOS.map((sos: any) => (
+                                            <div key={sos._id} style={{ background: 'var(--color-surface)', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '1rem', opacity: 0.8 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                                                    <div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                                            <span style={{ color: '#059669', fontSize: '0.7rem', fontWeight: 800 }}>✓ ĐÃ XỬ LÝ</span>
+                                                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{sos.bookingCode}</span>
+                                                        </div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                                            Giải quyết lúc: {new Date(sos.emergencyResolvedAt).toLocaleString('vi-VN')}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#059669', fontStyle: 'italic', maxWidth: '300px', textAlign: 'right' }}>
+                                                        Ghi chú: {sos.emergencyResolvedNote || 'Không có ghi chú'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                 </div>
             </div>
 
@@ -1012,6 +1285,101 @@ export const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+        {/* ── MODAL PHÁN QUYẾT KHIẾU NẠI ── */}
+        {isResolveModalOpen && resolveBooking && (
+            <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+                zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+            }}>
+                <div style={{
+                    background: 'white', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '550px',
+                    border: '1px solid rgba(59,130,246,0.15)', position: 'relative', boxSizing: 'border-box'
+                }}>
+                    <button
+                        onClick={() => { setIsResolveModalOpen(false); setResolveBooking(null); }}
+                        style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                        <X size={15} />
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <AlertTriangle size={24} style={{ color: '#3b82f6' }} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>Đưa Ra Phán Quyết</h3>
+                            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem', margin: '2px 0 0' }}>Mã booking: {resolveBooking.bookingCode}</p>
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+                            Phân bổ số tiền ({resolveBooking.totalPrice.toLocaleString()} ₫)
+                        </label>
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
+                                <span style={{ color: '#ef4444' }}>Hoàn Tourist: {resolveRefundPercentage}%</span>
+                                <span style={{ color: '#10b981' }}>Giải ngân Buddy: {100 - resolveRefundPercentage}%</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="0" max="100" step="5"
+                                value={resolveRefundPercentage}
+                                onChange={(e) => setResolveRefundPercentage(Number(e.target.value))}
+                                style={{ width: '100%', cursor: 'pointer' }}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', gap: '8px' }}>
+                                <button onClick={() => setResolveRefundPercentage(100)} style={{ flex: 1, padding: '0.5rem', background: resolveRefundPercentage === 100 ? '#ef4444' : '#fee2e2', color: resolveRefundPercentage === 100 ? 'white' : '#b91c1c', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>100% Tourist</button>
+                                <button onClick={() => setResolveRefundPercentage(50)} style={{ flex: 1, padding: '0.5rem', background: resolveRefundPercentage === 50 ? '#3b82f6' : '#dbeafe', color: resolveRefundPercentage === 50 ? 'white' : '#1d4ed8', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>50/50 Cưa đôi</button>
+                                <button onClick={() => setResolveRefundPercentage(0)} style={{ flex: 1, padding: '0.5rem', background: resolveRefundPercentage === 0 ? '#10b981' : '#d1fae5', color: resolveRefundPercentage === 0 ? 'white' : '#047857', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>100% Buddy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+                            Ghi chú giải thích phán quyết (Bắt buộc)
+                        </label>
+                        <textarea
+                            value={resolveNote}
+                            onChange={e => setResolveNote(e.target.value)}
+                            placeholder="Giải thích lý do dẫn đến phán quyết này để cả 2 bên cùng phục..."
+                            rows={4}
+                            style={{
+                                width: '100%', padding: '0.85rem', borderRadius: '12px',
+                                border: '1.5px solid #93c5fd', outline: 'none',
+                                fontSize: '0.85rem', lineHeight: 1.6, resize: 'vertical',
+                                fontFamily: 'inherit', boxSizing: 'border-box'
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <button
+                            onClick={() => { setIsResolveModalOpen(false); setResolveBooking(null); }}
+                            style={{ flex: 1, padding: '0.85rem', background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: '12px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', color: 'var(--color-text)' }}
+                        >
+                            Hủy bỏ
+                        </button>
+                        <button
+                            onClick={submitResolveDispute}
+                            disabled={isResolving || resolveNote.trim().length < 10}
+                            style={{
+                                flex: 2, padding: '0.85rem',
+                                background: resolveNote.trim().length >= 10 ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : '#e2e8f0',
+                                border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.95rem',
+                                color: resolveNote.trim().length >= 10 ? 'white' : '#94a3b8',
+                                cursor: resolveNote.trim().length >= 10 ? 'pointer' : 'not-allowed',
+                                boxShadow: resolveNote.trim().length >= 10 ? '0 4px 15px rgba(59,130,246,0.3)' : 'none'
+                            }}
+                        >
+                            {isResolving ? 'Đang xử lý...' : 'Xác nhận Phán Quyết'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 };
