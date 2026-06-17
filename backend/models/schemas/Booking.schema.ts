@@ -27,16 +27,36 @@ export interface IBooking {
     status?: string // 'pending', 'confirmed', 'ongoing', 'completed', 'cancelled'
     cancelReason?: string
     emergencyTriggeredAt?: Date
+    emergencyTriggeredBy?: mongoose.Types.ObjectId
+    emergencyRole?: string
     emergencyLocation?: {
         lat: number
         lng: number
         timestamp: Date
     }
+    emergencyResolvedAt?: Date
+    emergencyResolvedNote?: string
     refundBankInfo?: {
         bankCode: string
         accountNumber: string
         accountName: string
     }
+    // Dispute (Khiếu nại)
+    isDisputed?: boolean
+    disputeReason?: string
+    disputeCreatedAt?: Date
+    disputeStatus?: string // 'pending', 'resolved_refunded', 'resolved_paid', 'resolved_partial'
+    buddyDefenseReason?: string
+    buddyDefenseSubmittedAt?: Date
+    disputeResolutionNote?: string
+    disputeRefundPercentage?: number
+    // Insurance (Bảo hiểm UniTravel Care)
+    insurancePolicyNumber?: string
+    insuranceStatus?: string // 'inactive', 'active', 'expired'
+    // Share Tracking
+    shareTrackingToken?: string
+    // Escrow 24h payout
+    payoutReleasedAt?: Date
     created_at?: Date
     updated_at?: Date
 }
@@ -72,11 +92,31 @@ export const bookingSchema = new Schema<IBooking>(
         status: { type: String, default: 'pending' },
         cancelReason: { type: String, default: '' },
         emergencyTriggeredAt: { type: Date },
+        emergencyTriggeredBy: { type: Schema.Types.ObjectId, ref: 'Users' },
+        emergencyRole: { type: String, enum: ['tourist', 'buddy', 'unknown'] },
         emergencyLocation: {
             lat: { type: Number },
             lng: { type: Number },
             timestamp: { type: Date }
-        }
+        },
+        emergencyResolvedAt: { type: Date },
+        emergencyResolvedNote: { type: String, default: '' },
+        // Dispute fields
+        isDisputed: { type: Boolean, default: false },
+        disputeReason: { type: String, default: '' },
+        disputeCreatedAt: { type: Date },
+        disputeStatus: { type: String, enum: ['', 'pending', 'resolved_refunded', 'resolved_paid', 'resolved_partial'], default: '' },
+        buddyDefenseReason: { type: String, default: '' },
+        buddyDefenseSubmittedAt: { type: Date },
+        disputeResolutionNote: { type: String, default: '' },
+        disputeRefundPercentage: { type: Number, min: 0, max: 100 },
+        // Insurance fields
+        insurancePolicyNumber: { type: String, default: '' },
+        insuranceStatus: { type: String, enum: ['inactive', 'active', 'expired'], default: 'inactive' },
+        // Share tracking token
+        shareTrackingToken: { type: String, default: '' },
+        // Escrow 24h payout release time
+        payoutReleasedAt: { type: Date }
     },
     {
         timestamps: {

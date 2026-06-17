@@ -7,7 +7,7 @@ import axios from 'axios';
 import { 
   Calendar, Clock, Users, CheckCircle2, 
   ChevronDown, ChevronUp, MessageCircle, 
-  AlertTriangle, Shield, CreditCard, Landmark, X, Star
+  AlertTriangle, Shield, CreditCard, Landmark, X, Star, ShieldCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -80,6 +80,77 @@ export const MyBookingsPage = () => {
   const [cancelBookingItem, setCancelBookingItem] = useState<IBooking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+
+  // States cho modal Khiếu nại (Dispute)
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [disputeBooking, setDisputeBooking] = useState<IBooking | null>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeLoading, setDisputeLoading] = useState(false);
+
+  // States cho modal Giải trình (Buddy Defense)
+  const [isDefenseModalOpen, setIsDefenseModalOpen] = useState(false);
+  const [defenseBooking, setDefenseBooking] = useState<IBooking | null>(null);
+  const [defenseReason, setDefenseReason] = useState('');
+  const [defenseLoading, setDefenseLoading] = useState(false);
+
+  const handleRaiseDispute = async () => {
+    if (!disputeBooking) return;
+    if (!disputeReason.trim() || disputeReason.trim().length < 10) {
+      toast.error('Vui lòng mô tả lý do khiếu nại chi tiết hơn (tối thiểu 10 ký tự).');
+      return;
+    }
+    setDisputeLoading(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      await axios.post(`${API_URL}/bookings/${disputeBooking._id}/dispute`, { disputeReason }, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      toast.success('✅ Khiếu nại đã được ghi nhận! Admin sẽ xử lý trong vòng 24 giờ.');
+      setIsDisputeModalOpen(false);
+      setDisputeBooking(null);
+      setDisputeReason('');
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể gửi khiếu nại.');
+    } finally {
+      setDisputeLoading(false);
+    }
+  };
+
+  const handleSubmitDefense = async () => {
+    if (!defenseBooking) return;
+    if (!defenseReason.trim() || defenseReason.trim().length < 10) {
+      toast.error('Vui lòng nhập lời giải trình chi tiết hơn (tối thiểu 10 ký tự).');
+      return;
+    }
+    setDefenseLoading(true);
+    try {
+      await bookingApi.submitBuddyDefense(defenseBooking._id, defenseReason);
+      toast.success('✅ Đã gửi lời giải trình thành công! Admin sẽ xem xét lại vụ việc.');
+      setIsDefenseModalOpen(false);
+      setDefenseBooking(null);
+      setDefenseReason('');
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể gửi giải trình.');
+    } finally {
+      setDefenseLoading(false);
+    }
+  };
+
+  // const handleShareTracking = (booking: IBooking) => {
+  //   const token = (booking as any).shareTrackingToken;
+  //   if (!token) {
+  //     toast.error('Chưa có token chia sẻ. Buddy cần bắt đầu chuyến đi trước.');
+  //     return;
+  //   }
+  //   const link = `${window.location.origin}/track/public?token=${token}`;
+  //   navigator.clipboard.writeText(link).then(() => {
+  //     toast.success('✅ Đã sao chép link chia sẻ hành trình! Gửi cho người thân theo dõi nhé.');
+  //   }).catch(() => {
+  //     toast.error('Không thể sao chép. Link: ' + link);
+  //   });
+  // };
 
   const fetchReviewsForCompletedBookings = async (completedList: IBooking[]) => {
     const reviewsMap: Record<string, IReview[]> = {};
@@ -633,6 +704,16 @@ export const MyBookingsPage = () => {
                               </Link>
                             )}
 
+                            {/* [ALL] - Raise Dispute */}
+                            {['confirmed', 'ongoing', 'completed'].includes(booking.status) && booking.disputeStatus !== 'pending' && booking.escrowStatus !== 'released' && (
+                              <button 
+                                onClick={() => { setDisputeBooking(booking); setIsDisputeModalOpen(true); }}
+                                style={{ padding: '0.55rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                🚩 Khiếu nại
+                              </button>
+                            )}
+
                             {/* [BUDDY ONLY] - Hoàn thành chuyến đi (Fallback/Admin complete) */}
                             {isBuddy && hasPaid && ['confirmed', 'ongoing'].includes(booking.status) && (() => {
                               const ended = checkIsTourCompleted(booking);
@@ -674,6 +755,52 @@ export const MyBookingsPage = () => {
                             )}
 
                           </div>
+
+                          {/* DISPUTE STATUS BANNER */}
+                          {booking.isDisputed && (
+                            <div style={{ marginTop: '1.5rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', overflow: 'hidden' }}>
+                              <div style={{ padding: '0.75rem 1.25rem', background: '#fee2e2', borderBottom: '1px solid #fecaca', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontWeight: 800, fontSize: '0.9rem' }}>
+                                  <AlertTriangle size={16} /> 
+                                  {booking.disputeStatus === 'pending' ? 'Khiếu nại đang chờ xử lý' : 'Khiếu nại đã được giải quyết'}
+                                </div>
+                                {booking.disputeStatus === 'pending' && isBuddy && !booking.buddyDefenseReason && (
+                                  <button
+                                    onClick={() => { setDefenseBooking(booking); setIsDefenseModalOpen(true); }}
+                                    style={{ padding: '0.4rem 0.85rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}
+                                  >
+                                    Nộp giải trình
+                                  </button>
+                                )}
+                              </div>
+                              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.85rem' }}>
+                                <div>
+                                  <strong style={{ color: '#991b1b' }}>Lý do từ Tourist:</strong>
+                                  <div style={{ marginTop: '4px', color: '#475569', background: 'rgba(255,255,255,0.7)', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid #ef4444' }}>
+                                    {booking.disputeReason}
+                                  </div>
+                                </div>
+
+                                {booking.buddyDefenseReason && (
+                                  <div>
+                                    <strong style={{ color: '#0369a1' }}>Giải trình từ Buddy:</strong>
+                                    <div style={{ marginTop: '4px', color: '#475569', background: 'rgba(255,255,255,0.7)', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid #0ea5e9' }}>
+                                      {booking.buddyDefenseReason}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {['resolved_refunded', 'resolved_paid', 'resolved_partial'].includes(booking.disputeStatus || '') && booking.disputeResolutionNote && (
+                                  <div>
+                                    <strong style={{ color: '#059669' }}>Phán quyết của Admin ({booking.disputeRefundPercentage}% Hoàn Tourist / {100 - (booking.disputeRefundPercentage || 0)}% Giải ngân Buddy):</strong>
+                                    <div style={{ marginTop: '4px', color: '#064e3b', background: '#d1fae5', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                                      {booking.disputeResolutionNote}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                         </div>
 
@@ -1188,6 +1315,162 @@ export const MyBookingsPage = () => {
           100% { top: 0%; }
         }
       `}</style>
+
+      {/* ── MODAL KHIẾU NẠI (DISPUTE) ── */}
+      {isDisputeModalOpen && disputeBooking && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '1rem', boxSizing: 'border-box'
+        }}>
+          <div style={{
+            background: '#ffffff', borderRadius: '24px', width: '100%', maxWidth: '480px',
+            padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            border: '1px solid rgba(239,68,68,0.15)', position: 'relative', boxSizing: 'border-box'
+          }}>
+            <button
+              onClick={() => { setIsDisputeModalOpen(false); setDisputeReason(''); }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <X size={15} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertTriangle size={22} style={{ color: '#ef4444' }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>Gửi Khiếu Nại Chuyến Đi</h3>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', margin: '2px 0 0' }}>Mã booking: {disputeBooking.bookingCode}</p>
+              </div>
+            </div>
+
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#b91c1c', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              ⚠️ <strong>Lưu ý:</strong> Sau khi gửi khiếu nại, khoản tiền thanh toán sẽ bị đóng băng và không được giải ngân cho Buddy cho đến khi Admin xử lý xong. Chỉ khiếu nại khi bạn thực sự gặp vấn đề nghiêm trọng.
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
+                Mô tả vấn đề bạn gặp phải *
+              </label>
+              <textarea
+                value={disputeReason}
+                onChange={e => setDisputeReason(e.target.value)}
+                placeholder="Ví dụ: Buddy không đến đúng giờ, không dẫn đúng lịch trình đã hứa, có hành vi không phù hợp... (tối thiểu 10 ký tự)"
+                rows={5}
+                style={{
+                  width: '100%', padding: '0.85rem', borderRadius: '12px',
+                  border: '1.5px solid #fca5a5', outline: 'none',
+                  fontSize: '0.85rem', lineHeight: 1.6, resize: 'vertical',
+                  fontFamily: 'inherit', boxSizing: 'border-box', background: '#fff'
+                }}
+              />
+              <div style={{ fontSize: '0.72rem', color: disputeReason.length < 10 ? '#ef4444' : '#10b981', marginTop: '4px', textAlign: 'right' }}>
+                {disputeReason.length}/10 ký tự tối thiểu
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => { setIsDisputeModalOpen(false); setDisputeReason(''); }}
+                style={{ flex: 1, padding: '0.85rem', background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: 'var(--color-text)' }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleRaiseDispute}
+                disabled={disputeLoading || disputeReason.trim().length < 10}
+                style={{
+                  flex: 2, padding: '0.85rem',
+                  background: disputeReason.trim().length >= 10 ? 'linear-gradient(135deg, #ef4444, #dc2626)' : '#e2e8f0',
+                  border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.9rem',
+                  color: disputeReason.trim().length >= 10 ? 'white' : '#94a3b8',
+                  cursor: disputeReason.trim().length >= 10 ? 'pointer' : 'not-allowed',
+                  boxShadow: disputeReason.trim().length >= 10 ? '0 4px 15px rgba(239,68,68,0.3)' : 'none'
+                }}
+              >
+                {disputeLoading ? 'Đang gửi...' : '🚩 Gửi Khiếu Nại'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL GIẢI TRÌNH (DEFENSE) ── */}
+      {isDefenseModalOpen && defenseBooking && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+          zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '500px',
+            border: '1px solid rgba(14,165,233,0.15)', position: 'relative', boxSizing: 'border-box'
+          }}>
+            <button
+              onClick={() => { setIsDefenseModalOpen(false); setDefenseReason(''); }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <X size={15} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(14,165,233,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShieldCheck size={22} style={{ color: '#0ea5e9' }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>Gửi Giải Trình</h3>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', margin: '2px 0 0' }}>Mã booking: {defenseBooking.bookingCode}</p>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+                Lời giải thích của bạn *
+              </label>
+              <textarea
+                value={defenseReason}
+                onChange={e => setDefenseReason(e.target.value)}
+                placeholder="Vui lòng cung cấp sự việc theo góc nhìn của bạn để Admin có cái nhìn khách quan nhất... (tối thiểu 10 ký tự)"
+                rows={5}
+                style={{
+                  width: '100%', padding: '0.85rem', borderRadius: '12px',
+                  border: '1.5px solid #bae6fd', outline: 'none',
+                  fontSize: '0.85rem', lineHeight: 1.6, resize: 'vertical',
+                  fontFamily: 'inherit', boxSizing: 'border-box', background: '#f0f9ff'
+                }}
+              />
+              <div style={{ fontSize: '0.72rem', color: defenseReason.length < 10 ? '#ef4444' : '#10b981', marginTop: '4px', textAlign: 'right' }}>
+                {defenseReason.length}/10 ký tự tối thiểu
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => { setIsDefenseModalOpen(false); setDefenseReason(''); }}
+                style={{ flex: 1, padding: '0.85rem', background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: 'var(--color-text)' }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSubmitDefense}
+                disabled={defenseLoading || defenseReason.trim().length < 10}
+                style={{
+                  flex: 2, padding: '0.85rem',
+                  background: defenseReason.trim().length >= 10 ? 'linear-gradient(135deg, #0ea5e9, #0284c7)' : '#e2e8f0',
+                  border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.9rem',
+                  color: defenseReason.trim().length >= 10 ? 'white' : '#94a3b8',
+                  cursor: defenseReason.trim().length >= 10 ? 'pointer' : 'not-allowed',
+                  boxShadow: defenseReason.trim().length >= 10 ? '0 4px 15px rgba(14,165,233,0.3)' : 'none'
+                }}
+              >
+                {defenseLoading ? 'Đang gửi...' : 'Gửi Giải Trình'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

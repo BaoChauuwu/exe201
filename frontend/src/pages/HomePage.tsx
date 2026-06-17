@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, Star, Shield,
-  Compass, ArrowRight, Zap, Heart, MapPin, Clock
+  Compass, ArrowRight, Zap, Heart, MapPin, Clock, Sparkles
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import Navbar from '../components/layout/Navbar'
@@ -246,6 +246,145 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* ====== SMART MATCH BANNER ====== */}
+      <section style={{ 
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', 
+        color: 'white',
+        padding: '4.5rem 0',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Glow orbs */}
+        <div style={{
+          position: 'absolute',
+          top: '-10%', right: '-10%',
+          width: '300px', height: '300px',
+          background: 'radial-gradient(circle, rgba(14,165,233,0.25) 0%, transparent 70%)',
+          borderRadius: '50%',
+          filter: 'blur(50px)',
+          pointerEvents: 'none'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-10%', left: '-10%',
+          width: '250px', height: '250px',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)',
+          borderRadius: '50%',
+          filter: 'blur(50px)',
+          pointerEvents: 'none'
+        }} />
+
+        <div className='container' style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+            gap: '2.5rem',
+            alignItems: 'center'
+          }}>
+            <div>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(14, 165, 233, 0.15)',
+                border: '1px solid rgba(14, 165, 233, 0.4)',
+                borderRadius: '999px',
+                padding: '0.4rem 1.1rem',
+                color: '#38bdf8',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '1.25rem'
+              }}>
+                <Sparkles size={14} /> Tính năng mới
+              </span>
+              <h2 style={{ 
+                fontSize: '2.25rem', 
+                fontWeight: 900, 
+                lineHeight: 1.2, 
+                marginBottom: '1rem',
+                letterSpacing: '-0.02em'
+              }}>
+                Tìm kiếm Tour Đậm Chất Bản Địa với <span style={{ background: 'linear-gradient(135deg, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Smart Match</span>
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+                Thay vì mò mẫm qua hàng trăm bộ lọc tẻ nhạt, hãy trả lời 5 câu hỏi nhanh để thuật toán đối sánh của chúng tôi quét qua ngân sách, sở thích, ca rảnh và "tần số" vibe của các Local Buddy. Nhận ngay các tour khớp đến từng %!
+              </p>
+              <Link to='/smart-match'>
+                <button className='btn btn-primary btn-lg' style={{ 
+                  boxShadow: '0 8px 30px rgba(14, 165, 233, 0.35)',
+                  padding: '1rem 2rem',
+                  borderRadius: '14px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  Làm Trắc Nghiệm Ngay <Compass size={20} style={{ animation: 'spin 12s linear infinite' }} />
+                </button>
+              </Link>
+            </div>
+
+            {/* Visual preview */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '24px',
+              padding: '2rem',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+              position: 'relative'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>Tần số Vibe của bạn:</span>
+                <span style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800 }}>
+                  🔥 98% MATCH
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {[
+                  '✓ Hạt dẻ (Dưới 150k/giờ)',
+                  '✓ Hoạt động: Ăn sập đặc sản địa phương',
+                  '✓ Buddy: Năng động, Vui vẻ kể chuyện hay'
+                ].map((item, idx) => (
+                  <div key={idx} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem', 
+                    fontSize: '0.9rem', 
+                    color: '#e2e8f0',
+                    background: 'rgba(255,255,255,0.02)',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.04)'
+                  }}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Spinning compass decor */}
+              <div style={{
+                position: 'absolute',
+                bottom: '-20px',
+                right: '-20px',
+                width: '80px',
+                height: '80px',
+                background: 'rgba(14, 165, 233, 0.1)',
+                border: '1px solid rgba(14, 165, 233, 0.2)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem'
+              }}>
+                🧭
+              </div>
+            </div>
           </div>
         </div>
       </section>

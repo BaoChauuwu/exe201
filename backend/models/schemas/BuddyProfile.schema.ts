@@ -14,6 +14,9 @@ export interface IBuddyProfile {
     rating?: number
     totalReviews?: number
     totalCompletedTours?: number
+    reliabilityRate?: number
+    totalBookingsCount?: number
+    completedBookingsCount?: number
     payoutMethod?: {
         bankCode: string
         accountNumber: string
@@ -25,6 +28,7 @@ export interface IBuddyProfile {
     isAvailable?: boolean
     isApproved?: boolean
     hourlyRate?: number
+    personalityTags?: string[]
     created_at?: Date
     updated_at?: Date
 }
@@ -42,6 +46,9 @@ export const buddyProfileSchema = new Schema<IBuddyProfile>(
         rating: { type: Number, default: 0 },
         totalReviews: { type: Number, default: 0 },
         totalCompletedTours: { type: Number, default: 0 },
+        reliabilityRate: { type: Number, default: 100 },
+        totalBookingsCount: { type: Number, default: 0 },
+        completedBookingsCount: { type: Number, default: 0 },
         payoutMethod: {
             bankCode: { type: String },
             accountNumber: { type: String },
@@ -52,7 +59,8 @@ export const buddyProfileSchema = new Schema<IBuddyProfile>(
         availability: { type: [String], default: [] },
         isAvailable: { type: Boolean, default: false },
         isApproved: { type: Boolean, default: false },
-        hourlyRate: { type: Number, default: 0 }
+        hourlyRate: { type: Number, default: 0 },
+        personalityTags: { type: [String], default: [] }
     },
     {
         timestamps: {
