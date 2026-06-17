@@ -263,7 +263,7 @@ export const AdminDashboard = () => {
 
     const sidebarIcon = (active: boolean, color: string): React.CSSProperties => ({
         display: 'flex', alignItems: 'center', gap: '0.8rem',
-        color: active ? 'white' : 'var(--color-text-muted)'
+        color: active ? 'white' : color
     });
 
     const badgeStyle = (color: string): React.CSSProperties => ({
