@@ -34,6 +34,7 @@ import MyBookingsPage from './pages/MyBookingsPage'
 import { CalendarPage } from './pages/CalendarPage'
 import PaymentResultPage from './pages/PaymentResultPage'
 import { MyTrips } from './pages/MyTrips'
+import { SmartMatchWizard } from './pages/SmartMatchWizard'
 
 import { Toaster } from 'react-hot-toast'
 import { FeedbackModal } from './components/common/FeedbackModal'
@@ -114,6 +115,7 @@ function App() {
       <Routes>
         {/* Public */}
         <Route path='/' element={<HomePage />} />
+        <Route path='/smart-match' element={<SmartMatchWizard />} />
         <Route path='/verify-email' element={<VerifyEmailPage />} />
         <Route path='/reset-password' element={<ResetPasswordPage />} />
         <Route path='/oauth-success' element={<OAuthSuccessPage />} />

@@ -24,6 +24,7 @@ export interface IExperience {
   isApproved: boolean
   isActive: boolean
   status?: 'pending' | 'approved' | 'rejected'
+  tags?: string[]
   created_at: string
   updated_at: string
 }
@@ -47,6 +48,7 @@ export interface ExperienceFormValues {
     latitude: number
   }
   isActive?: boolean
+  tags?: string[]
 }
 
 /**
@@ -86,6 +88,12 @@ const buildFormData = (data: Partial<ExperienceFormValues>): FormData => {
       } else if (typeof img === 'string') {
         formData.append('keepImages', img)
       }
+    })
+  }
+
+  if (data.tags !== undefined) {
+    data.tags.forEach((tag) => {
+      formData.append('tags', tag)
     })
   }
 
@@ -156,4 +164,23 @@ export const experienceApi = {
    */
   approveExperience: (experienceId: string, status: 'approved' | 'rejected', cfg?: any) =>
     axiosInstance.post<{ message: string }>('/admin/experiences/approve', { experienceId, status }, cfg),
+
+  /**
+   * Đối sánh và tìm kiếm gợi ý tour thông minh
+   */
+  match: (params: {
+    budget: 'low' | 'medium' | 'high'
+    timeOfDay: 'morning' | 'afternoon' | 'evening'
+    interests: string[]
+    personality: 'nang_dong' | 'sau_sac' | 'am_ap'
+    hasMotorbike?: boolean
+    english?: boolean
+  }) =>
+    axiosInstance.post<{ data: IMatchResult[] }>('/match', params),
+}
+
+export interface IMatchResult extends IExperience {
+  buddyId: any // flat buddy details populated
+  score: number
+  matchDetails: string[]
 }
