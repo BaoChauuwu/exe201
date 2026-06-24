@@ -141,7 +141,7 @@ export default function RegisterPage() {
               {/* Role Selector */}
               <div>
                 <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Bạn tham gia với vai trò</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div
                     id='role-tourist-btn'
                     onClick={() => setValue('role', 'tourist')}
@@ -164,7 +164,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Name + DOB grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label className="input-label">Họ và tên</label>
                   <div style={{ position: 'relative' }}>
@@ -194,7 +194,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Password + Confirm */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label className="input-label">Mật khẩu</label>
                   <div style={{ position: 'relative' }}>

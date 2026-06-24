@@ -494,7 +494,7 @@ export const MyBookingsPage = () => {
                   {/* Expanded Detail Panel */}
                   {isExpanded && (
                     <div style={{ borderTop: '1px solid var(--color-border)', background: '#fafbfc', padding: '1.5rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start', flexWrap: 'wrap', width: '100%' }}>
+                      <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start', flexWrap: 'wrap', width: '100%' }}>
                         
                         {/* Cột 1: Thông tin đối tác & Điểm hẹn */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

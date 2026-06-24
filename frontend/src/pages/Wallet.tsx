@@ -116,7 +116,7 @@ export const Wallet = () => {
             <Navbar />
             <div style={{ maxWidth: '900px', margin: '0 auto', padding: '7.5rem 1.5rem 3.5rem' }}>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '2rem', alignItems: 'start' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '2rem', alignItems: 'start' }}>
 
                     {/* Left: Credit Card */}
                     <div>
@@ -245,7 +245,7 @@ export const Wallet = () => {
                             </div>
 
                             {/* Account number & name */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
                                 <div>
                                     <label style={labelStyle}>Số tài khoản</label>
                                     <div style={{ position: 'relative' }}>

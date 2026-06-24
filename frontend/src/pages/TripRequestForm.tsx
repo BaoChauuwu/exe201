@@ -100,7 +100,7 @@ export const TripRequestForm = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 <label style={labelStyle}>Ngày khởi hành</label>
                 <div style={{ position: 'relative' }}>
@@ -117,7 +117,7 @@ export const TripRequestForm = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 <label style={labelStyle}>Số giờ dự kiến</label>
                 <div style={{ position: 'relative' }}>

@@ -311,10 +311,10 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            <div style={{ maxWidth: '100%', margin: '0 auto', padding: '2rem 2.5rem', display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div className="responsive-padding" style={{ maxWidth: '100%', margin: '0 auto', padding: '2rem 2.5rem', display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
                 {/* Left Sidebar */}
-                <div style={{ flex: '0 0 280px', minWidth: '280px', position: 'sticky', top: '6rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+                <div className="responsive-w-full responsive-static" style={{ flex: '0 0 280px', minWidth: '280px', position: 'sticky', top: '6rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
                     <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}>
                             <ShieldCheck size={24} style={{ color: 'white' }} />
@@ -368,7 +368,7 @@ export const AdminDashboard = () => {
                 </div>
 
                 {/* Right Content card */}
-                <div style={{ flex: '3 1 700px', minWidth: 0, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', minHeight: '600px', boxShadow: 'var(--shadow-md)' }}>
+                <div className="responsive-w-full" style={{ flex: '3 1 700px', minWidth: 0, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', minHeight: '600px', boxShadow: 'var(--shadow-md)' }}>
 
                     {/* Search bar */}
                     {activeTab !== 'overview' && (
@@ -518,7 +518,7 @@ export const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
                                 
                                 {/* Tour Status Distribution */}
                                 <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
@@ -578,7 +578,7 @@ export const AdminDashboard = () => {
                                 {/* Charts Section */}
                                 <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
                                     
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                                    <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
                                         {/* Bookings Chart */}
                                         <div style={{ background: 'var(--color-bg-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
                                             <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.1rem', color: 'var(--color-text)' }}>Thống kê Tour (Năm {selectedYear})</h3>
@@ -656,7 +656,7 @@ export const AdminDashboard = () => {
                             </div>
                         ) : (
                             <>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.25rem', padding: '1.5rem' }}>
+                                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.25rem', padding: '1.5rem' }}>
                                     {paged.map(ekyc => (
                                         <div key={ekyc._id} style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: '18px', padding: '1.5rem', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
                                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
@@ -669,7 +669,7 @@ export const AdminDashboard = () => {
                                                 </div>
                                                 <span style={badgeStyle('#f59e0b')}>Reviewing</span>
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1.25rem' }}>
                                                 {[['Front ID', ekyc.docFrontUrl], ['Back ID', ekyc.docBackUrl], ['Selfie', ekyc.selfieUrl]].map(([label, url]) => (
                                                     <button key={label} onClick={() => setPreviewImage(url)} type='button' style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.75rem 0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', transition: 'all 0.2s', cursor: 'pointer' }}
                                                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-hover)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)'; }}
