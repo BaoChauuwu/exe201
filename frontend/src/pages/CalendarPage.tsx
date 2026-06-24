@@ -319,8 +319,9 @@ export const CalendarPage = () => {
                                 <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Đang tải lịch trình...</span>
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                                {calendarCells.map((cell, idx) => {
+                            <div style={{ overflowX: 'auto' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', minWidth: '300px' }}>
+                                    {calendarCells.map((cell, idx) => {
                                     const dayBookings = getBookingsForDay(cell.date);
                                     const isSel = selectedDate && isSameDay(cell.date, selectedDate);
                                     const isTodayCell = isToday(cell.date);
@@ -329,6 +330,7 @@ export const CalendarPage = () => {
                                         <div key={idx} 
                                             onClick={() => setSelectedDate(cell.date)}
                                             style={{
+                                                minWidth: 0,
                                                 minHeight: '85px', background: cell.isCurrentMonth ? '#ffffff' : '#f8fafc',
                                                 border: `1px solid ${isSel ? 'var(--color-primary)' : 'rgba(14, 165, 233, 0.08)'}`,
                                                 borderRadius: '12px', padding: '6px', cursor: 'pointer',
@@ -403,7 +405,8 @@ export const CalendarPage = () => {
                                             </div>
                                         </div>
                                     );
-                                })}
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>

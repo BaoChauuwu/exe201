@@ -1,6 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Plane, User, LogOut, ChevronDown, Moon, Sun } from 'lucide-react'
+import { Plane, User, LogOut, ChevronDown, Moon, Sun, Menu, X } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth.api'
 import axios from 'axios'
@@ -9,8 +9,15 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, logout, refreshToken } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -186,7 +193,7 @@ export default function Navbar() {
           </Link>
 
           {/* Center links */}
-          <ul style={linksStyle}>
+          <ul className="desktop-only" style={linksStyle}>
             <li>
               <Link to='/' style={linkStyle}
                 onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
@@ -320,7 +327,7 @@ export default function Navbar() {
           </ul>
 
           {/* Actions */}
-          <div style={actionsStyle}>
+          <div className="desktop-only" style={actionsStyle}>
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
@@ -402,7 +409,98 @@ export default function Navbar() {
               </>
             )}
           </div>
+
+          {/* Mobile Menu Toggle Button */}
+          <button 
+            className="mobile-only"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              background: 'transparent', border: 'none', color: 'var(--color-text)', 
+              padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, right: 0,
+            background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem',
+            display: 'flex', flexDirection: 'column', gap: '1.25rem', zIndex: 199
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
+              <span style={{ fontWeight: 700, color: 'var(--color-text-muted)' }}>Menu</span>
+              <button
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                style={{
+                  background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)',
+                  padding: '6px 12px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'
+                }}
+              >
+                {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />} 
+                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}</span>
+              </button>
+            </div>
+            
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <li><Link to='/' style={{...linkStyle, fontSize: '1rem'}}>Trang chủ</Link></li>
+              <li><Link to='/buddies' style={{...linkStyle, fontSize: '1rem'}}>Tìm Buddy</Link></li>
+              <li><Link to='/smart-match' style={{...linkStyle, fontSize: '1rem', color: '#0ea5e9'}}>✨ Ghép Cặp Tour</Link></li>
+              
+              {isAuthenticated && user?.role === 'admin' && (
+                <li><Link to='/admin' style={{...linkStyle, fontSize: '1rem'}}>Admin Portal</Link></li>
+              )}
+              
+              {isAuthenticated && user?.role !== 'admin' && (
+                <>
+                  <li><Link to='/dashboard' style={{...linkStyle, fontSize: '1rem'}}>Dashboard</Link></li>
+                  <li><Link to='/my-trips' style={{...linkStyle, fontSize: '1rem'}}>Chuyến đi của tôi</Link></li>
+                  <li><Link to='/conversations' style={{...linkStyle, fontSize: '1rem'}}>Tin nhắn</Link></li>
+                  <li><Link to='/wallet' style={{...linkStyle, fontSize: '1rem'}}>Ví tiền</Link></li>
+                  <li><Link to='/calendar' style={{...linkStyle, fontSize: '1rem'}}>Lịch trình</Link></li>
+                  
+                  {user?.role === 'tourist' && (
+                    <>
+                      <li><Link to='/my-requests' style={{...linkStyle, fontSize: '1rem'}}>Yêu cầu chuyến đi</Link></li>
+                      <li><a href='#' onClick={navigateToLiveTracking} style={{...linkStyle, fontSize: '1rem', color: '#0ea5e9'}}>🗺️ Xem Bản Đồ (Live Map)</a></li>
+                    </>
+                  )}
+                  {user?.role === 'buddy' && (
+                    <>
+                      <li><Link to='/trip-requests/open' style={{...linkStyle, fontSize: '1rem'}}>Bảng yêu cầu</Link></li>
+                      <li><a href='#' onClick={navigateToLiveTracking} style={{...linkStyle, fontSize: '1rem', color: '#ef4444'}}>🚨 Mở Live SOS & Map</a></li>
+                    </>
+                  )}
+                </>
+              )}
+            </ul>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+              {isAuthenticated ? (
+                <>
+                  <Link to='/profile' style={{ textDecoration: 'none', width: '100%' }}>
+                    <div style={{...btnSecondaryStyle, width: '100%', justifyContent: 'center', boxSizing: 'border-box'}}><User size={15} /> Hồ sơ cá nhân</div>
+                  </Link>
+                  <button style={{...btnLogoutStyle, width: '100%', justifyContent: 'center'}} onClick={handleLogout}>
+                    <LogOut size={15} /> Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to='/login' style={{ textDecoration: 'none', width: '100%' }}>
+                    <div style={{...btnSecondaryStyle, width: '100%', justifyContent: 'center', boxSizing: 'border-box'}}>Đăng nhập</div>
+                  </Link>
+                  <Link to='/register' style={{ textDecoration: 'none', width: '100%' }}>
+                    <div style={{...btnPrimaryStyle, width: '100%', justifyContent: 'center', boxSizing: 'border-box'}}>Đăng ký</div>
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Navbar spacer — push content below fixed nav */}
