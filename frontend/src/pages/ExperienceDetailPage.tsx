@@ -173,7 +173,8 @@ export const ExperienceDetailPage = () => {
         // Thanh toán qua cổng VNPAY thật — redirect toàn trình duyệt
         const res = await vnpayApi.createPaymentUrl({
           bookingId: createdBookingId,
-          orderDescription: `Thanh toán tour ${experience?.title || ''}`
+          orderDescription: `Thanh toán tour ${experience?.title || ''}`,
+          returnUrl: window.location.origin + '/payment/result'
         })
         const paymentUrl = res.data?.data?.paymentUrl
         if (paymentUrl) {

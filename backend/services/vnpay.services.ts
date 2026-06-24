@@ -27,6 +27,7 @@ export interface CreatePaymentUrlParams {
   ipAddr: string
   bankCode?: string       // Tuỳ chọn: nếu muốn chọn trước ngân hàng
   locale?: string         // Mặc định 'vn'
+  returnUrl?: string      // Mặc định sẽ dùng VNP_RETURN_URL trong env nếu không truyền
 }
 
 // -----------------------------------------------------------------------
@@ -62,7 +63,7 @@ class VnpayService {
       vnp_Locale: locale,
       vnp_OrderInfo: orderDescription,
       vnp_OrderType: 'other',
-      vnp_ReturnUrl: VNP_RETURN_URL,
+      vnp_ReturnUrl: params.returnUrl || VNP_RETURN_URL,
       vnp_TxnRef: bookingId               // Dùng bookingId làm mã đơn hàng
     }
 

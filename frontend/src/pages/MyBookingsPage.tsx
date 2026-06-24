@@ -309,7 +309,8 @@ export const MyBookingsPage = () => {
         // Thanh toán qua cổng VNPAY — redirect sang trang VNPAY
         const res = await vnpayApi.createPaymentUrl({
           bookingId: selectedBooking._id,
-          orderDescription: `Thanh toán tour ${selectedBooking.bookingCode}`
+          orderDescription: `Thanh toán tour ${selectedBooking.bookingCode}`,
+          returnUrl: window.location.origin + '/payment/result'
         });
         const paymentUrl = res.data?.data?.paymentUrl;
         if (paymentUrl) {
