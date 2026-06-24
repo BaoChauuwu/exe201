@@ -1,0 +1,1 @@
+import { sendForgotPasswordEmail } from './utils/email'; async function test() { try { await sendForgotPasswordEmail('baochaudeptrai300@gmail.com', 'Test User', 'test-token'); console.log('Email sent successfully'); } catch (error) { console.error('Failed to send email:', error); } }; test();

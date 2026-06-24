@@ -602,7 +602,7 @@ export const AdminDashboard = () => {
                                                     datasets: [
                                                         { label: 'Doanh thu', data: months.map(m => m.revenue), borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.5)', borderWidth: 3, tension: 0.3, pointRadius: 4 }
                                                     ]
-                                                }} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }, plugins: { tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y); } return label; } } } } }} />
+                                                }} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }, plugins: { tooltip: { callbacks: { label: function(context: any) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y); } return label; } } } } }} />
                                             </div>
                                         </div>
                                     </div>
