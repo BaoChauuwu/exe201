@@ -62,6 +62,11 @@ export const createExperienceValidator = validate(
         isFloat: { options: { min: 0.5 }, errorMessage: 'minHours phải >= 0.5' },
         toFloat: true
       },
+      price: {
+        notEmpty: { errorMessage: 'Giá không được để trống' },
+        isFloat: { options: { min: 0 }, errorMessage: 'Giá phải >= 0' },
+        toFloat: true
+      },
       maxGroupSize: {
         optional: true,
         isInt: { options: { min: 1 }, errorMessage: 'maxGroupSize phải >= 1' },
@@ -123,6 +128,11 @@ export const updateExperienceValidator = validate(
       minHours: {
         optional: true,
         isFloat: { options: { min: 0.5 }, errorMessage: 'minHours phải >= 0.5' },
+        toFloat: true
+      },
+      price: {
+        optional: true,
+        isFloat: { options: { min: 0 }, errorMessage: 'Giá phải >= 0' },
         toFloat: true
       },
       maxGroupSize: {

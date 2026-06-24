@@ -47,6 +47,7 @@ export interface ExperienceFormValues {
     longitude: number
     latitude: number
   }
+  price: number
   isActive?: boolean
   tags?: string[]
 }
@@ -63,6 +64,7 @@ const buildFormData = (data: Partial<ExperienceFormValues>): FormData => {
   if (data.category !== undefined) formData.append('category', data.category)
   if (data.minHours !== undefined) formData.append('minHours', String(data.minHours))
   if (data.maxGroupSize !== undefined) formData.append('maxGroupSize', String(data.maxGroupSize))
+  if (data.price !== undefined) formData.append('price', String(data.price))
   
   if (data.meetingPoint !== undefined) {
     formData.append('meetingPointLng', String(data.meetingPoint.longitude))

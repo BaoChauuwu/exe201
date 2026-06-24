@@ -57,6 +57,7 @@ export const EditExperiencePage = () => {
         description: experience.description,
         category: experience.category,
         city: experience.city,
+        price: experience.price,
         minHours: experience.minHours,
         maxGroupSize: experience.maxGroupSize,
         includedItems: experience.includedItems,
