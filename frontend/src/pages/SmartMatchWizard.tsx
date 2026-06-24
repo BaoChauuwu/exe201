@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, Compass, DollarSign, Clock, Utensils,
@@ -19,17 +19,25 @@ const STEPS = [
 ];
 
 export const SmartMatchWizard = () => {
-  const [step, setStep] = useState(0); // 0 to 4: Quiz, 5: Scanning, 6: Results
-  const [budget, setBudget] = useState<'low' | 'medium' | 'high'>('medium');
-  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('afternoon');
-  const [interests, setInterests] = useState<string[]>([]);
-  const [personality, setPersonality] = useState<'nang_dong' | 'sau_sac' | 'am_ap'>('nang_dong');
-  const [hasMotorbike, setHasMotorbike] = useState(false);
-  const [english, setEnglish] = useState(false);
+  const savedStateStr = sessionStorage.getItem('smartMatchState');
+  const savedState = savedStateStr ? JSON.parse(savedStateStr) : null;
+
+  const [step, setStep] = useState(savedState?.step ?? 0); // 0 to 4: Quiz, 5: Scanning, 6: Results
+  const [budget, setBudget] = useState<'low' | 'medium' | 'high'>(savedState?.budget ?? 'medium');
+  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>(savedState?.timeOfDay ?? 'afternoon');
+  const [interests, setInterests] = useState<string[]>(savedState?.interests ?? []);
+  const [personality, setPersonality] = useState<'nang_dong' | 'sau_sac' | 'am_ap'>(savedState?.personality ?? 'nang_dong');
+  const [hasMotorbike, setHasMotorbike] = useState(savedState?.hasMotorbike ?? false);
+  const [english, setEnglish] = useState(savedState?.english ?? false);
   
-  // const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<IMatchResult[]>([]);
+  const [results, setResults] = useState<IMatchResult[]>(savedState?.results ?? []);
   const [scanMessage, setScanMessage] = useState('Đang khởi tạo thuật toán...');
+
+  useEffect(() => {
+    sessionStorage.setItem('smartMatchState', JSON.stringify({
+      step, budget, timeOfDay, interests, personality, hasMotorbike, english, results
+    }));
+  }, [step, budget, timeOfDay, interests, personality, hasMotorbike, english, results]);
 
   const handleInterestToggle = (val: string) => {
     if (interests.includes(val)) {
@@ -108,6 +116,7 @@ export const SmartMatchWizard = () => {
     setHasMotorbike(false);
     setEnglish(false);
     setResults([]);
+    sessionStorage.removeItem('smartMatchState');
   };
 
   const formatPrice = (p: number) => {
