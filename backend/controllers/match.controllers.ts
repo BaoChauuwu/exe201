@@ -25,17 +25,17 @@ export const getSmartMatches = async (req: Request, res: Response) => {
         const matchDetails: string[] = []
 
         // 1. Budget scoring (weight: 25%)
-        const hourlyRate = profile?.hourlyRate || 0
+        const experienceHourlyRate = (exp.price || 0) / (exp.minHours || 1)
         if (budget === 'low') {
-          if (hourlyRate <= 150000) {
+          if (experienceHourlyRate <= 150000) {
             score += 25
             matchDetails.push('Hợp túi tiền học sinh/sinh viên')
-          } else if (hourlyRate <= 250000) {
+          } else if (experienceHourlyRate <= 250000) {
             score += 15
             matchDetails.push('Chi phí trung bình thấp')
           }
         } else if (budget === 'medium') {
-          if (hourlyRate <= 300000) {
+          if (experienceHourlyRate <= 300000) {
             score += 25
             matchDetails.push('Chi phí hợp lý')
           } else {
