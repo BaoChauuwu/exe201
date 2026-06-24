@@ -294,7 +294,7 @@ export const ExperienceForm = ({
           <h2 style={sectionTitleStyle}>Giá & Quy mô nhóm</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {/* Price */}
           <div>
             <label style={labelStyle}>Giá Tour (VND) *</label>
@@ -379,7 +379,7 @@ export const ExperienceForm = ({
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
             <label style={labelStyle}>Kinh độ (Longitude) *</label>
             <div style={{ position: 'relative' }}>

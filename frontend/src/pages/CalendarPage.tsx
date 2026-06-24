@@ -277,7 +277,7 @@ export const CalendarPage = () => {
                 </div>
 
                 {/* Main 2-Column Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr', gap: '2rem', alignItems: 'start' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr', gap: '2rem', alignItems: 'start' }}>
                     
                     {/* Left: Monthly Calendar Component */}
                     <div style={{ background: '#ffffff', border: '1px solid rgba(14, 165, 233, 0.12)', borderRadius: '24px', padding: '1.75rem', boxShadow: '0 8px 30px rgba(14,165,233,0.02)' }}>
@@ -609,7 +609,7 @@ export const CalendarPage = () => {
                             </div>
 
                             {/* Schedule info block */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '14px', border: '1px solid rgba(14,165,233,0.06)' }}>
                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-text-faint)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Khởi hành</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-text)' }}>

@@ -316,7 +316,7 @@ export const BuddyProfilePage = () => {
                                 </button>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
                                     <label style={labelStyle}>Ngôn ngữ</label>
                                     <div style={{ position: 'relative' }}>
@@ -412,7 +412,7 @@ export const BuddyProfilePage = () => {
                                 )}
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
                                     <label style={labelStyle}>Số tài khoản</label>
                                     <input type='text' value={accountNumber} onChange={e => setAccountNumber(e.target.value)}
