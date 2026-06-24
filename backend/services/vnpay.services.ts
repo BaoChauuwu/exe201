@@ -100,8 +100,12 @@ class VnpayService {
     // Tách chữ ký ra khỏi object để tạo lại và so sánh
     const receivedHash = query['vnp_SecureHash']
 
-    // Xoá vnp_SecureHash và vnp_SecureHashType trước khi sort
-    const verifyParams = { ...query }
+    const verifyParams: Record<string, any> = {}
+    for (const key in query) {
+      if (key.startsWith('vnp_')) {
+        verifyParams[key] = query[key]
+      }
+    }
     delete verifyParams['vnp_SecureHash']
     delete verifyParams['vnp_SecureHashType']
 
