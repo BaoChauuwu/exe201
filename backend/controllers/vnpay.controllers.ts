@@ -19,7 +19,7 @@ export const createPaymentUrlController = async (req: Request, res: Response) =>
   const paymentUrl = vnpayService.createPaymentUrl({
     bookingId: booking._id.toString(),
     amount: booking.totalPrice,
-    orderDescription: orderDescription || `Thanh toán tour ${booking.bookingCode}`,
+    orderDescription: orderDescription || `Payment for tour ${booking.bookingCode}`,
     ipAddr,
     bankCode
   })
