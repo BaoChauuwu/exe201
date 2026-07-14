@@ -277,7 +277,7 @@ export const CalendarPage = () => {
                 </div>
 
                 {/* Main 2-Column Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr', gap: '2rem', alignItems: 'start' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr', gap: '2rem', alignItems: 'start' }}>
                     
                     {/* Left: Monthly Calendar Component */}
                     <div style={{ background: '#ffffff', border: '1px solid rgba(14, 165, 233, 0.12)', borderRadius: '24px', padding: '1.75rem', boxShadow: '0 8px 30px rgba(14,165,233,0.02)' }}>
@@ -319,8 +319,9 @@ export const CalendarPage = () => {
                                 <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Đang tải lịch trình...</span>
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                                {calendarCells.map((cell, idx) => {
+                            <div style={{ overflowX: 'auto' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', minWidth: '300px' }}>
+                                    {calendarCells.map((cell, idx) => {
                                     const dayBookings = getBookingsForDay(cell.date);
                                     const isSel = selectedDate && isSameDay(cell.date, selectedDate);
                                     const isTodayCell = isToday(cell.date);
@@ -329,6 +330,7 @@ export const CalendarPage = () => {
                                         <div key={idx} 
                                             onClick={() => setSelectedDate(cell.date)}
                                             style={{
+                                                minWidth: 0,
                                                 minHeight: '85px', background: cell.isCurrentMonth ? '#ffffff' : '#f8fafc',
                                                 border: `1px solid ${isSel ? 'var(--color-primary)' : 'rgba(14, 165, 233, 0.08)'}`,
                                                 borderRadius: '12px', padding: '6px', cursor: 'pointer',
@@ -403,7 +405,8 @@ export const CalendarPage = () => {
                                             </div>
                                         </div>
                                     );
-                                })}
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -609,7 +612,7 @@ export const CalendarPage = () => {
                             </div>
 
                             {/* Schedule info block */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '14px', border: '1px solid rgba(14,165,233,0.06)' }}>
                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-text-faint)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Khởi hành</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-text)' }}>

@@ -380,7 +380,8 @@ export const MyBookingsPage = () => {
         // Thanh toán qua cổng VNPAY — redirect sang trang VNPAY
         const res = await vnpayApi.createPaymentUrl({
           bookingId: selectedBooking._id,
-          orderDescription: `Thanh toán tour ${selectedBooking.bookingCode}`
+          orderDescription: `Thanh toán tour ${selectedBooking.bookingCode}`,
+          returnUrl: window.location.origin + '/payment/result'
         });
         const paymentUrl = res.data?.data?.paymentUrl;
         if (paymentUrl) {
@@ -565,7 +566,7 @@ export const MyBookingsPage = () => {
                   {/* Expanded Detail Panel */}
                   {isExpanded && (
                     <div style={{ borderTop: '1px solid var(--color-border)', background: '#fafbfc', padding: '1.5rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start', flexWrap: 'wrap', width: '100%' }}>
+                      <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start', flexWrap: 'wrap', width: '100%' }}>
                         
                         {/* Cột 1: Thông tin đối tác & Điểm hẹn */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

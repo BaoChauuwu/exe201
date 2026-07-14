@@ -13,15 +13,16 @@ import { getClientIp } from '../utils/vnpay.utils'
 export const createPaymentUrlController = async (req: Request, res: Response) => {
   // booking đã được middleware đính kèm vào req, không cần query DB lại
   const booking = (req as any).booking
-  const { orderDescription, bankCode } = req.body
+  const { orderDescription, bankCode, returnUrl } = req.body
   const ipAddr = getClientIp(req as any)
 
   const paymentUrl = vnpayService.createPaymentUrl({
     bookingId: booking._id.toString(),
     amount: booking.totalPrice,
-    orderDescription: orderDescription || `Thanh toán tour ${booking.bookingCode}`,
+    orderDescription: orderDescription || `Payment for tour ${booking.bookingCode}`,
     ipAddr,
-    bankCode
+    bankCode,
+    returnUrl
   })
 
   return res.status(httpStatus.OK).json({

@@ -4,6 +4,7 @@ export interface CreatePaymentUrlPayload {
   bookingId: string
   orderDescription?: string
   bankCode?: string
+  returnUrl?: string
 }
 
 export interface CreatePaymentUrlResponse {

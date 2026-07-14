@@ -23,11 +23,8 @@ class ExperiencesService {
       imageUrls.push(url)
     }
 
-    const BuddyProfile = require('~/models/BuddyProfile.model').default
-    const profile = await BuddyProfile.findOne({ userId: new ObjectId(buddyId) })
-    const hourlyRate = profile?.hourlyRate || 0
     const minHours = body.minHours ?? 1
-    const price = hourlyRate * minHours
+    const price = body.price ?? 0
 
     const experience = await ExperienceModel.create({
       buddyId: new ObjectId(buddyId),
@@ -111,19 +108,13 @@ class ExperiencesService {
         currentImages.some((img, idx) => img !== finalImages[idx])
     }
 
-    const BuddyProfile = require('~/models/BuddyProfile.model').default
-    const profile = await BuddyProfile.findOne({ userId: new ObjectId(buddyId) })
-    const hourlyRate = profile?.hourlyRate || 0
-
     if (body.title !== undefined) experience.title = body.title
     if (body.description !== undefined) experience.description = body.description
     if (body.category !== undefined) experience.category = body.category
     if (body.city !== undefined) experience.city = body.city
     if (body.currency !== undefined) experience.currency = body.currency
     if (body.minHours !== undefined) experience.minHours = body.minHours
-
-    // Automatically recalculate price
-    experience.price = hourlyRate * experience.minHours
+    if (body.price !== undefined) experience.price = body.price
 
     if (body.maxGroupSize !== undefined) experience.maxGroupSize = body.maxGroupSize
     if (body.isActive !== undefined) experience.isActive = body.isActive
@@ -151,6 +142,7 @@ class ExperiencesService {
       body.description !== undefined ||
       body.category !== undefined ||
       body.city !== undefined ||
+      body.price !== undefined ||
       body.currency !== undefined ||
       body.minHours !== undefined ||
       body.maxGroupSize !== undefined ||

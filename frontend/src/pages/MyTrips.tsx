@@ -170,7 +170,7 @@ export const MyTrips = () => {
                       </h3>
 
                       {/* Tour Details Grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                      <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
                           <Calendar size={15} style={{ color: 'var(--color-primary)' }} />
                           <span>{new Date(trip.scheduledDate).toLocaleDateString('vi-VN')}</span>

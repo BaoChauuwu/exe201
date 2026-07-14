@@ -173,7 +173,8 @@ export const ExperienceDetailPage = () => {
         // Thanh toán qua cổng VNPAY thật — redirect toàn trình duyệt
         const res = await vnpayApi.createPaymentUrl({
           bookingId: createdBookingId,
-          orderDescription: `Thanh toán tour ${experience?.title || ''}`
+          orderDescription: `Thanh toán tour ${experience?.title || ''}`,
+          returnUrl: window.location.origin + '/payment/result'
         })
         const paymentUrl = res.data?.data?.paymentUrl
         if (paymentUrl) {
@@ -253,7 +254,7 @@ export const ExperienceDetailPage = () => {
           <ArrowLeft size={16} /> Quay lại
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '2rem', alignItems: 'start' }}>
+        <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '2rem', alignItems: 'start' }}>
 
           {/* ══════════════════════════════════ LEFT COLUMN ══════════════════════════════════ */}
           <div>
@@ -320,7 +321,7 @@ export const ExperienceDetailPage = () => {
             </div>
 
             {/* ── Stats row ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
               {[
                 { icon: <Clock size={18} style={{ color: 'var(--color-primary)' }} />, label: 'Thời gian tối thiểu', value: `${experience.minHours} giờ` },
                 { icon: <Users size={18} style={{ color: '#8b5cf6' }} />, label: 'Nhóm tối đa', value: `${experience.maxGroupSize} người` },
@@ -402,7 +403,7 @@ export const ExperienceDetailPage = () => {
           </div>
 
           {/* ══════════════════════════════════ RIGHT COLUMN (sticky) ══════════════════════════════════ */}
-          <div style={{ position: 'sticky', top: '5.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="responsive-static" style={{ position: 'sticky', top: '5.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
             {/* ── Widget Đặt lịch thông minh (Airbnb Style) ── */}
             <div style={{ background: '#ffffff', border: '1px solid rgba(14,165,233,0.25)', borderRadius: '24px', padding: '1.75rem', boxShadow: '0 10px 35px rgba(14,165,233,0.08)' }}>
@@ -455,7 +456,7 @@ export const ExperienceDetailPage = () => {
                 </div>
 
                 {/* Số giờ & Số khách */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   
                   {/* Số giờ */}
                   <div>
@@ -542,7 +543,7 @@ export const ExperienceDetailPage = () => {
                       </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem' }}>
+                    <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem' }}>
                       <div>
                         <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, marginBottom: '2px' }}>SỐ TÀI KHOẢN</label>
                         <input 

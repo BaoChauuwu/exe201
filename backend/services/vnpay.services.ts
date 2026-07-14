@@ -27,6 +27,7 @@ export interface CreatePaymentUrlParams {
   ipAddr: string
   bankCode?: string       // Tuỳ chọn: nếu muốn chọn trước ngân hàng
   locale?: string         // Mặc định 'vn'
+  returnUrl?: string      // Mặc định sẽ dùng VNP_RETURN_URL trong env nếu không truyền
 }
 
 // -----------------------------------------------------------------------
@@ -62,7 +63,7 @@ class VnpayService {
       vnp_Locale: locale,
       vnp_OrderInfo: orderDescription,
       vnp_OrderType: 'other',
-      vnp_ReturnUrl: VNP_RETURN_URL,
+      vnp_ReturnUrl: params.returnUrl || VNP_RETURN_URL,
       vnp_TxnRef: bookingId               // Dùng bookingId làm mã đơn hàng
     }
 
@@ -100,8 +101,12 @@ class VnpayService {
     // Tách chữ ký ra khỏi object để tạo lại và so sánh
     const receivedHash = query['vnp_SecureHash']
 
-    // Xoá vnp_SecureHash và vnp_SecureHashType trước khi sort
-    const verifyParams = { ...query }
+    const verifyParams: Record<string, any> = {}
+    for (const key in query) {
+      if (key.startsWith('vnp_')) {
+        verifyParams[key] = query[key]
+      }
+    }
     delete verifyParams['vnp_SecureHash']
     delete verifyParams['vnp_SecureHashType']
 

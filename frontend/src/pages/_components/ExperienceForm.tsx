@@ -16,6 +16,7 @@ const experienceSchema = z.object({
   description: z.string().min(10, 'Tối thiểu 10 ký tự').max(2000, 'Tối đa 2000 ký tự'),
   category: z.enum(['food', 'adventure', 'culture', 'nightlife', 'other']),
   city: z.string().optional(),
+  price: z.number({ message: 'Nhập số hợp lệ' }).min(0, 'Giá không được âm'),
   minHours: z.number({ message: 'Nhập số hợp lệ' }).min(0.5, 'Tối thiểu 0.5 giờ'),
   maxGroupSize: z.number({ message: 'Nhập số hợp lệ' }).min(1, 'Tối thiểu 1 người'),
   includedItems: z.array(z.string().min(1)).min(1, 'Thêm ít nhất 1 mục bao gồm'),
@@ -170,6 +171,7 @@ export const ExperienceForm = ({
       description: defaultValues?.description ?? '',
       category: defaultValues?.category ?? 'other',
       city: defaultValues?.city ?? 'Da Nang',
+      price: defaultValues?.price ?? ('' as unknown as number),
       minHours: defaultValues?.minHours ?? ('' as unknown as number),
       maxGroupSize: defaultValues?.maxGroupSize ?? ('' as unknown as number),
       includedItems: defaultValues?.includedItems ?? [],
@@ -292,24 +294,21 @@ export const ExperienceForm = ({
           <h2 style={sectionTitleStyle}>Giá & Quy mô nhóm</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          {/* Calculated Price Notice */}
+        <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          {/* Price */}
           <div>
-            <label style={labelStyle}>Giá Tour (Tự động)</label>
-            <div style={{
-              background: 'rgba(16,185,129,0.07)',
-              border: '1px solid rgba(16,185,129,0.15)',
-              borderRadius: '12px',
-              padding: '0.875rem 1rem',
-              color: '#34d399',
-              fontSize: '0.85rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <DollarSign size={16} />
-              Giá = Giá theo giờ của bạn × Thời gian tối thiểu
+            <label style={labelStyle}>Giá Tour (VND) *</label>
+            <div style={{ position: 'relative' }}>
+              <DollarSign size={15} style={iconWrap} />
+              <input
+                {...register('price', { valueAsNumber: true })}
+                type='number'
+                min={0}
+                placeholder='vd: 150000'
+                style={errors.price ? inputErrorStyle : inputStyle}
+              />
             </div>
+            {errors.price && <p style={errorText}>{errors.price.message}</p>}
           </div>
 
           {/* Max group size */}
@@ -380,7 +379,7 @@ export const ExperienceForm = ({
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
             <label style={labelStyle}>Kinh độ (Longitude) *</label>
             <div style={{ position: 'relative' }}>

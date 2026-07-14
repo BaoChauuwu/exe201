@@ -254,7 +254,7 @@ export const EkycPage = () => {
                 <p style={{ color: '#0f172a', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.875rem' }}>
                   Căn cước công dân (CCCD)
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
                   {slots.map(slot => (
                     <UploadZone key={slot.label} slot={slot} />
                   ))}
