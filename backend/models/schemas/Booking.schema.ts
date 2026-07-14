@@ -57,6 +57,19 @@ export interface IBooking {
     shareTrackingToken?: string
     // Escrow 24h payout
     payoutReleasedAt?: Date
+    // Extend Booking requests
+    extensionRequests?: {
+        _id?: ObjectId
+        requestedBy: ObjectId
+        additionalHours: number
+        additionalPrice: number
+        additionalCommission: number
+        additionalBuddyEarning: number
+        status: 'pending' | 'accepted' | 'rejected'
+        reason?: string
+        createdAt?: Date
+        updatedAt?: Date
+    }[]
     created_at?: Date
     updated_at?: Date
 }
@@ -116,7 +129,22 @@ export const bookingSchema = new Schema<IBooking>(
         // Share tracking token
         shareTrackingToken: { type: String, default: '' },
         // Escrow 24h payout release time
-        payoutReleasedAt: { type: Date }
+        payoutReleasedAt: { type: Date },
+        // Extension requests
+        extensionRequests: {
+            type: [{
+                requestedBy: { type: Schema.Types.ObjectId, ref: 'Users' },
+                additionalHours: { type: Number, required: true },
+                additionalPrice: { type: Number, required: true },
+                additionalCommission: { type: Number, required: true },
+                additionalBuddyEarning: { type: Number, required: true },
+                status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+                reason: { type: String, default: '' },
+                createdAt: { type: Date, default: Date.now },
+                updatedAt: { type: Date }
+            }],
+            default: []
+        }
     },
     {
         timestamps: {

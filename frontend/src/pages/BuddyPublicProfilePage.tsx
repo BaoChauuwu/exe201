@@ -20,14 +20,10 @@ export const BuddyPublicProfilePage = () => {
                 const buddyUserId = buddyProfile.userId?._id || buddyProfile.userId;
                 
                 Promise.all([
-                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/experiences`),
-                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/reviews/target/${buddyUserId}`)
+                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/experiences/buddy/${id || buddyUserId}`).catch(() => ({ data: { result: [] } })),
+                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/reviews/target/${buddyUserId}`).catch(() => ({ data: { result: [] } }))
                 ]).then(([expRes, reviewRes]) => {
-                    const allExp = expRes.data.result || [];
-                    const buddyExp = allExp.filter((exp: any) => {
-                        const expBuddyId = exp.buddyId?._id || exp.buddyId;
-                        return String(expBuddyId) === String(buddyUserId);
-                    });
+                    const buddyExp = expRes.data.result || [];
                     setExperiences(buddyExp);
                     setReviews(reviewRes.data.result || []);
                     setLoading(false);

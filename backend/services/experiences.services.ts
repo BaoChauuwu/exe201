@@ -181,6 +181,33 @@ class ExperiencesService {
     return experience
   }
 
+  async getExperiencesByBuddyId(buddyId: string) {
+    let queryBuddyId: any = buddyId
+    if (ObjectId.isValid(buddyId)) {
+      queryBuddyId = new ObjectId(buddyId)
+    }
+    const BuddyProfileModel = require('~/models/BuddyProfile.model').default
+    let targetUserId = queryBuddyId
+    try {
+      const profile = await BuddyProfileModel.findOne({
+        $or: [{ _id: queryBuddyId }, { userId: queryBuddyId }]
+      })
+      if (profile && profile.userId) {
+        targetUserId = profile.userId
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    return ExperienceModel.find({
+      $or: [
+        { buddyId: targetUserId },
+        { buddyId: queryBuddyId }
+      ],
+      isActive: true
+    }).sort({ created_at: -1 })
+  }
+
   async getAllExperiences() {
     return ExperienceModel.find({
       $or: [

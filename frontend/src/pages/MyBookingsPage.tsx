@@ -7,7 +7,7 @@ import axios from 'axios';
 import { 
   Calendar, Clock, Users, CheckCircle2, 
   ChevronDown, ChevronUp, MessageCircle, 
-  AlertTriangle, Shield, CreditCard, Landmark, X, Star, ShieldCheck
+  AlertTriangle, Shield, CreditCard, Landmark, X, Star, ShieldCheck, PlusCircle
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -92,6 +92,14 @@ export const MyBookingsPage = () => {
   const [defenseBooking, setDefenseBooking] = useState<IBooking | null>(null);
   const [defenseReason, setDefenseReason] = useState('');
   const [defenseLoading, setDefenseLoading] = useState(false);
+
+  // States cho modal Gia hạn chuyến đi (Extension)
+  const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+  const [extendBookingItem, setExtendBookingItem] = useState<IBooking | null>(null);
+  const [extendHours, setExtendHours] = useState<number>(1);
+  const [extendReason, setExtendReason] = useState<string>('');
+  const [extendLoading, setExtendLoading] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const handleRaiseDispute = async () => {
     if (!disputeBooking) return;
@@ -233,6 +241,63 @@ export const MyBookingsPage = () => {
     }
   };
 
+  const handleRequestExtension = async () => {
+    if (!extendBookingItem) return;
+    if (!extendHours || extendHours <= 0) {
+      toast.error('Số giờ gia hạn phải lớn hơn 0');
+      return;
+    }
+    setExtendLoading(true);
+    try {
+      await bookingApi.requestExtension(extendBookingItem._id, extendHours, extendReason);
+      toast.success(`Đã gửi yêu cầu gia hạn +${extendHours} giờ tới Buddy! Vui lòng chờ xác nhận.`);
+      setIsExtendModalOpen(false);
+      setExtendBookingItem(null);
+      setExtendHours(1);
+      setExtendReason('');
+      fetchBookings();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Gửi yêu cầu gia hạn thất bại.';
+      toast.error(errorMsg);
+      if (errorMsg.toLowerCase().includes('số dư ví')) {
+        if (window.confirm(`${errorMsg}\n\nBạn có muốn đi đến trang Ví UniTravel để nạp tiền ngay bây giờ không?`)) {
+          setIsExtendModalOpen(false);
+          navigate('/wallet');
+        }
+      }
+    } finally {
+      setExtendLoading(false);
+    }
+  };
+
+  const handleAcceptExtension = async (bookingId: string, requestId?: string) => {
+    if (!window.confirm('Bạn có chắc chắn đồng ý gia hạn chuyến đi này không? Hệ thống sẽ tự động cập nhật giờ và thanh toán phí phát sinh.')) return;
+    setActionLoadingId(bookingId + '_accept');
+    try {
+      await bookingApi.acceptExtension(bookingId, requestId);
+      toast.success('Đã đồng ý gia hạn chuyến đi thành công!');
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Đồng ý gia hạn thất bại.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectExtension = async (bookingId: string, requestId?: string) => {
+    const reason = window.prompt('Nhập lý do từ chối (tùy chọn):') || '';
+    setActionLoadingId(bookingId + '_reject');
+    try {
+      await bookingApi.rejectExtension(bookingId, requestId, reason);
+      toast.success('Đã từ chối yêu cầu gia hạn chuyến đi.');
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Từ chối gia hạn thất bại.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   useEffect(() => {
     if (accessToken) {
       fetchBookings();
@@ -254,12 +319,18 @@ export const MyBookingsPage = () => {
       socket.on(eventName, () => {
         fetchBookings();
       });
+      const extEventName = `booking_extension_updated_${booking._id}`;
+      socket.on(extEventName, () => {
+        fetchBookings();
+      });
     });
     
     return () => {
       bookings.forEach(booking => {
         const eventName = `booking_status_updated_${booking._id}`;
         socket.off(eventName);
+        const extEventName = `booking_extension_updated_${booking._id}`;
+        socket.off(extEventName);
       });
     };
   }, [bookings]);
@@ -576,8 +647,65 @@ export const MyBookingsPage = () => {
                             </div>
                           </div>
 
+                          {/* Banner Yêu cầu Gia hạn (nếu có request pending) */}
+                          {booking.extensionRequests && booking.extensionRequests.some(r => r.status === 'pending') && (() => {
+                            const pendingReq = booking.extensionRequests!.find(r => r.status === 'pending')!;
+                            return (
+                              <div style={{
+                                background: isBuddy ? '#fef3c7' : '#eff6ff',
+                                border: `1.5px solid ${isBuddy ? '#f59e0b' : '#60a5fa'}`,
+                                borderRadius: '14px',
+                                padding: '0.85rem 1rem',
+                                fontSize: '0.82rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.6rem',
+                                marginTop: '0.5rem'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: isBuddy ? '#b45309' : '#1d4ed8' }}>
+                                  <Clock size={16} />
+                                  <span>{isBuddy ? '🔔 Yêu cầu gia hạn chuyến đi từ Tourist' : '⏳ Đang chờ Buddy phản hồi yêu cầu gia hạn'}</span>
+                                </div>
+                                <div style={{ color: '#334155', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div>
+                                    • Đi thêm: <strong style={{ color: '#0f172a' }}>+{pendingReq.additionalHours} giờ</strong>
+                                    {' '}(Phí phát sinh: <strong style={{ color: '#ef4444' }}>+{pendingReq.additionalPrice.toLocaleString()} ₫</strong>)
+                                  </div>
+                                  {isBuddy && (
+                                    <div>
+                                      • Bạn thực nhận thêm: <strong style={{ color: '#059669' }}>+{pendingReq.additionalBuddyEarning.toLocaleString()} ₫</strong>
+                                    </div>
+                                  )}
+                                  {pendingReq.reason && (
+                                    <div style={{ fontStyle: 'italic', color: '#64748b' }}>
+                                      📝 Lý do/Ghi chú: "{pendingReq.reason}"
+                                    </div>
+                                  )}
+                                </div>
+                                {isBuddy && (
+                                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '4px' }}>
+                                    <button
+                                      onClick={() => handleAcceptExtension(booking._id, pendingReq._id)}
+                                      disabled={actionLoadingId === booking._id + '_accept'}
+                                      style={{ padding: '0.5rem 1rem', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 8px rgba(16,185,129,0.25)' }}
+                                    >
+                                      ✅ {actionLoadingId === booking._id + '_accept' ? 'Đang xử lý...' : 'Đồng ý gia hạn (+Giờ)'}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRejectExtension(booking._id, pendingReq._id)}
+                                      disabled={actionLoadingId === booking._id + '_reject'}
+                                      style={{ padding: '0.5rem 1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#dc2626', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}
+                                    >
+                                      ❌ Từ chối
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
                           {/* Nhóm Nút Hành động */}
-                          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', flexWrap: 'wrap', width: '100%' }}>
+                          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', flexWrap: 'wrap', width: '100%', marginTop: '0.5rem' }}>
                             
                             {/* Nút Chat */}
                             {partner && (
@@ -675,6 +803,21 @@ export const MyBookingsPage = () => {
                                 style={{ padding: '0.55rem 1.25rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(245,158,11,0.2)' }}
                               >
                                 ⚡ Bắt đầu (Check-in)
+                              </button>
+                            )}
+
+                            {/* [TOURIST ONLY] - Xin gia hạn chuyến đi (+Giờ) */}
+                            {!isBuddy && ['confirmed', 'ongoing'].includes(booking.status) && (!booking.extensionRequests || !booking.extensionRequests.some(r => r.status === 'pending')) && (
+                              <button
+                                onClick={() => {
+                                  setExtendBookingItem(booking);
+                                  setExtendHours(1);
+                                  setExtendReason('');
+                                  setIsExtendModalOpen(true);
+                                }}
+                                style={{ padding: '0.55rem 1.1rem', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 4px 12px rgba(59,130,246,0.2)' }}
+                              >
+                                <PlusCircle size={14} /> ⏱️ Xin gia hạn (+Giờ)
                               </button>
                             )}
 
@@ -1466,6 +1609,164 @@ export const MyBookingsPage = () => {
                 }}
               >
                 {defenseLoading ? 'Đang gửi...' : 'Gửi Giải Trình'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL XIN GIA HẠN CHUYẾN ĐI (+GIỜ) ── */}
+      {isExtendModalOpen && extendBookingItem && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+          zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '480px',
+            border: '1px solid rgba(59,130,246,0.15)', position: 'relative', boxSizing: 'border-box'
+          }}>
+            <button
+              onClick={() => { setIsExtendModalOpen(false); setExtendBookingItem(null); setExtendHours(1); setExtendReason(''); }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <X size={15} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <PlusCircle size={22} style={{ color: '#3b82f6' }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>Xin Gia Hạn Chuyến Đi</h3>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', margin: '2px 0 0' }}>Mã booking: {extendBookingItem.bookingCode}</p>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+                Số giờ muốn đi thêm (+Giờ) *
+              </label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                {[1, 2, 3, 4].map(h => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => setExtendHours(h)}
+                    style={{
+                      flex: 1, padding: '0.65rem 0', borderRadius: '10px',
+                      border: extendHours === h ? '2px solid #3b82f6' : '1px solid var(--color-border)',
+                      background: extendHours === h ? '#eff6ff' : '#f8fafc',
+                      color: extendHours === h ? '#2563eb' : 'var(--color-text)',
+                      fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem'
+                    }}
+                  >
+                    +{h}h
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Hoặc nhập số giờ tùy chỉnh:</span>
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={extendHours}
+                  onChange={e => setExtendHours(Math.max(0.5, Number(e.target.value)))}
+                  style={{ width: '80px', padding: '0.4rem 0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 700, fontSize: '0.85rem', textAlign: 'center' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1rem', marginBottom: '1.25rem', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Đơn giá theo giờ:</span>
+                <span style={{ fontWeight: 600 }}>{extendBookingItem.pricePerHourSnapshot.toLocaleString()} ₫/h</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Thời gian gia hạn thêm:</span>
+                <span style={{ fontWeight: 700, color: '#3b82f6' }}>+{extendHours} giờ</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '0.4rem', marginTop: '0.2rem', fontWeight: 800, fontSize: '0.95rem', color: '#ef4444' }}>
+                <span>Phí gia hạn phát sinh:</span>
+                <span>{(extendBookingItem.pricePerHourSnapshot * extendHours).toLocaleString()} ₫</span>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#64748b', fontStyle: 'italic', marginTop: '4px' }}>
+                💡 Nếu tour đã thanh toán, hệ thống sẽ tự động khấu trừ số dư ví UniTravel ngay sau khi Buddy đồng ý gia hạn.
+              </div>
+              {extendBookingItem.paymentStatus === 'paid' && user?.walletBalance !== undefined && user.walletBalance < (extendBookingItem.pricePerHourSnapshot * extendHours) && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '12px', padding: '0.75rem', marginTop: '0.75rem',
+                  display: 'flex', flexDirection: 'column', gap: '6px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef4444', fontWeight: 700, fontSize: '0.82rem' }}>
+                    <span>⚠️ Số dư ví không đủ để gia hạn tự động!</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Ví hiện có:</span>
+                    <span style={{ fontWeight: 700 }}>{(user.walletBalance || 0).toLocaleString()} ₫</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#ef4444', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Còn thiếu:</span>
+                    <span style={{ fontWeight: 800 }}>{((extendBookingItem.pricePerHourSnapshot * extendHours) - (user.walletBalance || 0)).toLocaleString()} ₫</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExtendModalOpen(false);
+                      navigate('/wallet');
+                    }}
+                    style={{
+                      marginTop: '4px', padding: '6px 12px', background: '#ef4444', color: 'white',
+                      border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                      textAlign: 'center'
+                    }}
+                  >
+                    + Nạp thêm tiền vào ví ngay
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+                Ghi chú cho Buddy (Tùy chọn)
+              </label>
+              <textarea
+                value={extendReason}
+                onChange={e => setExtendReason(e.target.value)}
+                placeholder="Ví dụ: Mình muốn ghé thêm quán ăn bên cạnh, bạn đi cùng thêm 2 tiếng nhé..."
+                rows={3}
+                style={{
+                  width: '100%', padding: '0.75rem', borderRadius: '12px',
+                  border: '1px solid #cbd5e1', outline: 'none',
+                  fontSize: '0.85rem', lineHeight: 1.5, resize: 'vertical',
+                  fontFamily: 'inherit', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => { setIsExtendModalOpen(false); setExtendBookingItem(null); setExtendHours(1); setExtendReason(''); }}
+                style={{ flex: 1, padding: '0.85rem', background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: 'var(--color-text)' }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleRequestExtension}
+                disabled={extendLoading || !extendHours || extendHours <= 0}
+                style={{
+                  flex: 2, padding: '0.85rem',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                  border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.9rem',
+                  color: 'white', cursor: extendLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 15px rgba(59,130,246,0.3)'
+                }}
+              >
+                {extendLoading ? 'Đang gửi yêu cầu...' : 'Gửi Yêu Cầu Gia Hạn'}
               </button>
             </div>
           </div>

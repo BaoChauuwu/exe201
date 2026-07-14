@@ -6,23 +6,21 @@ import { wrapRequestHandler } from '~/utils/handlers'
 
 const reviewsRouter = Router()
 
-// Yêu cầu đăng nhập cho tất cả các API đánh giá
-reviewsRouter.use(accessTokenValidator)
-
-// 1. Gửi đánh giá cho chuyến đi
+// 1. Gửi đánh giá cho chuyến đi (yêu cầu đăng nhập)
 reviewsRouter.post(
   '/',
+  accessTokenValidator,
   createReviewValidator,
   wrapRequestHandler(createReviewController)
 )
 
-// 2. Lấy danh sách đánh giá của một booking
+// 2. Lấy danh sách đánh giá của một booking (Công khai / Public)
 reviewsRouter.get(
   '/booking/:bookingId',
   wrapRequestHandler(getBookingReviewsController)
 )
 
-// 3. Lấy danh sách đánh giá của một target (buddy hoặc tourist)
+// 3. Lấy danh sách đánh giá của một target (buddy hoặc tourist - Công khai / Public)
 reviewsRouter.get(
   '/target/:targetId',
   wrapRequestHandler(getTargetReviewsController)

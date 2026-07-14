@@ -6,7 +6,8 @@ import {
   updateExperienceController,
   getMyExperiencesController,
   getExperienceByIdController,
-  getAllExperiencesController
+  getAllExperiencesController,
+  getExperiencesByBuddyIdController
 } from '~/controllers/experiences.controllers'
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -52,6 +53,9 @@ experiencesRouter.get(
 
 // GET /experiences – Danh sách tour công khai (Public)
 experiencesRouter.get('/', wrapRequestHandler(getAllExperiencesController))
+
+// GET /experiences/buddy/:buddyId – Danh sách tour của 1 buddy cụ thể (Public)
+experiencesRouter.get('/buddy/:buddyId', wrapRequestHandler(getExperiencesByBuddyIdController))
 
 // GET /experiences/:id – Chi tiết 1 tour (Public)
 experiencesRouter.get('/:id', wrapRequestHandler(getExperienceByIdController))

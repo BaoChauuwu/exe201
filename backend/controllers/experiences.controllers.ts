@@ -59,3 +59,12 @@ export const getAllExperiencesController = async (req: Request, res: Response, n
     result
   })
 }
+
+export const getExperiencesByBuddyIdController = async (req: Request, res: Response, next: NextFunction) => {
+  const buddyId = req.params.buddyId as string
+  const result = await experiencesService.getExperiencesByBuddyId(buddyId)
+  return res.status(httpStatus.OK).json({
+    message: 'Lấy danh sách tour của buddy thành công',
+    result
+  })
+}

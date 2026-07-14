@@ -100,6 +100,9 @@ function App() {
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
       <Toaster
         position='top-right'
+        containerStyle={{
+          zIndex: 999999
+        }}
         toastOptions={{
           style: {
             background: 'rgba(26, 22, 37, 0.95)',

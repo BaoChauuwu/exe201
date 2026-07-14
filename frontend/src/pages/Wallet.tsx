@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/layout/Navbar';
-import { Landmark, CreditCard, ArrowRight } from 'lucide-react';
+import { Landmark, CreditCard, ArrowRight, PlusCircle, Zap, Wallet as WalletIcon } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 export const Wallet = () => {
-    const { user, accessToken } = useAuthStore();
+    const { user, accessToken, fetchMe } = useAuthStore();
     const buddyId = user?._id;
+
+    const [activeTab, setActiveTab] = useState<'withdraw' | 'deposit'>(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('tab') === 'deposit' || user?.role === 'tourist' ? 'deposit' : 'withdraw';
+    });
 
     const [walletBalance, setWalletBalance] = useState(0);
     const [amount, setAmount] = useState('');
@@ -16,6 +21,10 @@ export const Wallet = () => {
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
+
+    const [depositAmount, setDepositAmount] = useState('');
+    const [depositMethod, setDepositMethod] = useState<'VNPAY' | 'BANK' | 'MOMO' | 'INSTANT'>('INSTANT');
+    const [depositStatus, setDepositStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
 
     useEffect(() => {
         if (buddyId && accessToken) {
@@ -96,6 +105,42 @@ export const Wallet = () => {
                 setStatus('idle');
             });
     };
+
+    const handleDeposit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const depAmount = Number(depositAmount);
+        if (depAmount <= 0) {
+            toast.error('Số tiền nạp phải lớn hơn 0');
+            return;
+        }
+        setDepositStatus('loading');
+        axios.post((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/payouts/deposit', {
+            userId: buddyId,
+            amount: depAmount,
+            method: depositMethod
+        }, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        })
+            .then(res => {
+                setDepositStatus('success');
+                toast.success(`🎉 Nạp thành công ${depAmount.toLocaleString('vi-VN')} ₫ vào ví UniTravel!`);
+                if (res.data.data?.walletBalance !== undefined) {
+                    setWalletBalance(res.data.data.walletBalance);
+                } else {
+                    setWalletBalance(prev => prev + depAmount);
+                }
+                fetchMe();
+                setDepositAmount('');
+            })
+            .catch((err: any) => {
+                setDepositStatus('error');
+                toast.error(err.response?.data?.message || 'Nạp tiền thất bại, vui lòng thử lại');
+            })
+            .finally(() => {
+                setDepositStatus('idle');
+            });
+    };
+
 
     const inputStyle: React.CSSProperties = {
         width: '100%', boxSizing: 'border-box',
@@ -213,76 +258,203 @@ export const Wallet = () => {
                         )}
                     </div>
 
-                    {/* Right: Form */}
+                    {/* Right: Tabs & Form */}
                     <div style={{ background: '#ffffff', border: '1px solid rgba(14,165,233,0.12)', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 30px rgba(2,132,199,0.04)' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.375rem' }}>
-                            {user?.role === 'buddy' ? 'Rút tiền' : 'Rút tiền hoàn'}
-                        </h3>
-                        <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1.75rem' }}>
-                            {user?.role === 'buddy' ? 'Chuyển thu nhập về tài khoản ngân hàng của bạn' : 'Yêu cầu chuyển số dư ví về tài khoản ngân hàng của bạn'}
-                        </p>
-
-                        <form onSubmit={handleWithdraw} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                            {/* Bank */}
-                            <div>
-                                <label style={labelStyle}>Ngân hàng</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Landmark size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                    <select value={bankCode} onChange={e => setBankCode(e.target.value)}
-                                        style={{ ...inputStyle, appearance: 'none', background: 'white' }}>
-                                        <option value='VCB'>Vietcombank</option>
-                                        <option value='TCB'>Techcombank</option>
-                                        <option value='MB'>MB Bank</option>
-                                        <option value='MOMO'>MoMo Wallet</option>
-                                        <option value='OTHER'>Khác...</option>
-                                    </select>
-                                </div>
-                                {bankCode === 'OTHER' && (
-                                    <div style={{ marginTop: '0.875rem' }}>
-                                        <input required type='text' value={customBank} onChange={e => setCustomBank(e.target.value)} placeholder='Nhập tên ngân hàng hoặc ví...' style={inputStyle} />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Account number & name */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-                                <div>
-                                    <label style={labelStyle}>Số tài khoản</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <CreditCard size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                        <input required type='text' value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder='0123456789' style={{ ...inputStyle, fontFamily: 'monospace' }} />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={labelStyle}>Tên tài khoản</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.8rem' }}>👤</span>
-                                        <input required type='text' value={accountName} onChange={e => setAccountName(e.target.value)} placeholder='NGUYEN VAN A' style={{ ...inputStyle, textTransform: 'uppercase' }} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Amount */}
-                            <div>
-                                <label style={labelStyle}>Số tiền rút (VND)</label>
-                                <div style={{ position: 'relative' }}>
-                                    <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#0284c7', fontWeight: 700, fontSize: '1.1rem' }}>₫</span>
-                                    <input required type='number' value={amount} onChange={e => setAmount(e.target.value)} placeholder='500000'
-                                        style={{ ...inputStyle, padding: '1rem 0.875rem 1rem 2.5rem', fontSize: '1.25rem', fontWeight: 700 }} />
-                                </div>
-                            </div>
-
-                            <button type='submit' disabled={status === 'loading'}
-                                style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 6px 20px rgba(2,132,199,0.25)', fontFamily: 'inherit', opacity: status === 'loading' ? 0.7 : 1 }}>
-                                {status === 'loading' ? (
-                                    <><div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Đang xử lý...</>
-                                ) : 'Xác nhận rút tiền'}
+                        {/* Tab Switcher */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: '#f1f5f9', padding: '6px', borderRadius: '16px', marginBottom: '1.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('deposit')}
+                                style={{
+                                    padding: '0.75rem',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    background: activeTab === 'deposit' ? 'white' : 'transparent',
+                                    color: activeTab === 'deposit' ? '#0284c7' : '#64748b',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'deposit' ? '0 4px 12px rgba(2,132,199,0.15)' : 'none',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <PlusCircle size={17} /> Nạp tiền vào ví
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('withdraw')}
+                                style={{
+                                    padding: '0.75rem',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    background: activeTab === 'withdraw' ? 'white' : 'transparent',
+                                    color: activeTab === 'withdraw' ? '#0f172a' : '#64748b',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'withdraw' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <WalletIcon size={17} /> {user?.role === 'buddy' ? 'Rút tiền' : 'Rút tiền hoàn'}
+                            </button>
+                        </div>
 
-                            <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.72rem', margin: 0 }}>
-                                🔒 Bảo vệ bởi MongoDB Transactions
-                            </p>
-                        </form>
+                        {activeTab === 'deposit' ? (
+                            /* DEPOSIT FORM */
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.375rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    Nạp số dư vào ví UniTravel
+                                </h3>
+                                <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                                    Nạp tiền nhanh chóng để thanh toán tour, gia hạn ngoài giờ và trải nghiệm không gián đoạn
+                                </p>
+
+                                <form onSubmit={handleDeposit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                    {/* Method */}
+                                    <div>
+                                        <label style={labelStyle}>Phương thức nạp tiền</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Zap size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#0284c7' }} />
+                                            <select value={depositMethod} onChange={e => setDepositMethod(e.target.value as any)}
+                                                style={{ ...inputStyle, appearance: 'none', background: 'white' }}>
+                                                <option value='INSTANT'>⚡ Nạp nhanh trực tiếp vào ví (Chế độ tiện lợi)</option>
+                                                <option value='VNPAY'>Cổng thanh toán VNPay (Ngân hàng / ATM / QR)</option>
+                                                <option value='BANK'>Chuyển khoản Ngân hàng (Vietcombank / MB / TCB)</option>
+                                                <option value='MOMO'>Ví điện tử MoMo</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Amount */}
+                                    <div>
+                                        <label style={labelStyle}>Số tiền muốn nạp (VND)</label>
+                                        <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                                            <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#0284c7', fontWeight: 700, fontSize: '1.1rem' }}>₫</span>
+                                            <input required type='number' value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder='500000'
+                                                style={{ ...inputStyle, padding: '1rem 0.875rem 1rem 2.5rem', fontSize: '1.25rem', fontWeight: 700 }} />
+                                        </div>
+
+                                        {/* Quick amount pills */}
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            {[100000, 200000, 500000, 1000000, 2000000].map((quickAmt) => (
+                                                <button
+                                                    key={quickAmt}
+                                                    type="button"
+                                                    onClick={() => setDepositAmount(String(quickAmt))}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #e2e8f0',
+                                                        background: depositAmount === String(quickAmt) ? '#e0f2fe' : '#f8fafc',
+                                                        color: depositAmount === String(quickAmt) ? '#0284c7' : '#475569',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.8rem',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    + {quickAmt.toLocaleString('vi-VN')} ₫
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button type='submit' disabled={depositStatus === 'loading'}
+                                        style={{ width: '100%', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 6px 20px rgba(2,132,199,0.3)', fontFamily: 'inherit', opacity: depositStatus === 'loading' ? 0.7 : 1 }}>
+                                        {depositStatus === 'loading' ? (
+                                            <><div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Đang nạp tiền...</>
+                                        ) : (
+                                            <><PlusCircle size={18} /> Xác nhận nạp tiền ngay</>
+                                        )}
+                                    </button>
+
+                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.72rem', margin: 0 }}>
+                                        ⚡ Số dư được cập nhật lập tức và an toàn vào tài khoản của bạn
+                                    </p>
+                                </form>
+                            </div>
+                        ) : (
+                            /* WITHDRAW FORM */
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.375rem' }}>
+                                    {user?.role === 'buddy' ? 'Rút tiền' : 'Rút tiền hoàn'}
+                                </h3>
+                                <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1.75rem' }}>
+                                    {user?.role === 'buddy' ? 'Chuyển thu nhập về tài khoản ngân hàng của bạn' : 'Yêu cầu chuyển số dư ví về tài khoản ngân hàng của bạn'}
+                                </p>
+
+                                <form onSubmit={handleWithdraw} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                                    {/* Bank */}
+                                    <div>
+                                        <label style={labelStyle}>Ngân hàng</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Landmark size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                            <select value={bankCode} onChange={e => setBankCode(e.target.value)}
+                                                style={{ ...inputStyle, appearance: 'none', background: 'white' }}>
+                                                <option value='VCB'>Vietcombank</option>
+                                                <option value='TCB'>Techcombank</option>
+                                                <option value='MB'>MB Bank</option>
+                                                <option value='MOMO'>MoMo Wallet</option>
+                                                <option value='OTHER'>Khác...</option>
+                                            </select>
+                                        </div>
+                                        {bankCode === 'OTHER' && (
+                                            <div style={{ marginTop: '0.875rem' }}>
+                                                <input required type='text' value={customBank} onChange={e => setCustomBank(e.target.value)} placeholder='Nhập tên ngân hàng hoặc ví...' style={inputStyle} />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Account number & name */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                                        <div>
+                                            <label style={labelStyle}>Số tài khoản</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <CreditCard size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                                <input required type='text' value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder='0123456789' style={{ ...inputStyle, fontFamily: 'monospace' }} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Tên tài khoản</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.8rem' }}>👤</span>
+                                                <input required type='text' value={accountName} onChange={e => setAccountName(e.target.value)} placeholder='NGUYEN VAN A' style={{ ...inputStyle, textTransform: 'uppercase' }} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Amount */}
+                                    <div>
+                                        <label style={labelStyle}>Số tiền rút (VND)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#0284c7', fontWeight: 700, fontSize: '1.1rem' }}>₫</span>
+                                            <input required type='number' value={amount} onChange={e => setAmount(e.target.value)} placeholder='500000'
+                                                style={{ ...inputStyle, padding: '1rem 0.875rem 1rem 2.5rem', fontSize: '1.25rem', fontWeight: 700 }} />
+                                        </div>
+                                    </div>
+
+                                    <button type='submit' disabled={status === 'loading'}
+                                        style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 6px 20px rgba(2,132,199,0.25)', fontFamily: 'inherit', opacity: status === 'loading' ? 0.7 : 1 }}>
+                                        {status === 'loading' ? (
+                                            <><div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Đang xử lý...</>
+                                        ) : 'Xác nhận rút tiền'}
+                                    </button>
+
+                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.72rem', margin: 0 }}>
+                                        🔒 Bảo vệ bởi MongoDB Transactions
+                                    </p>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

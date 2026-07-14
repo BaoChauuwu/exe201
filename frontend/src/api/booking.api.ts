@@ -55,6 +55,18 @@ export interface IBooking {
     disputeResolutionNote?: string
     disputeRefundPercentage?: number
     escrowStatus?: string
+    extensionRequests?: {
+        _id?: string
+        requestedBy: string
+        additionalHours: number
+        additionalPrice: number
+        additionalCommission: number
+        additionalBuddyEarning: number
+        status: 'pending' | 'accepted' | 'rejected'
+        reason?: string
+        createdAt?: string
+        updatedAt?: string
+    }[]
     created_at: string
     updated_at: string
 }
@@ -149,5 +161,23 @@ export const bookingApi = {
      * Admin giải quyết khiếu nại (có partial refund)
      */
     resolveDispute: (id: string, refundPercentage: number, resolutionNote: string) =>
-        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/resolve-dispute`, { refundPercentage, resolutionNote })
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/resolve-dispute`, { refundPercentage, resolutionNote }),
+
+    /**
+     * Tourist gửi yêu cầu gia hạn chuyến đi (+Giờ)
+     */
+    requestExtension: (id: string, additionalHours: number, reason?: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/request-extend`, { additionalHours, reason }),
+
+    /**
+     * Buddy đồng ý gia hạn chuyến đi
+     */
+    acceptExtension: (id: string, requestId?: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/accept-extend`, { requestId }),
+
+    /**
+     * Buddy từ chối gia hạn chuyến đi
+     */
+    rejectExtension: (id: string, requestId?: string, rejectReason?: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/reject-extend`, { requestId, rejectReason })
 }

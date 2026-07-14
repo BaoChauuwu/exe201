@@ -98,3 +98,50 @@ export const requestPayout = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Transaction failed, rolled back.', error })
     }
 }
+
+export const depositWallet = async (req: Request, res: Response) => {
+    const { userId, amount } = req.body
+    const depositAmount = Number(amount)
+
+    if (!userId || !depositAmount || depositAmount <= 0) {
+        return res.status(400).json({ message: 'Số tiền nạp không hợp lệ' })
+    }
+
+    const session = await mongoose.startSession()
+    session.startTransaction()
+
+    try {
+        const user = await UserModel.findById(new ObjectId(userId)).session(session)
+        if (!user) {
+            await session.abortTransaction()
+            session.endSession()
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' })
+        }
+
+        user.walletBalance = (user.walletBalance || 0) + depositAmount
+        await user.save({ session })
+
+        if (user.role === 'buddy') {
+            const profile = await BuddyProfile.findOne({ userId: new ObjectId(userId) }).session(session)
+            if (profile) {
+                profile.walletBalance = (profile.walletBalance || 0) + depositAmount
+                await profile.save({ session })
+            }
+        }
+
+        await session.commitTransaction()
+        session.endSession()
+
+        return res.json({
+            message: 'Nạp tiền vào ví thành công',
+            data: {
+                walletBalance: user.walletBalance
+            }
+        })
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        return res.status(500).json({ message: 'Nạp tiền thất bại', error })
+    }
+}
+

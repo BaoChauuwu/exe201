@@ -53,9 +53,9 @@ class BookingsService {
         }
 
         // Lấy thông tin Buddy Profile
-        const buddyProfile = await BuddyProfileModel.findOne({ userId: experience.buddyId })
+        let buddyProfile = await BuddyProfileModel.findOne({ $or: [{ userId: experience.buddyId }, { _id: experience.buddyId }] })
         if (!buddyProfile) {
-            throw new Error('Không tìm thấy hồ sơ của Local Buddy dẫn tour này.')
+            buddyProfile = new BuddyProfileModel({ userId: experience.buddyId, availability: [], hourlyRate: 0 })
         }
 
         // Validate Trùng Lịch bận của Buddy và Khung giờ làm việc
@@ -68,7 +68,9 @@ class BookingsService {
         )
 
         // Tính toán chi phí snapshot
-        const pricePerHourSnapshot = experience.price
+        const pricePerHourSnapshot = (experience.minHours && experience.minHours > 0)
+            ? Math.round((experience.price || 0) / experience.minHours)
+            : (experience.price || 0)
         const totalPrice = pricePerHourSnapshot * hours
         const commissionAmount = totalPrice * 0.15 // 15% Platform Commission
         const buddyEarning = totalPrice - commissionAmount
@@ -132,24 +134,41 @@ class BookingsService {
 
         // 2.0. Kiểm tra khung giờ làm việc của Buddy (Availability)
         const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-        const dayName = daysOfWeek[date.getDay()]
+        const daysOfWeekVN = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7']
+        const daysOfWeekVN2 = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+        const daysOfWeekVN3 = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+        const dayIdx = date.getDay()
+        const dayName = daysOfWeek[dayIdx]
         
         let isWithinWorkingHours = false
-        if (buddyAvailability && buddyAvailability.length > 0) {
+        if (!buddyAvailability || buddyAvailability.length === 0) {
+            isWithinWorkingHours = true
+        } else {
             for (const slotStr of buddyAvailability) {
+                if (slotStr.includes('24/7') || slotStr.toLowerCase().includes('all') || slotStr.toLowerCase().includes('cả tuần')) {
+                    isWithinWorkingHours = true
+                    break
+                }
                 const parts = slotStr.split(' ')
-                // format: "Monday 08:00 - 17:00"
-                if (parts.length >= 3 && parts[0] === dayName) {
-                    const slotStart = parts[1]
-                    const slotEnd = parts[3]
-                    
-                    const [slotStartHour, slotStartMin] = slotStart.split(':').map(Number)
-                    const slotStartMins = slotStartHour * 60 + slotStartMin
-                    
-                    const [slotEndHour, slotEndMin] = slotEnd.split(':').map(Number)
-                    const slotEndMins = slotEndHour * 60 + slotEndMin
-                    
-                    if (newStartMin >= slotStartMins && newEndMin <= slotEndMins) {
+                const matchesDay = parts.some(p => p === dayName || p === daysOfWeekVN[dayIdx] || p === daysOfWeekVN2[dayIdx] || p === daysOfWeekVN3[dayIdx]) || slotStr.includes(dayName) || slotStr.includes(daysOfWeekVN[dayIdx])
+                if (matchesDay) {
+                    if (parts.length >= 3) {
+                        const timeParts = slotStr.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/)
+                        if (timeParts) {
+                            const [_, slotStart, slotEnd] = timeParts
+                            const [slotStartHour, slotStartMin] = slotStart.split(':').map(Number)
+                            const slotStartMins = slotStartHour * 60 + slotStartMin
+                            const [slotEndHour, slotEndMin] = slotEnd.split(':').map(Number)
+                            const slotEndMins = slotEndHour * 60 + slotEndMin
+                            if (newStartMin >= slotStartMins && newEndMin <= slotEndMins) {
+                                isWithinWorkingHours = true
+                                break
+                            }
+                        } else {
+                            isWithinWorkingHours = true
+                            break
+                        }
+                    } else {
                         isWithinWorkingHours = true
                         break
                     }
@@ -538,6 +557,15 @@ class BookingsService {
             // 6.1. Cập nhật trạng thái Booking sang Cancelled
             booking.status = 'cancelled'
             booking.cancelReason = cancelReason || `Hủy bởi ${isTourist ? 'Tourist' : isBuddy ? 'Buddy' : 'Admin'}`
+            if (booking.extensionRequests && booking.extensionRequests.length > 0) {
+                booking.extensionRequests.forEach(req => {
+                    if (req.status === 'pending') {
+                        req.status = 'rejected'
+                        req.reason = (req.reason || '') + ' [Hệ thống tự hủy do chuyến đi đã bị hủy]'
+                        req.updatedAt = new Date()
+                    }
+                })
+            }
             if (session) {
                 await booking.save({ session })
             } else {
@@ -1142,6 +1170,305 @@ class BookingsService {
             .sort({ disputeCreatedAt: -1 })
 
         return bookings
+    }
+
+    // 17. Tourist gửi yêu cầu gia hạn chuyến đi (+Giờ)
+    async requestExtension(bookingId: string, touristId: string, additionalHours: number, reason: string) {
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) {
+            throw new Error('Không tìm thấy thông tin đặt tour này.')
+        }
+
+        if (booking.touristId.toString() !== touristId) {
+            throw new Error('Bạn không có quyền xin gia hạn chuyến đi này.')
+        }
+
+        if (!['confirmed', 'ongoing'].includes(booking.status || '')) {
+            throw new Error('Chỉ có thể xin gia hạn đối với chuyến đi đang diễn ra hoặc đã được xác nhận.')
+        }
+
+        const extHours = Number(additionalHours)
+        if (!extHours || extHours <= 0 || isNaN(extHours)) {
+            throw new Error('Số giờ gia hạn không hợp lệ (phải lớn hơn 0).')
+        }
+
+        if (extHours > 24) {
+            throw new Error('Số giờ gia hạn tối đa trong một lần yêu cầu là 24 giờ.')
+        }
+
+        if (booking.hours + extHours > 48) {
+            throw new Error('Tổng thời lượng chuyến đi không được vượt quá 48 giờ.')
+        }
+
+        if (booking.extensionRequests && booking.extensionRequests.some(r => r.status === 'pending')) {
+            throw new Error('Đang có một yêu cầu gia hạn chờ Buddy xác nhận.')
+        }
+
+        const additionalPrice = Math.round((booking.pricePerHourSnapshot || 0) * extHours)
+        const additionalCommission = Math.round(additionalPrice * 0.15)
+        const additionalBuddyEarning = additionalPrice - additionalCommission
+
+        if (booking.paymentStatus === 'paid') {
+            const tourist = await UserModel.findById(touristId)
+            const currentBalance = tourist?.walletBalance || 0
+            if (currentBalance < additionalPrice) {
+                throw new Error(`Số dư ví của bạn không đủ để tự động thanh toán phí gia hạn (${additionalPrice.toLocaleString()} ₫). Vui lòng nạp thêm tiền vào ví trước khi gửi yêu cầu.`)
+            }
+        }
+
+        booking.extensionRequests = booking.extensionRequests || []
+        const newReq = {
+            _id: new ObjectId(),
+            requestedBy: new ObjectId(touristId),
+            additionalHours: extHours,
+            additionalPrice,
+            additionalCommission,
+            additionalBuddyEarning,
+            status: 'pending' as const,
+            reason: reason || '',
+            createdAt: new Date()
+        }
+        booking.extensionRequests.push(newReq as any)
+        await booking.save()
+
+        try {
+            const { getIO } = require('../socket')
+            const io = getIO()
+            io.emit(`booking_extension_updated_${bookingId}`, {
+                bookingId,
+                status: 'pending',
+                extensionRequest: newReq
+            })
+        } catch (socketErr) {
+            console.error('[BookingsService] Socket.io emit error:', socketErr)
+        }
+
+        return booking
+    }
+
+    // 18. Buddy đồng ý gia hạn chuyến đi
+    async acceptExtension(bookingId: string, buddyId: string, requestId?: string) {
+        const session = await mongoose.startSession().catch(() => null)
+        if (session) session.startTransaction()
+
+        try {
+            const booking = session
+                ? await BookingModel.findById(bookingId).session(session)
+                : await BookingModel.findById(bookingId)
+
+            if (!booking) {
+                throw new Error('Không tìm thấy thông tin đặt tour này.')
+            }
+
+            if (booking.buddyId.toString() !== buddyId) {
+                throw new Error('Bạn không có quyền xác nhận cho chuyến đi này.')
+            }
+
+            if (!['confirmed', 'ongoing'].includes(booking.status || '')) {
+                throw new Error('Chuyến đi không còn ở trạng thái hợp lệ để gia hạn (đã hoàn thành hoặc đã bị hủy).')
+            }
+
+            if (!booking.extensionRequests || booking.extensionRequests.length === 0) {
+                throw new Error('Không tìm thấy yêu cầu gia hạn nào.')
+            }
+
+            const reqIndex = booking.extensionRequests.findIndex(
+                r => r.status === 'pending' && (!requestId || r._id?.toString() === requestId)
+            )
+
+            if (reqIndex === -1) {
+                throw new Error('Không tìm thấy yêu cầu gia hạn đang chờ xác nhận.')
+            }
+
+            const extReq = booking.extensionRequests[reqIndex]
+
+            // Kiểm tra trùng lịch của Buddy với các chuyến đi khác trong ngày sau khi cộng giờ
+            const startOfDay = new Date(booking.scheduledDate)
+            startOfDay.setHours(0, 0, 0, 0)
+            const endOfDay = new Date(booking.scheduledDate)
+            endOfDay.setHours(23, 59, 59, 999)
+
+            const existingBookings = session
+                ? await BookingModel.find({
+                    buddyId: booking.buddyId,
+                    scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+                    status: { $in: ['confirmed', 'ongoing'] },
+                    _id: { $ne: booking._id }
+                }).session(session)
+                : await BookingModel.find({
+                    buddyId: booking.buddyId,
+                    scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+                    status: { $in: ['confirmed', 'ongoing'] },
+                    _id: { $ne: booking._id }
+                })
+
+            const [checkStartHour, checkStartMin] = booking.startTime.split(':').map(Number)
+            const newStartMin = checkStartHour * 60 + checkStartMin
+            const newEndMin = newStartMin + (booking.hours + extReq.additionalHours) * 60
+
+            for (const b of existingBookings) {
+                const [existHour, existMin] = b.startTime.split(':').map(Number)
+                const existStartMin = existHour * 60 + existMin
+                const existEndMin = existStartMin + b.hours * 60
+                if (newStartMin < existEndMin && newEndMin > existStartMin) {
+                    throw new Error('Không thể đồng ý gia hạn vì bạn bị trùng lịch với một chuyến đi khác ngay sau đó!')
+                }
+            }
+
+            if (booking.paymentStatus === 'paid') {
+                const tourist = session
+                    ? await UserModel.findById(booking.touristId).session(session)
+                    : await UserModel.findById(booking.touristId)
+
+                if (!tourist) {
+                    throw new Error('Không tìm thấy thông tin Tourist.')
+                }
+
+                const currentBalance = tourist.walletBalance || 0
+                if (currentBalance < extReq.additionalPrice) {
+                    throw new Error(`Khách hàng không còn đủ số dư ví (${currentBalance.toLocaleString()} ₫) để thanh toán phí gia hạn (${extReq.additionalPrice.toLocaleString()} ₫). Vui lòng yêu cầu khách nạp thêm tiền!`)
+                }
+
+                tourist.walletBalance = currentBalance - extReq.additionalPrice
+                if (session) await tourist.save({ session })
+                else await tourist.save()
+
+                const transaction = new TransactionModel({
+                    userId: booking.touristId,
+                    type: 'booking_payment',
+                    amount: extReq.additionalPrice,
+                    paymentMethod: 'Ví UniTravel',
+                    gatewayTransactionId: 'EXT-TXN-' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+                    status: 'success'
+                })
+                if (session) await transaction.save({ session })
+                else await transaction.save()
+
+                const buddyProfile = session
+                    ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
+                    : await BuddyProfileModel.findOne({ userId: booking.buddyId })
+
+                if (buddyProfile) {
+                    buddyProfile.pendingBalance = (buddyProfile.pendingBalance || 0) + extReq.additionalBuddyEarning
+                    if (session) await buddyProfile.save({ session })
+                    else await buddyProfile.save()
+                }
+            }
+
+            // Cập nhật thông tin booking
+            booking.hours += extReq.additionalHours
+            booking.totalPrice += extReq.additionalPrice
+            booking.commissionAmount += extReq.additionalCommission
+            booking.buddyEarning += extReq.additionalBuddyEarning
+            booking.extensionRequests[reqIndex].status = 'accepted'
+            booking.extensionRequests[reqIndex].updatedAt = new Date()
+
+            if (session) await booking.save({ session })
+            else await booking.save()
+
+            // Cập nhật AvailabilitySlot
+            const [startHour, startMin] = booking.startTime.split(':').map(Number)
+            const endTotalMin = (startHour * 60 + startMin) + booking.hours * 60
+            const endHour = Math.floor(endTotalMin / 60)
+            const endMin = endTotalMin % 60
+            const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`
+
+            const slotUpdate = {
+                $set: { endTime: newEndTime },
+                $setOnInsert: {
+                    buddyId: booking.buddyId,
+                    date: booking.scheduledDate,
+                    startTime: booking.startTime,
+                    status: 'booked'
+                }
+            }
+            const slotOptions = { upsert: true, new: true }
+
+            if (session) {
+                await AvailabilitySlotModel.findOneAndUpdate(
+                    { bookingId: booking._id },
+                    slotUpdate,
+                    { ...slotOptions, session }
+                )
+            } else {
+                await AvailabilitySlotModel.findOneAndUpdate(
+                    { bookingId: booking._id },
+                    slotUpdate,
+                    slotOptions
+                )
+            }
+
+            if (session) {
+                await session.commitTransaction()
+                session.endSession()
+            }
+
+            try {
+                const { getIO } = require('../socket')
+                const io = getIO()
+                io.emit(`booking_extension_updated_${bookingId}`, {
+                    bookingId,
+                    status: 'accepted',
+                    booking
+                })
+            } catch (socketErr) {
+                console.error('[BookingsService] Socket.io emit error:', socketErr)
+            }
+
+            return booking
+        } catch (error) {
+            if (session) {
+                await session.abortTransaction()
+                session.endSession()
+            }
+            throw error
+        }
+    }
+
+    // 19. Buddy từ chối gia hạn chuyến đi
+    async rejectExtension(bookingId: string, buddyId: string, requestId?: string, rejectReason?: string) {
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) {
+            throw new Error('Không tìm thấy thông tin đặt tour này.')
+        }
+
+        if (booking.buddyId.toString() !== buddyId) {
+            throw new Error('Bạn không có quyền xử lý yêu cầu này.')
+        }
+
+        if (!booking.extensionRequests || booking.extensionRequests.length === 0) {
+            throw new Error('Không tìm thấy yêu cầu gia hạn nào.')
+        }
+
+        const reqIndex = booking.extensionRequests.findIndex(
+            r => r.status === 'pending' && (!requestId || r._id?.toString() === requestId)
+        )
+
+        if (reqIndex === -1) {
+            throw new Error('Không tìm thấy yêu cầu gia hạn đang chờ xác nhận.')
+        }
+
+        booking.extensionRequests[reqIndex].status = 'rejected'
+        booking.extensionRequests[reqIndex].updatedAt = new Date()
+        if (rejectReason) {
+            booking.extensionRequests[reqIndex].reason = (booking.extensionRequests[reqIndex].reason || '') + ` [Từ chối: ${rejectReason}]`
+        }
+
+        await booking.save()
+
+        try {
+            const { getIO } = require('../socket')
+            const io = getIO()
+            io.emit(`booking_extension_updated_${bookingId}`, {
+                bookingId,
+                status: 'rejected',
+                booking
+            })
+        } catch (socketErr) {
+            console.error('[BookingsService] Socket.io emit error:', socketErr)
+        }
+
+        return booking
     }
 
     // 16. Giải ngân Escrow tự động sau 24h (Admin chạy thủ công hoặc cron job)

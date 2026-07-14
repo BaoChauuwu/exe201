@@ -330,3 +330,64 @@ export const releaseEscrowController = async (req: Request, res: Response) => {
         })
     }
 }
+
+// 15. Tourist yêu cầu gia hạn chuyến đi (+Giờ)
+export const requestExtensionController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const user_id = req.decoded_authorization?.user_id as string
+        const { additionalHours, reason } = req.body
+
+        const booking = await bookingsService.requestExtension(id as string, user_id, Number(additionalHours), reason)
+
+        return res.status(httpStatus.OK).json({
+            message: `Đã gửi yêu cầu gia hạn (+${additionalHours} giờ) tới Buddy thành công.`,
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+
+// 16. Buddy đồng ý gia hạn chuyến đi
+export const acceptExtensionController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const user_id = req.decoded_authorization?.user_id as string
+        const { requestId } = req.body
+
+        const booking = await bookingsService.acceptExtension(id as string, user_id, requestId)
+
+        return res.status(httpStatus.OK).json({
+            message: 'Đã xác nhận gia hạn chuyến đi thành công.',
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+
+// 17. Buddy từ chối gia hạn chuyến đi
+export const rejectExtensionController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const user_id = req.decoded_authorization?.user_id as string
+        const { requestId, rejectReason } = req.body
+
+        const booking = await bookingsService.rejectExtension(id as string, user_id, requestId, rejectReason)
+
+        return res.status(httpStatus.OK).json({
+            message: 'Đã từ chối yêu cầu gia hạn chuyến đi.',
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+

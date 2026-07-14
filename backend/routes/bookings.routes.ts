@@ -15,7 +15,10 @@ import {
     submitBuddyDefenseController,
     resolveDisputeController,
     getDisputesController,
-    releaseEscrowController
+    releaseEscrowController,
+    requestExtensionController,
+    acceptExtensionController,
+    rejectExtensionController
 } from '../controllers/bookings.controllers'
 import { accessTokenValidator } from '../middlewares/users.middlewares'
 import { 
@@ -131,6 +134,27 @@ bookingsRouter.get(
 bookingsRouter.post(
     '/admin/release-escrow',
     wrapRequestHandler(releaseEscrowController)
+)
+
+// 13. Tourist xin gia hạn chuyến đi (+Giờ)
+bookingsRouter.post(
+    '/:id/request-extend',
+    accessTokenValidator,
+    wrapRequestHandler(requestExtensionController)
+)
+
+// 14. Buddy đồng ý gia hạn chuyến đi
+bookingsRouter.post(
+    '/:id/accept-extend',
+    accessTokenValidator,
+    wrapRequestHandler(acceptExtensionController)
+)
+
+// 15. Buddy từ chối gia hạn chuyến đi
+bookingsRouter.post(
+    '/:id/reject-extend',
+    accessTokenValidator,
+    wrapRequestHandler(rejectExtensionController)
 )
 
 export default bookingsRouter
