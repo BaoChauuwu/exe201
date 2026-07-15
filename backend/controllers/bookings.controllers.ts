@@ -371,6 +371,53 @@ export const acceptExtensionController = async (req: Request, res: Response) => 
     }
 }
 
+// 16.5 Tourist thanh toán phí gia hạn
+export const payExtensionController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const user_id = req.decoded_authorization?.user_id as string
+        const { requestId } = req.body
+
+        const booking = await bookingsService.payExtension(id as string, user_id, requestId)
+
+        return res.status(httpStatus.OK).json({
+            message: 'Đã thanh toán thành công. Thời gian chuyến đi đã được gia hạn!',
+            result: booking
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+
+// 16.6 Tạo VNPay URL thanh toán gia hạn chuyến đi
+export const createVNPayExtensionUrlController = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const user_id = req.decoded_authorization?.user_id as string
+        const { requestId } = req.body
+
+        const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1'
+
+        const paymentUrl = await bookingsService.createVNPayExtensionUrl(
+            id as string,
+            user_id,
+            requestId,
+            Array.isArray(ipAddr) ? ipAddr[0] : ipAddr
+        )
+
+        return res.status(httpStatus.OK).json({
+            message: 'Tạo link thanh toán VNPay thành công',
+            result: { paymentUrl }
+        })
+    } catch (error: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+            message: error.message
+        })
+    }
+}
+
 // 17. Buddy từ chối gia hạn chuyến đi
 export const rejectExtensionController = async (req: Request, res: Response) => {
     try {
