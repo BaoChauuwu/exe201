@@ -18,6 +18,8 @@ import {
     releaseEscrowController,
     requestExtensionController,
     acceptExtensionController,
+    payExtensionController,
+    createVNPayExtensionUrlController,
     rejectExtensionController
 } from '../controllers/bookings.controllers'
 import { accessTokenValidator } from '../middlewares/users.middlewares'
@@ -155,6 +157,20 @@ bookingsRouter.post(
     '/:id/reject-extend',
     accessTokenValidator,
     wrapRequestHandler(rejectExtensionController)
+)
+
+// 16. Tourist thanh toán gia hạn chuyến đi
+bookingsRouter.post(
+    '/:id/pay-extend',
+    accessTokenValidator,
+    wrapRequestHandler(payExtensionController)
+)
+
+// 17. Tourist lấy link thanh toán VNPay cho gia hạn
+bookingsRouter.post(
+    '/:id/pay-extend-vnpay',
+    accessTokenValidator,
+    wrapRequestHandler(createVNPayExtensionUrlController)
 )
 
 export default bookingsRouter

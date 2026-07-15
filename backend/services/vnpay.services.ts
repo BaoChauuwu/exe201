@@ -130,13 +130,32 @@ class VnpayService {
       return { RspCode: '97', Message: 'Fail checksum' }
     }
 
-    const vnpTxnRef = query['vnp_TxnRef'] as string           // = bookingId
+    const vnpTxnRef = query['vnp_TxnRef'] as string           // = bookingId hoặc ext_bookingId_requestId
     const vnpAmount = parseInt(query['vnp_Amount'] as string)  // Đã nhân 100
     const vnpResponseCode = query['vnp_ResponseCode'] as string
     const vnpTransactionStatus = query['vnp_TransactionStatus'] as string
     const vnpTransactionNo = query['vnp_TransactionNo'] as string // Mã GD phía VNPAY
 
-    // Bước 2: Tìm đơn hàng trong DB
+    // XỬ LÝ GIA HẠN CHUYẾN ĐI
+    if (vnpTxnRef.startsWith('ext_')) {
+      const parts = vnpTxnRef.split('_')
+      if (parts.length === 3) {
+        const extBookingId = parts[1]
+        const extRequestId = parts[2]
+        
+        if (vnpResponseCode === '00' && (!vnpTransactionStatus || vnpTransactionStatus === '00')) {
+          try {
+            const bookingsService = require('./bookings.services').default
+            await bookingsService.completeExtensionVNPay(extBookingId, extRequestId, vnpTransactionNo, vnpAmount / 100)
+          } catch (err) {
+            console.error('[VnpayService] Lỗi xử lý gia hạn VNPay IPN:', err)
+          }
+        }
+        return { RspCode: '00', Message: 'Confirm Success' }
+      }
+    }
+
+    // Bước 2: Tìm đơn hàng trong DB (Dành cho đặt tour mới)
     const booking = await BookingModel.findById(vnpTxnRef)
     if (!booking) {
       return { RspCode: '01', Message: 'Order not found' }

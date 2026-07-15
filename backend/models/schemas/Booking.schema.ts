@@ -65,7 +65,7 @@ export interface IBooking {
         additionalPrice: number
         additionalCommission: number
         additionalBuddyEarning: number
-        status: 'pending' | 'accepted' | 'rejected'
+        status: 'pending' | 'accepted_pending_payment' | 'accepted' | 'rejected'
         reason?: string
         createdAt?: Date
         updatedAt?: Date
@@ -138,7 +138,7 @@ export const bookingSchema = new Schema<IBooking>(
                 additionalPrice: { type: Number, required: true },
                 additionalCommission: { type: Number, required: true },
                 additionalBuddyEarning: { type: Number, required: true },
-                status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+                status: { type: String, enum: ['pending', 'accepted_pending_payment', 'accepted', 'rejected'], default: 'pending' },
                 reason: { type: String, default: '' },
                 createdAt: { type: Date, default: Date.now },
                 updatedAt: { type: Date }

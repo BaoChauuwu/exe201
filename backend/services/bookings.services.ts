@@ -1208,14 +1208,6 @@ class BookingsService {
         const additionalCommission = Math.round(additionalPrice * 0.15)
         const additionalBuddyEarning = additionalPrice - additionalCommission
 
-        if (booking.paymentStatus === 'paid') {
-            const tourist = await UserModel.findById(touristId)
-            const currentBalance = tourist?.walletBalance || 0
-            if (currentBalance < additionalPrice) {
-                throw new Error(`Số dư ví của bạn không đủ để tự động thanh toán phí gia hạn (${additionalPrice.toLocaleString()} ₫). Vui lòng nạp thêm tiền vào ví trước khi gửi yêu cầu.`)
-            }
-        }
-
         booking.extensionRequests = booking.extensionRequests || []
         const newReq = {
             _id: new ObjectId(),
@@ -1315,44 +1307,113 @@ class BookingsService {
                 }
             }
 
-            if (booking.paymentStatus === 'paid') {
-                const tourist = session
-                    ? await UserModel.findById(booking.touristId).session(session)
-                    : await UserModel.findById(booking.touristId)
+            // Logic thanh toán và cộng giờ đã được chuyển sang hàm payExtension
 
-                if (!tourist) {
-                    throw new Error('Không tìm thấy thông tin Tourist.')
-                }
+            // Cập nhật trạng thái
+            booking.extensionRequests[reqIndex].status = 'accepted_pending_payment'
+            booking.extensionRequests[reqIndex].updatedAt = new Date()
 
-                const currentBalance = tourist.walletBalance || 0
-                if (currentBalance < extReq.additionalPrice) {
-                    throw new Error(`Khách hàng không còn đủ số dư ví (${currentBalance.toLocaleString()} ₫) để thanh toán phí gia hạn (${extReq.additionalPrice.toLocaleString()} ₫). Vui lòng yêu cầu khách nạp thêm tiền!`)
-                }
+            if (session) await booking.save({ session })
+            else await booking.save()
 
-                tourist.walletBalance = currentBalance - extReq.additionalPrice
-                if (session) await tourist.save({ session })
-                else await tourist.save()
+            // Không cập nhật AvailabilitySlot ở đây, sẽ cập nhật khi thanh toán
 
-                const transaction = new TransactionModel({
-                    userId: booking.touristId,
-                    type: 'booking_payment',
-                    amount: extReq.additionalPrice,
-                    paymentMethod: 'Ví UniTravel',
-                    gatewayTransactionId: 'EXT-TXN-' + Math.random().toString(36).substring(2, 12).toUpperCase(),
-                    status: 'success'
+            if (session) {
+                await session.commitTransaction()
+                session.endSession()
+            }
+
+            try {
+                const { getIO } = require('../socket')
+                const io = getIO()
+                io.emit(`booking_extension_updated_${bookingId}`, {
+                    bookingId,
+                    status: 'accepted_pending_payment',
+                    booking
                 })
-                if (session) await transaction.save({ session })
-                else await transaction.save()
+            } catch (socketErr) {
+                console.error('[BookingsService] Socket.io emit error:', socketErr)
+            }
 
-                const buddyProfile = session
-                    ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
-                    : await BuddyProfileModel.findOne({ userId: booking.buddyId })
+            return booking
+        } catch (error) {
+            if (session) {
+                await session.abortTransaction()
+                session.endSession()
+            }
+            throw error
+        }
+    }
 
-                if (buddyProfile) {
-                    buddyProfile.pendingBalance = (buddyProfile.pendingBalance || 0) + extReq.additionalBuddyEarning
-                    if (session) await buddyProfile.save({ session })
-                    else await buddyProfile.save()
-                }
+    // 18.5 Tourist thanh toán phí gia hạn chuyến đi
+    async payExtension(bookingId: string, touristId: string, requestId?: string) {
+        const session = await mongoose.startSession().catch(() => null)
+        if (session) session.startTransaction()
+
+        try {
+            const booking = session
+                ? await BookingModel.findById(bookingId).session(session)
+                : await BookingModel.findById(bookingId)
+
+            if (!booking) {
+                throw new Error('Không tìm thấy thông tin đặt tour này.')
+            }
+
+            if (booking.touristId.toString() !== touristId) {
+                throw new Error('Bạn không có quyền thanh toán cho chuyến đi này.')
+            }
+
+            if (!booking.extensionRequests || booking.extensionRequests.length === 0) {
+                throw new Error('Không tìm thấy yêu cầu gia hạn nào.')
+            }
+
+            const reqIndex = booking.extensionRequests.findIndex(
+                r => r.status === 'accepted_pending_payment' && (!requestId || r._id?.toString() === requestId)
+            )
+
+            if (reqIndex === -1) {
+                throw new Error('Không tìm thấy yêu cầu gia hạn đang chờ thanh toán.')
+            }
+
+            const extReq = booking.extensionRequests[reqIndex]
+
+            const tourist = session
+                ? await UserModel.findById(booking.touristId).session(session)
+                : await UserModel.findById(booking.touristId)
+
+            if (!tourist) {
+                throw new Error('Không tìm thấy thông tin Tourist.')
+            }
+
+            const currentBalance = tourist.walletBalance || 0
+            if (currentBalance < extReq.additionalPrice) {
+                throw new Error(`Số dư ví của bạn (${currentBalance.toLocaleString()} ₫) không đủ để thanh toán phí gia hạn (${extReq.additionalPrice.toLocaleString()} ₫). Vui lòng nạp thêm tiền!`)
+            }
+
+            tourist.walletBalance = currentBalance - extReq.additionalPrice
+            if (session) await tourist.save({ session })
+            else await tourist.save()
+
+            const transaction = new TransactionModel({
+                bookingId: booking._id,
+                payerId: booking.touristId,
+                type: 'booking_payment',
+                amount: extReq.additionalPrice,
+                paymentMethod: 'Ví UniTravel',
+                gatewayTransactionId: 'EXT-PAY-' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+                status: 'success'
+            })
+            if (session) await transaction.save({ session })
+            else await transaction.save()
+
+            const buddyProfile = session
+                ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
+                : await BuddyProfileModel.findOne({ userId: booking.buddyId })
+
+            if (buddyProfile) {
+                buddyProfile.pendingBalance = (buddyProfile.pendingBalance || 0) + extReq.additionalBuddyEarning
+                if (session) await buddyProfile.save({ session })
+                else await buddyProfile.save()
             }
 
             // Cập nhật thông tin booking
@@ -1423,6 +1484,162 @@ class BookingsService {
             }
             throw error
         }
+    }
+
+    // 18.6 Hoàn tất thanh toán gia hạn chuyến đi (VNPay Webhook gọi)
+    async completeExtensionVNPay(bookingId: string, requestId: string, vnpTransactionNo: string, amount: number) {
+        const session = await mongoose.startSession().catch(() => null)
+        if (session) session.startTransaction()
+
+        try {
+            const booking = session
+                ? await BookingModel.findById(bookingId).session(session)
+                : await BookingModel.findById(bookingId)
+
+            if (!booking) {
+                throw new Error('Không tìm thấy thông tin đặt tour này.')
+            }
+
+            if (!booking.extensionRequests || booking.extensionRequests.length === 0) {
+                throw new Error('Không tìm thấy yêu cầu gia hạn nào.')
+            }
+
+            const reqIndex = booking.extensionRequests.findIndex(
+                r => r._id?.toString() === requestId
+            )
+
+            if (reqIndex === -1) {
+                throw new Error('Không tìm thấy yêu cầu gia hạn.')
+            }
+
+            const extReq = booking.extensionRequests[reqIndex]
+
+            // Nếu đã accepted rồi (IPN bị gọi lặp lại), bỏ qua
+            if (extReq.status === 'accepted') {
+                if (session) {
+                    await session.abortTransaction()
+                    session.endSession()
+                }
+                return booking
+            }
+
+            if (extReq.status !== 'accepted_pending_payment') {
+                throw new Error('Trạng thái yêu cầu gia hạn không hợp lệ.')
+            }
+
+            const transaction = new TransactionModel({
+                bookingId: booking._id,
+                payerId: booking.touristId,
+                type: 'booking_payment',
+                amount: extReq.additionalPrice,
+                paymentMethod: 'VNPay',
+                gatewayTransactionId: vnpTransactionNo || `EXT-VNP-${bookingId}`,
+                status: 'success'
+            })
+            if (session) await transaction.save({ session })
+            else await transaction.save()
+
+            const buddyProfile = session
+                ? await BuddyProfileModel.findOne({ userId: booking.buddyId }).session(session)
+                : await BuddyProfileModel.findOne({ userId: booking.buddyId })
+
+            if (buddyProfile) {
+                buddyProfile.pendingBalance = (buddyProfile.pendingBalance || 0) + extReq.additionalBuddyEarning
+                if (session) await buddyProfile.save({ session })
+                else await buddyProfile.save()
+            }
+
+            // Cập nhật thông tin booking
+            booking.hours += extReq.additionalHours
+            booking.totalPrice += extReq.additionalPrice
+            booking.commissionAmount += extReq.additionalCommission
+            booking.buddyEarning += extReq.additionalBuddyEarning
+            booking.extensionRequests[reqIndex].status = 'accepted'
+            booking.extensionRequests[reqIndex].updatedAt = new Date()
+
+            if (session) await booking.save({ session })
+            else await booking.save()
+
+            // Cập nhật AvailabilitySlot
+            const [startHour, startMin] = booking.startTime.split(':').map(Number)
+            const endTotalMin = (startHour * 60 + startMin) + booking.hours * 60
+            const endHour = Math.floor(endTotalMin / 60)
+            const endMin = endTotalMin % 60
+            const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`
+
+            const slotUpdate = {
+                $set: { endTime: newEndTime },
+                $setOnInsert: {
+                    buddyId: booking.buddyId,
+                    date: booking.scheduledDate,
+                    startTime: booking.startTime,
+                    status: 'booked'
+                }
+            }
+            const slotOptions = { upsert: true, new: true }
+
+            if (session) {
+                await AvailabilitySlotModel.findOneAndUpdate(
+                    { bookingId: booking._id },
+                    slotUpdate,
+                    { ...slotOptions, session }
+                )
+            } else {
+                await AvailabilitySlotModel.findOneAndUpdate(
+                    { bookingId: booking._id },
+                    slotUpdate,
+                    slotOptions
+                )
+            }
+
+            if (session) {
+                await session.commitTransaction()
+                session.endSession()
+            }
+
+            try {
+                const { getIO } = require('../socket')
+                const io = getIO()
+                io.emit(`booking_extension_updated_${bookingId}`, {
+                    bookingId,
+                    status: 'accepted',
+                    booking
+                })
+            } catch (socketErr) {
+                console.error('[BookingsService] Socket.io emit error:', socketErr)
+            }
+
+            return booking
+        } catch (error) {
+            if (session) {
+                await session.abortTransaction()
+                session.endSession()
+            }
+            throw error
+        }
+    }
+
+    // 18.7 Tạo URL thanh toán VNPay cho gia hạn
+    async createVNPayExtensionUrl(bookingId: string, touristId: string, requestId: string, ipAddr: string) {
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) throw new Error('Không tìm thấy thông tin đặt tour này.')
+        if (booking.touristId.toString() !== touristId) throw new Error('Bạn không có quyền thực hiện hành động này.')
+
+        const extReq = booking.extensionRequests?.find(r => r._id?.toString() === requestId)
+        if (!extReq) throw new Error('Không tìm thấy yêu cầu gia hạn.')
+        if (extReq.status !== 'accepted_pending_payment') throw new Error('Trạng thái yêu cầu gia hạn không hợp lệ.')
+
+        const vnpayService = require('./vnpay.services').default
+        const orderDescription = `Thanh toan gia han cho chuyen di ${booking.bookingCode}`
+
+        const paymentUrl = vnpayService.createPaymentUrl({
+            bookingId: `ext_${booking._id}_${extReq._id}`, // Prefix ext_ để processIpn nhận diện
+            amount: extReq.additionalPrice,
+            orderDescription,
+            ipAddr
+        })
+
+        return paymentUrl
     }
 
     // 19. Buddy từ chối gia hạn chuyến đi

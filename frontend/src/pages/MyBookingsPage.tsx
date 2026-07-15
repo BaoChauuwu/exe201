@@ -271,7 +271,7 @@ export const MyBookingsPage = () => {
   };
 
   const handleAcceptExtension = async (bookingId: string, requestId?: string) => {
-    if (!window.confirm('Bạn có chắc chắn đồng ý gia hạn chuyến đi này không? Hệ thống sẽ tự động cập nhật giờ và thanh toán phí phát sinh.')) return;
+    if (!window.confirm('Bạn có chắc chắn đồng ý gia hạn chuyến đi này không? Hệ thống sẽ gửi yêu cầu thanh toán cho Tourist.')) return;
     setActionLoadingId(bookingId + '_accept');
     try {
       await bookingApi.acceptExtension(bookingId, requestId);
@@ -298,6 +298,36 @@ export const MyBookingsPage = () => {
     }
   };
 
+  const handlePayExtension = async (bookingId: string, requestId?: string) => {
+    setActionLoadingId(bookingId + '_pay_ext');
+    try {
+      await bookingApi.payExtension(bookingId, requestId);
+      toast.success('Đã thanh toán thành công! Thời gian chuyến đi đã được gia hạn.');
+      fetchBookings();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Thanh toán gia hạn thất bại.';
+      toast.error(errorMsg);
+      if (errorMsg.toLowerCase().includes('số dư ví')) {
+        if (window.confirm(`${errorMsg}\n\nBạn có muốn đi đến trang Ví UniTravel để nạp tiền ngay bây giờ không?`)) {
+          navigate('/wallet');
+        }
+      }
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handlePayExtensionVNPay = async (bookingId: string, requestId?: string) => {
+    setActionLoadingId(bookingId + '_pay_ext_vnpay');
+    try {
+      const response = await bookingApi.createExtensionVnpayUrl(bookingId, requestId);
+      window.location.href = response.data.result.paymentUrl;
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Tạo link thanh toán VNPay thất bại.');
+      setActionLoadingId(null);
+    }
+  };
+
   useEffect(() => {
     if (accessToken) {
       fetchBookings();
@@ -320,8 +350,17 @@ export const MyBookingsPage = () => {
         fetchBookings();
       });
       const extEventName = `booking_extension_updated_${booking._id}`;
-      socket.on(extEventName, () => {
+      socket.on(extEventName, (data: any) => {
         fetchBookings();
+        if (data && data.status && !isBuddy) {
+          if (data.status === 'accepted_pending_payment') {
+            toast.success(`Buddy đã đồng ý gia hạn cho tour ${booking.bookingCode}. Vui lòng thanh toán để xác nhận!`, { duration: 5000 });
+          } else if (data.status === 'rejected') {
+            toast.error(`Buddy đã từ chối yêu cầu gia hạn cho tour ${booking.bookingCode}.`, { duration: 5000 });
+          } else if (data.status === 'accepted') {
+            toast.success(`Gia hạn tour ${booking.bookingCode} thành công!`, { duration: 5000 });
+          }
+        }
       });
     });
     
@@ -648,9 +687,9 @@ export const MyBookingsPage = () => {
                             </div>
                           </div>
 
-                          {/* Banner Yêu cầu Gia hạn (nếu có request pending) */}
-                          {booking.extensionRequests && booking.extensionRequests.some(r => r.status === 'pending') && (() => {
-                            const pendingReq = booking.extensionRequests!.find(r => r.status === 'pending')!;
+                          {/* Banner Yêu cầu Gia hạn */}
+                          {booking.extensionRequests && booking.extensionRequests.some(r => ['pending', 'accepted_pending_payment'].includes(r.status)) && (() => {
+                            const pendingReq = booking.extensionRequests!.find(r => ['pending', 'accepted_pending_payment'].includes(r.status))!;
                             return (
                               <div style={{
                                 background: isBuddy ? '#fef3c7' : '#eff6ff',
@@ -665,7 +704,12 @@ export const MyBookingsPage = () => {
                               }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: isBuddy ? '#b45309' : '#1d4ed8' }}>
                                   <Clock size={16} />
-                                  <span>{isBuddy ? '🔔 Yêu cầu gia hạn chuyến đi từ Tourist' : '⏳ Đang chờ Buddy phản hồi yêu cầu gia hạn'}</span>
+                                  <span>
+                                    {pendingReq.status === 'pending'
+                                      ? (isBuddy ? '🔔 Yêu cầu gia hạn chuyến đi từ Tourist' : '⏳ Đang chờ Buddy phản hồi yêu cầu gia hạn')
+                                      : (isBuddy ? '⏳ Đang chờ Tourist thanh toán phí gia hạn' : '🔔 Buddy đã đồng ý gia hạn! Vui lòng thanh toán để xác nhận.')
+                                    }
+                                  </span>
                                 </div>
                                 <div style={{ color: '#334155', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div>
@@ -683,14 +727,14 @@ export const MyBookingsPage = () => {
                                     </div>
                                   )}
                                 </div>
-                                {isBuddy && (
+                                {isBuddy && pendingReq.status === 'pending' && (
                                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '4px' }}>
                                     <button
                                       onClick={() => handleAcceptExtension(booking._id, pendingReq._id)}
                                       disabled={actionLoadingId === booking._id + '_accept'}
                                       style={{ padding: '0.5rem 1rem', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 8px rgba(16,185,129,0.25)' }}
                                     >
-                                      ✅ {actionLoadingId === booking._id + '_accept' ? 'Đang xử lý...' : 'Đồng ý gia hạn (+Giờ)'}
+                                      ✅ {actionLoadingId === booking._id + '_accept' ? 'Đang xử lý...' : 'Đồng ý gia hạn'}
                                     </button>
                                     <button
                                       onClick={() => handleRejectExtension(booking._id, pendingReq._id)}
@@ -698,6 +742,24 @@ export const MyBookingsPage = () => {
                                       style={{ padding: '0.5rem 1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#dc2626', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}
                                     >
                                       ❌ Từ chối
+                                    </button>
+                                  </div>
+                                )}
+                                {!isBuddy && pendingReq.status === 'accepted_pending_payment' && (
+                                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '4px', flexWrap: 'wrap' }}>
+                                    <button
+                                      onClick={() => handlePayExtension(booking._id, pendingReq._id)}
+                                      disabled={actionLoadingId?.startsWith(booking._id)}
+                                      style={{ padding: '0.5rem 1rem', background: 'var(--gradient-primary)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 8px rgba(2,132,199,0.25)' }}
+                                    >
+                                      💳 {actionLoadingId === booking._id + '_pay_ext' ? 'Đang xử lý...' : 'Thanh toán (Ví)'}
+                                    </button>
+                                    <button
+                                      onClick={() => handlePayExtensionVNPay(booking._id, pendingReq._id)}
+                                      disabled={actionLoadingId?.startsWith(booking._id)}
+                                      style={{ padding: '0.5rem 1rem', background: 'linear-gradient(135deg, #0284c7, #0369a1)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 8px rgba(2,132,199,0.25)' }}
+                                    >
+                                      🏦 {actionLoadingId === booking._id + '_pay_ext_vnpay' ? 'Đang chuyển hướng...' : 'Thanh toán (VNPay)'}
                                     </button>
                                   </div>
                                 )}
