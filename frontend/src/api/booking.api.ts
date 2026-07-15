@@ -62,7 +62,7 @@ export interface IBooking {
         additionalPrice: number
         additionalCommission: number
         additionalBuddyEarning: number
-        status: 'pending' | 'accepted' | 'rejected'
+        status: 'pending' | 'accepted_pending_payment' | 'accepted' | 'rejected'
         reason?: string
         createdAt?: string
         updatedAt?: string
@@ -174,6 +174,18 @@ export const bookingApi = {
      */
     acceptExtension: (id: string, requestId?: string) =>
         axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/accept-extend`, { requestId }),
+
+    /**
+     * Tourist thanh toán phí gia hạn chuyến đi (Ví UniTravel)
+     */
+    payExtension: (id: string, requestId?: string) =>
+        axiosInstance.post<{ message: string; result: IBooking }>(`/bookings/${id}/pay-extend`, { requestId }),
+
+    /**
+     * Tourist thanh toán phí gia hạn chuyến đi (VNPay)
+     */
+    createExtensionVnpayUrl: (id: string, requestId?: string) =>
+        axiosInstance.post<{ message: string; result: { paymentUrl: string } }>(`/bookings/${id}/pay-extend-vnpay`, { requestId }),
 
     /**
      * Buddy từ chối gia hạn chuyến đi
